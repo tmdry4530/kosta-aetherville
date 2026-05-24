@@ -41,7 +41,8 @@ body::before {
 
 .shell {
   display: grid;
-  grid-template-columns: minmax(300px, 0.62fr) minmax(460px, 1.38fr);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
   gap: 1.5rem;
   min-height: 100vh;
   padding: clamp(1.25rem, 4vw, 3rem);
@@ -57,8 +58,10 @@ body::before {
 }
 
 .hero {
-  align-self: center;
-  padding: clamp(1.5rem, 4vw, 3rem);
+  display: grid;
+  align-self: stretch;
+  gap: 1rem;
+  padding: clamp(1.4rem, 3vw, 2.4rem);
 }
 
 .eyebrow {
@@ -72,13 +75,14 @@ body::before {
 
 h1 {
   margin: 0;
-  max-width: 10ch;
-  font-size: clamp(2.35rem, 6vw, 5.7rem);
-  line-height: 0.95;
-  letter-spacing: -0.08em;
+  max-width: 18ch;
+  font-size: clamp(2.4rem, 5vw, 4.8rem);
+  line-height: 0.98;
+  letter-spacing: -0.065em;
 }
 
 .lede {
+  max-width: 74ch;
   color: var(--muted);
   font-size: 1.06rem;
   line-height: 1.75;
@@ -112,8 +116,10 @@ h1 {
 
 .endpointGrid {
   display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.8rem;
-  margin: 2rem 0 0;
+  max-width: 58rem;
+  margin: 0.6rem 0 0;
 }
 
 .endpointGrid div {
@@ -137,7 +143,7 @@ h1 {
 }
 
 .cityPanel {
-  min-height: 520px;
+  min-height: min(64vh, 680px);
   overflow: hidden;
   position: relative;
 }
@@ -150,7 +156,7 @@ h1 {
 
 .cityCanvas {
   height: 100%;
-  min-height: 520px;
+  min-height: min(64vh, 680px);
 }
 
 .statusPill {
@@ -456,10 +462,6 @@ h1 {
 }
 
 @media (max-width: 920px) {
-  .shell {
-    grid-template-columns: 1fr;
-  }
-
   .panelDeck {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -509,6 +511,7 @@ h1 {
   }
 
   .endpointGrid {
+    grid-template-columns: 1fr;
     margin-top: 1.2rem;
   }
 

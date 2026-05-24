@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "demo_waypoint_movement_polished",
+  "status": "demo_top_bottom_layout_polished",
   "source_prd": "source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -476,6 +476,25 @@
         "client_fallback": "replay_citizens_taxi_drone_use_poseOnRoute_waypoint_interpolation_no_angle_sine_cosine_orbits",
         "verification": "runpod_direct_redeploy_sim_start_state_samples_show_actor_positions_advancing_between_waypoints",
         "runtime": "direct_process_only_no_docker_no_secret_output"
+      }
+    },
+    {
+      "id": "M7-011",
+      "title": "Switch demo UI from left-right split to top-bottom layout",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "client/src/app/globals.css",
+      "depends_on": [
+        "M7-010"
+      ],
+      "unblocked_by": "M7-010",
+      "last_checked_at": "2026-05-25T03:47:00+09:00",
+      "completed_at": "2026-05-25T03:47:00+09:00",
+      "diagnostics": {
+        "layout": "shell_single_column_top_hero_bottom_city_scene",
+        "hero": "full_width_top_banner_with_tighter_title_and_compact_endpoint_cards",
+        "city": "full_width_scene_below_hero_with_panel_deck_under_canvas",
+        "runtime": "client_css_only_no_runpod_restart_no_docker"
       }
     }
   ]

@@ -675,3 +675,10 @@
 - Updated client replay/fallback motion so citizens, taxi, and drone also follow straight route segments instead of circular sine/cosine loops.
 - Added regression coverage proving the first citizen advances along a corridor segment with stable lane position, not an orbit.
 - Verified RunPod tunnel state after redeploy: simulation running, tick advancing, and sampled citizens moving between route waypoints.
+
+## Top-bottom layout polish — 2026-05-25T03:47:00+09:00
+
+- Status: complete locally; main page no longer uses the previous left/right split.
+- `.shell` now stacks the hero/instructions on top and the live city scene plus panels underneath.
+- Hero typography was tightened for a top banner layout, endpoint cards are compact, and the city canvas expands full-width below.
+- Runtime services were not changed; this is a local client layout update only.
