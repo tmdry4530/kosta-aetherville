@@ -8,7 +8,7 @@ pod.
 | Service | Port | Direct command |
 |---|---:|---|
 | Orchestrator | 8080 | `uv run uvicorn aetherville_server.main:app --host 0.0.0.0 --port 8080` |
-| Vision | 8001 | `uv run uvicorn aetherville_server.vision:app --host 0.0.0.0 --port 8001` |
+| Vision | 18001 verified / 8001 architecture target | `uv run uvicorn aetherville_server.vision:app --host 0.0.0.0 --port "${AETHERVILLE_VISION_PORT:-18001}"` |
 | vLLM fallback | 8000 | `uv run uvicorn aetherville_server.vllm_fallback:app --host 0.0.0.0 --port 8000` |
 | Redis | 6379 | `redis-server` when available; otherwise orchestrator memory fallback |
 
@@ -22,7 +22,7 @@ Equivalent raw checks:
 
 ```bash
 curl -fsS http://127.0.0.1:8080/api/v1/health
-curl -fsS http://127.0.0.1:8001/health
+curl -fsS "http://127.0.0.1:${AETHERVILLE_VISION_PORT:-18001}/health"
 curl -fsS http://127.0.0.1:8000/v1/models
 ```
 
@@ -52,5 +52,6 @@ bash infra/runpod/start_direct_processes.sh
 VISION_URL=http://127.0.0.1:18001 bash infra/runpod/health_check_direct.sh
 ```
 
-The final public demo should still expose the architecture-contract ports or
-document a port-mapping/proxy change explicitly.
+The current verified pod uses `AETHERVILLE_VISION_PORT=18001` because a template
+process owns `:8001`. The final public demo should still expose the
+architecture-contract ports or document a port-mapping/proxy change explicitly.

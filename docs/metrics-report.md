@@ -4,7 +4,7 @@
 
 - Date: 2026-05-24
 - Scope: Phase 10 local demo-readiness snapshot after Phases 01–09.
-- RunPod mode: direct-process fallback.
+- RunPod mode: direct-process runtime.
 - GPU workload: none; mock vLLM, mock vision, deterministic traffic/citizen/vehicle paths.
 
 ## Verification commands

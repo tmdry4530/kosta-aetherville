@@ -7,8 +7,9 @@
 - Decision: Codex should configure backend services through SSH to RunPod and keep the local machine focused on repository editing and browser rendering.
 - Consequences:
   - SSH environment variables are required.
-  - Docker Compose path is preferred only when Docker daemon is available.
-  - Direct-process fallback must exist for RunPod pods without Docker daemon.
+  - Direct-process runtime is the active execution strategy for the verified RunPod pod.
+  - Docker Compose is optional future packaging/portability documentation only.
+  - Direct-process runtime must exist for RunPod pods without Docker daemon.
 - Revisit when: the user moves to a VM with full Docker support or a managed inference endpoint.
 
 ## ADR-002: Shared schemas are the single source of truth
@@ -78,3 +79,17 @@
   - The API shape remains compatible with a later vLLM-backed planner.
   - Tests assert cache reuse so future implementations do not regress into per-tick LLM calls.
 - Revisit when: real vLLM model access is approved and a batch planning/reflection worker is introduced.
+
+## ADR-009: Verified RunPod execution uses direct-process runtime, not Docker-first deployment
+
+- Status: accepted
+- Context: Goal 00 verified RunPod SSH and GPU access, and the pod reports an NVIDIA GeForce RTX 4090. The current RunPod pod does not expose a usable Docker daemon. Docker daemon setup, Docker Compose execution, Docker-in-Docker, and blind Docker retries would add operational risk and are not required for the verified service path.
+- Decision: Treat the RunPod pod itself as the execution environment. The active cloud runtime strategy is direct-process startup: vLLM or the OpenAI-compatible fallback through a documented direct command path, FastAPI orchestrator through `uvicorn`, vision through `uvicorn` or a deterministic stub, simulation as Python package/module code, and process management through shell scripts, tmux, nohup, or supervisor-compatible commands. Docker Compose artifacts are retained only as future portability/deployment documentation.
+- Consequences:
+  - Current cloud runtime acceptance must not require Docker execution.
+  - Health checks and smoke tests must work against direct processes.
+  - Deployment automation must prefer `--mode direct` and must not attempt Docker daemon setup or Docker-in-Docker on this pod.
+  - `verify_runpod.sh` must not invoke Docker commands for this verified pod; it records the no-Docker direct-process policy instead.
+  - `deploy_over_ssh.sh --mode compose` must fail fast as unsupported for the current execution path.
+  - Future Docker packaging can be revisited only when a Docker-capable environment is explicitly selected and verified.
+- Revisit when: the user moves to a Docker-capable VM/pod, adopts a managed inference endpoint, or explicitly approves a new containerized deployment target.

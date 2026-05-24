@@ -39,7 +39,7 @@
 
 ## 중요한 전제
 
-RunPod는 템플릿/이미지에 따라 컨테이너 내부에서 Docker daemon이 없을 수 있다. Codex는 먼저 `docker info`, `nvidia-smi`, `python`, `uv`, `node`, `pnpm`을 점검하고, Docker Compose 경로가 불가능하면 direct-process 경로로 fallback해야 한다.
+현재 검증된 RunPod pod는 Docker daemon을 사용할 수 없으며 Docker는 실행 의존성이 아니다. Codex는 SSH/GPU/Python 런타임을 확인한 뒤 direct-process runtime만 사용한다. Docker Compose 파일은 향후 Docker-capable 배포 타깃을 위한 portability 문서로만 유지한다.
 
 ## 현재 데모 실행
 
@@ -55,11 +55,13 @@ pnpm dev
 - Live client: `http://localhost:3000/`
 - Replay fallback: `http://localhost:3000/replay`
 - RunPod backend health: use `infra/runpod/.env.runpod`, then `bash infra/runpod/verify_runpod.sh`.
-- Direct-process cloud mode remains the supported path until Docker daemon is available.
+- Direct-process cloud mode is the current supported RunPod execution path; do not run Docker or Docker Compose for this pod.
 
 ## 데모 문서
 
 - `docs/demo-scenario.md`
+- `docs/live-demo-runbook.md`
+- `docs/demo-script-15min.md`
 - `docs/demo-readiness-checklist.md`
 - `docs/metrics-report.md`
 - `docs/architecture-diagram.md`

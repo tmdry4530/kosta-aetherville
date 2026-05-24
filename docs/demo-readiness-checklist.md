@@ -3,7 +3,7 @@
 ## Before the demo
 
 - [ ] Run `bash infra/runpod/verify_runpod.sh`.
-- [ ] Confirm Docker remains direct-process fallback if daemon is unavailable.
+- [ ] Confirm direct-process runtime is active and no Docker command is needed.
 - [ ] Run `bash infra/runpod/health_check_direct.sh` inside the synced workspace or through the deployment helper.
 - [ ] Start local client with `pnpm dev`.
 - [ ] Open the live route `/` and confirm connection/tick status.
@@ -26,3 +26,16 @@
 - Real YOLO unavailable: continue with deterministic mock boxes.
 - PPO/LSTM unavailable: show baseline controller and deterministic forecast.
 - Public WSS/REST not configured: use SSH/in-pod smoke evidence and replay route for presentation.
+
+## Final freeze checklist
+
+- [ ] `docs/live-demo-runbook.md` has been followed in Mode A or Mode B.
+- [ ] RunPod direct-process services started with `AETHERVILLE_VISION_PORT=18001`.
+- [ ] Orchestrator health returns `ok`.
+- [ ] Vision health returns `ok` on port `18001`.
+- [ ] Socket.IO polling smoke receives `aetherville:state_update`.
+- [ ] Local client starts with `NEXT_PUBLIC_ORCHESTRATOR_URL` and `NEXT_PUBLIC_SOCKET_URL` set to the selected endpoint.
+- [ ] Live route `/` renders city state.
+- [ ] Replay route `/replay` works before the live demo begins.
+- [ ] God Mode text command has been tested once.
+- [ ] No Docker or Docker Compose command is part of the demo path.

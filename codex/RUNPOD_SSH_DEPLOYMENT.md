@@ -12,15 +12,10 @@ Set up the cloud backend on the user's rented RunPod instance by SSH. Do not ask
 cp infra/runpod/.env.runpod.example infra/runpod/.env.runpod
 ```
 
-2. Fill:
-
-```bash
-RUNPOD_HOST=
-RUNPOD_SSH_PORT=
-RUNPOD_USER=root
-RUNPOD_SSH_KEY=/absolute/path/to/private_key
-RUNPOD_REMOTE_DIR=/workspace/aetherville
-```
+2. Fill the required SSH variables listed in
+   `infra/runpod/.env.runpod.example` using only the local ignored
+   `.env.runpod` file or process environment. Do not copy actual values into
+   tracked docs, chat, logs, or commits.
 
 3. Ensure `.env.runpod` is ignored.
 
@@ -44,35 +39,20 @@ This checks:
 - Python
 - Node/pnpm if available
 - currently running service process names without command-line arguments
-- Docker daemon availability
+- no-Docker direct-process policy
 - exposed service ports if URLs are provided
 
 ## Deployment modes
 
-### Mode A — Docker Compose
+### Current mode — direct process runtime
 
-Use when remote `docker info` succeeds.
-
-```bash
-bash infra/runpod/deploy_over_ssh.sh
-```
-
-Remote command should eventually run:
+For the current RunPod pod, Docker is unavailable and is not required. The pod
+itself is the execution environment. Do not attempt Docker daemon setup,
+Docker Compose execution, Docker-in-Docker, or blind Docker retries. Use the
+direct-process scripts below after the repository is synced:
 
 ```bash
-cd "$RUNPOD_REMOTE_DIR"
-docker compose -f docker-compose.yml -f docker-compose.cloud.yml up -d --build
-```
-
-### Mode B — direct process fallback
-
-### Direct-process scripts now provided
-
-For the current RunPod pod, Docker is unavailable. Use the direct-process scripts
-below after the repository is synced:
-
-```bash
-# Starts orchestrator :8080, vision :8001, and mock vLLM-compatible fallback :8000.
+# Starts orchestrator :8080, vision, and mock vLLM-compatible fallback :8000.
 # Redis uses memory fallback unless redis-server is installed.
 export AETHERVILLE_VLLM_MODE=mock
 export AETHERVILLE_REDIS_MODE=memory
@@ -101,6 +81,13 @@ bash infra/runpod/deploy_over_ssh.sh --mode sync-only
 bash infra/runpod/deploy_over_ssh.sh --mode direct
 ```
 
+### Future portability — Docker Compose artifacts
+
+Docker Compose files may remain in the repository as portability/deployment
+documentation for a different Docker-capable target. They are not an active
+execution dependency for the verified RunPod pod, and current Codex automation
+must not run Docker or Docker Compose.
+
 The real vLLM upgrade path is intentionally opt-in to avoid accidental model
 downloads/GPU spend:
 
@@ -110,8 +97,6 @@ export MODEL_NAME="<approved-model>"
 bash infra/runpod/start_direct_processes.sh
 ```
 
-
-Use when Docker daemon is unavailable.
 
 Codex must create or document process supervisors for:
 
@@ -131,15 +116,16 @@ uv run python -m vllm.entrypoints.openai.api_server \
 
 # Default mock/fallback services used for safe smoke tests
 uv run uvicorn aetherville_server.vllm_fallback:app --host 0.0.0.0 --port 8000
-uv run uvicorn aetherville_server.vision:app --host 0.0.0.0 --port 8001
+uv run uvicorn aetherville_server.vision:app --host 0.0.0.0 --port "${AETHERVILLE_VISION_PORT:-18001}"
 uv run uvicorn aetherville_server.main:app --host 0.0.0.0 --port 8080
 ```
 
 The current implementation uses repo-managed pid files under `AETHERVILLE_RUN_DIR` instead of deleting or altering system services.
 
-For M0, Docker unavailability is not by itself a hard blocker if SSH and GPU
-checks pass. Record it as the deployment-mode decision, use direct processes for
-the next cloud-services goal, and avoid blind Docker retries.
+For M0 and later cloud milestones, Docker unavailability is not a hard blocker
+when SSH and GPU checks pass. Record direct-process runtime as the deployment
+decision and avoid Docker daemon setup, Docker Compose execution,
+Docker-in-Docker, or blind Docker retries.
 
 ## Health checks
 
@@ -147,7 +133,7 @@ Inside RunPod:
 
 ```bash
 curl -fsS http://127.0.0.1:8080/api/v1/health
-curl -fsS http://127.0.0.1:8001/health
+curl -fsS "http://127.0.0.1:${AETHERVILLE_VISION_PORT:-18001}/health"
 curl -fsS http://127.0.0.1:8000/v1/models
 ```
 

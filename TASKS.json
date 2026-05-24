@@ -1,11 +1,11 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "in_progress",
+  "status": "demo_freeze_ready",
   "source_prd": "source/Project Aetherville PRD.pdf",
   "tasks": [
     {
       "id": "M0-001",
-      "title": "Verify RunPod SSH, GPU, ports, and Docker/direct-process capability",
+      "title": "Verify RunPod SSH, GPU, ports, and direct-process runtime capability",
       "status": "done",
       "owner": "codex",
       "goal_file": ".codex/goals/00-runpod-ssh-bootstrap.md",
@@ -20,9 +20,10 @@
         "uv": "missing_on_pod",
         "redis_server": "missing_on_pod",
         "docker_daemon": "unavailable",
-        "deployment_mode": "direct_process_fallback_for_next_cloud_goal",
+        "deployment_mode": "direct_process_runtime_for_next_cloud_goal",
         "remote_workspace": "missing_deploy_script_will_create",
-        "deploy_dry_run": "passed_without_remote_changes"
+        "deploy_dry_run": "passed_without_remote_changes",
+        "docker_policy": "verified_unavailable_skipped_by_current_direct_process_policy"
       },
       "completed_at": "2026-05-24T19:37:08+09:00"
     },
@@ -51,7 +52,7 @@
     },
     {
       "id": "M0-003",
-      "title": "Implement cloud docker/direct-process service startup and health checks",
+      "title": "Implement cloud direct-process service startup and health checks",
       "status": "done",
       "owner": "codex",
       "goal_file": ".codex/goals/02-cloud-services-docker-compose.md",
@@ -62,7 +63,6 @@
       "last_checked_at": "2026-05-24T20:16:05+09:00",
       "completed_at": "2026-05-24T20:16:05+09:00",
       "diagnostics": {
-        "compose_config": "passed_local_docker_compose_config",
         "direct_process_local": "passed_orchestrator_vision_vllm_fallback_memory_redis_health",
         "runpod_deploy": "passed_actual_tar_over_ssh_sync_and_direct_start",
         "runpod_services": "orchestrator_8080_vllm_fallback_8000_vision_18001_running",
@@ -70,7 +70,11 @@
         "runpod_redis": "memory_fallback_selected_redis_server_missing",
         "runpod_vllm": "mock_openai_compatible_fallback_no_model_download_no_gpu_workload",
         "runpod_sync": "remote_rsync_missing_tar_over_ssh_fallback_used",
-        "docker_daemon": "unavailable_on_runpod_no_blind_retry"
+        "docker_daemon": "unavailable_on_runpod_no_blind_retry",
+        "docker_compose_artifacts": "future_portability_documentation_only_not_current_acceptance",
+        "runpod_execution_strategy": "direct_process_runtime_no_docker_setup_compose_dind_or_blind_retries",
+        "current_acceptance": "vllm_direct_or_fallback_orchestrator_uvicorn_vision_uvicorn_or_stub_sim_python_module_shell_managed_health_smokes_without_docker",
+        "script_policy": "verify_bootstrap_deploy_scripts_hardened_to_skip_or_reject_docker_execution"
       }
     },
     {
@@ -262,7 +266,7 @@
         "M6-001"
       ],
       "unblocked_by": "M6-001",
-      "last_checked_at": "2026-05-24T21:57:21+09:00",
+      "last_checked_at": "2026-05-24T22:39:21+09:00",
       "completed_at": "2026-05-24T21:57:21+09:00",
       "diagnostics": {
         "task_statuses": "all_M0_to_M7_tasks_done_and_goal_files_accounted_for",
@@ -272,7 +276,80 @@
         "server": "world_state_rest_and_socketio_state_update_verified_on_runpod",
         "fallback": "replay_route_e2e_verified_and_documented",
         "residual_risks": "docker_unavailable_vision_8001_blocked_public_urls_not_configured_real_models_deferred",
-        "client_start_smoke": "next_start_port_3100_home_and_replay_curl_passed"
+        "client_start_smoke": "next_start_port_3100_home_and_replay_curl_passed",
+        "reaudit_after_direct_process_patch": "local_full_suite_runpod_verify_direct_deploy_health_integration_smoke_client_start_passed_no_docker_commands"
+      }
+    },
+    {
+      "id": "M7-002",
+      "title": "Patch goal documents for verified direct-process RunPod runtime",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/MASTER_AETHERVILLE_FULL_DELIVERY.md",
+      "depends_on": [
+        "M7-001"
+      ],
+      "unblocked_by": "M7-001",
+      "last_checked_at": "2026-05-24T22:14:49+09:00",
+      "completed_at": "2026-05-24T22:14:49+09:00",
+      "diagnostics": {
+        "goal_02": "documented_as_Cloud_Services_Direct_Process_Runtime_filename_retained_for_compatibility",
+        "runtime_strategy": "RunPod_pod_is_execution_environment_direct_process_runtime_active",
+        "docker_policy": "docker_optional_packaging_only_no_docker_execution_required_no_daemon_setup_compose_dind_or_blind_retries",
+        "acceptance": "vllm_direct_path_or_fallback_orchestrator_uvicorn_vision_uvicorn_or_stub_sim_package_shell_process_management_health_smokes_without_docker",
+        "adr": "ADR_009_added_for_verified_RunPod_direct_process_strategy",
+        "secrets": "no_env_runpod_or_secret_material_added",
+        "follow_up": "direct_process_policy_enforced_in_runpod_scripts_and_docs_during_M7_003"
+      }
+    },
+    {
+      "id": "M7-003",
+      "title": "Re-run final audit after direct-process runtime hardening",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/99-final-audit.md",
+      "depends_on": [
+        "M7-002"
+      ],
+      "unblocked_by": "M7-002",
+      "last_checked_at": "2026-05-24T22:39:21+09:00",
+      "completed_at": "2026-05-24T22:39:21+09:00",
+      "diagnostics": {
+        "next_incomplete_phase": "Phase_99_reaudit_selected_because_strategy_patch_changed_goal_runtime_docs_after_prior_final_audit",
+        "script_hardening": "verify_runpod_skips_docker_commands_bootstrap_prints_direct_commands_deploy_compose_mode_rejected",
+        "local_verification": "git_status_bash_n_json_uv_pytest_uv_full_pytest_ruff_mypy_pnpm_lint_typecheck_test_test_e2e_build_client_start_smoke_passed",
+        "runpod_verification": "ssh_gpu_verify_passed_without_docker_commands_direct_deploy_health_passed",
+        "integration_smoke": "remote_rest_vision_god_command_socketio_polling_state_update_passed_after_correct_shared_schema_payload",
+        "failed_then_fixed": "initial_remote_smoke_used_invalid_god_command_payload_and_returned_422_corrected_to_shared_GodCommand_schema",
+        "docker_policy": "no_docker_daemon_setup_no_docker_compose_no_dind_no_blind_retry",
+        "secrets": "no_env_runpod_or_secret_material_added_or_committed"
+      }
+    },
+    {
+      "id": "M7-004",
+      "title": "Create final live demo freeze runbook and checklist",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "docs/live-demo-runbook.md",
+      "depends_on": [
+        "M7-003"
+      ],
+      "unblocked_by": "M7-003",
+      "last_checked_at": "2026-05-24T23:11:38+09:00",
+      "completed_at": "2026-05-24T23:11:38+09:00",
+      "diagnostics": {
+        "scope": "docs_and_runtime_command_freeze_no_master_phase_reopen",
+        "runbook": "Mode_A_public_RunPod_endpoint_and_Mode_B_SSH_tunnel_documented",
+        "vision_port": "verified_18001_used_for_live_demo_commands_and_examples",
+        "client_config": "NEXT_PUBLIC_ORCHESTRATOR_URL_and_NEXT_PUBLIC_SOCKET_URL_documented_for_public_or_tunnel_modes",
+        "smoke": "REST_health_demo_smoke_and_SocketIO_polling_smoke_commands_documented",
+        "checklist": "final_freeze_checklist_added_to_demo_readiness",
+        "script": "docs_demo_script_15min_md_added",
+        "runtime_adjustment": "direct_process_script_defaults_updated_to_vision_18001_for_verified_pod",
+        "docker_policy": "no_docker_commands_no_compose_no_dind",
+        "secrets": "no_env_runpod_values_or_key_paths_committed",
+        "verification": "json_bash_n_diff_check_pnpm_typecheck_client_build_demo_smoke_via_ssh_tunnel_passed",
+        "commit_ready": "all_lightweight_freeze_checks_passed"
       }
     }
   ]

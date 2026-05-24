@@ -28,7 +28,8 @@ bash infra/runpod/health_check_direct.sh
 bash infra/runpod/stop_direct_processes.sh
 ```
 
-Current verified RunPod state uses direct-process fallback because Docker daemon
-is unavailable. These scripts are conservative: they do not install Docker,
-delete remote data, or start real vLLM model downloads unless explicitly
-configured with `AETHERVILLE_VLLM_MODE=real` and an approved `MODEL_NAME`.
+Current verified RunPod state uses direct-process runtime because Docker daemon
+is unavailable and not required. These scripts are conservative: they do not
+install Docker, run Docker Compose, delete remote data, or start real vLLM model
+downloads unless explicitly configured with `AETHERVILLE_VLLM_MODE=real` and an
+approved `MODEL_NAME`.

@@ -2,7 +2,7 @@
 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| RunPod Docker daemon unavailable | medium | high | detect first; direct-process fallback |
+| RunPod Docker daemon unavailable | medium | high | do not retry Docker; use direct-process runtime |
 | vLLM 14B AWQ latency too high | medium | high | plan caching, batching, 7B fallback |
 | Spot instance interruption | high | medium | on-demand before demo, snapshot restore |
 | Internet failure during demo | medium | critical | replay mode, recorded videos, tethering |

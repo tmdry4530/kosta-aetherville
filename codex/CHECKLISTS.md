@@ -14,7 +14,7 @@
 - [ ] `.env.runpod` exists locally and is ignored
 - [ ] SSH connects
 - [ ] GPU visible
-- [ ] Docker availability checked
+- [ ] Direct-process runtime policy confirmed; no Docker command required
 - [ ] Remote workspace exists
 - [ ] Ports exposed in RunPod UI
 - [ ] Health checks pass or blockers documented

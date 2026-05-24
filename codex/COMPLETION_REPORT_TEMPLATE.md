@@ -19,7 +19,7 @@
 
 - SSH:
 - GPU:
-- Docker:
+- Docker/direct-process policy:
 - vLLM:
 - Vision:
 - Orchestrator:

@@ -73,14 +73,11 @@ echo "== Runtime check =="
 ssh_run 'set -e; python --version || true; node --version || true; pnpm --version || true; uv --version || true; redis-server --version || true'
 
 echo "== Service process check =="
-ssh_run 'ps -eo pid=,comm= | awk '"'"'$2 ~ /^(python|uvicorn|vllm|redis-server|caddy|docker)$/ {print}'"'"' || true'
+ssh_run 'ps -eo pid=,comm= | awk '"'"'$2 ~ /^(python|uvicorn|vllm|redis-server|caddy)$/ {print}'"'"' || true'
 
-echo "== Docker check =="
-if ssh_run 'command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1'; then
-  echo "Docker daemon: available"
-else
-  echo "Docker daemon: unavailable. Use direct-process fallback or a RunPod template with Docker support."
-fi
+echo "== Docker policy =="
+echo "Docker daemon: unavailable for the verified RunPod execution path."
+echo "Docker commands are intentionally skipped; use direct-process runtime only."
 
 echo "== Remote workspace check =="
 ssh_run "if test -d '$RUNPOD_REMOTE_DIR'; then echo 'remote workspace exists'; else echo 'remote workspace missing; deploy script will create it'; fi"

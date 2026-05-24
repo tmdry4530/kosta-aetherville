@@ -12,7 +12,7 @@
 ## When to stop and ask/report
 
 - RunPod SSH fails after basic diagnostics.
-- Docker and direct-process paths are both impossible.
+- Direct-process runtime is impossible after SSH/GPU diagnostics.
 - A model download requires credentials not present.
 - A goal requires a paid domain/TLS setup not provided.
 - A test fails twice for the same reason.

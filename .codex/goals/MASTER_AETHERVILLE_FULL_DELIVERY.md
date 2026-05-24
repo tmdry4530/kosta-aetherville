@@ -12,8 +12,10 @@ The implementation must proceed through every existing goal file in `.codex/goal
 - RunPod SSH connectivity is verified.
 - GPU is NVIDIA GeForce RTX 4090.
 - Docker daemon is unavailable on the RunPod.
-- Cloud-side work must use direct-process fallback unless Docker becomes explicitly available and verified.
-- Do not blind retry Docker or Docker Compose.
+- Cloud-side work uses **direct-process runtime**. This is the active implementation strategy, not a Docker-first fallback.
+- The RunPod pod itself is the execution environment.
+- Docker is optional future packaging/portability documentation only.
+- Do not attempt Docker daemon setup, Docker Compose execution, Docker-in-Docker, or blind Docker retries.
 
 ## Source of truth priority
 
@@ -48,15 +50,18 @@ Run:
 - `.codex/goals/02-cloud-services-docker-compose.md`
 
 Adjustment:
-- Because Docker is unavailable, implement direct-process equivalents.
-- Preserve Docker docs/artifacts only as future deployment artifacts.
+- Treat Goal 02 as **Cloud Services Direct Process Runtime**. The filename is retained for compatibility with existing links.
+- Because Docker is unavailable and not required, implement and verify direct-process runtime only.
+- Preserve Docker Compose docs/artifacts only as future portability/deployment documentation.
 - Do not require Docker for current acceptance.
 
 Required outcome:
 - vLLM direct-process path documented and scripted.
-- orchestrator direct-process path runnable.
-- vision service direct-process path runnable or stubbed with clear upgrade path.
-- health checks available.
+- FastAPI orchestrator runnable via uvicorn/direct process.
+- vision service runnable via uvicorn/direct process or deterministic stub with clear upgrade path.
+- simulation engine available as a Python package/module.
+- process management available through shell scripts, tmux, nohup, or supervisor-compatible commands.
+- health checks and smoke tests available without Docker.
 
 ### Phase 03: Shared Schemas API WS
 Run:
@@ -196,6 +201,7 @@ At minimum, attempt:
 - RunPod SSH verification.
 - direct-process RunPod service start smoke test.
 - final integration smoke script.
+- No Docker command is required for current cloud runtime acceptance.
 
 If a command cannot run, record:
 - command
@@ -226,7 +232,8 @@ Stop and report only if:
 - Never delete user work.
 - Never weaken tests to get green.
 - Never mark complete based only on proxy signals.
-- Do not use Docker unless Docker daemon is verified working.
+- Do not use Docker for the current RunPod execution path.
+- Do not attempt Docker daemon setup, Docker Compose execution, Docker-in-Docker, or blind Docker retries.
 
 ## Final completion criteria
 

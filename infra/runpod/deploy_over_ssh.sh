@@ -11,7 +11,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --mode)
-      DEPLOY_MODE="${2:?--mode requires bootstrap|sync-only|direct|compose}"
+      DEPLOY_MODE="${2:?--mode requires bootstrap|sync-only|direct}"
       shift 2
       ;;
     --mode=*)
@@ -26,7 +26,12 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$DEPLOY_MODE" in
-  bootstrap|sync-only|direct|compose) ;;
+  bootstrap|sync-only|direct) ;;
+  compose)
+    echo "Invalid deploy mode: compose is disabled by the current direct-process runtime policy." >&2
+    echo "Docker Compose artifacts are retained only as future portability documentation." >&2
+    exit 2
+    ;;
   *)
     echo "Invalid deploy mode: $DEPLOY_MODE" >&2
     exit 2
@@ -197,10 +202,7 @@ case "$DEPLOY_MODE" in
     echo "Deploy sync completed; no remote start command requested."
     ;;
   direct)
-    ssh_capture "cd '$RUNPOD_REMOTE_DIR' && export AETHERVILLE_VLLM_MODE='${AETHERVILLE_VLLM_MODE:-mock}' AETHERVILLE_REDIS_MODE='${AETHERVILLE_REDIS_MODE:-memory}' AETHERVILLE_BOOTSTRAP_UV='${AETHERVILLE_BOOTSTRAP_UV:-0}' AETHERVILLE_ORCHESTRATOR_PORT='${AETHERVILLE_ORCHESTRATOR_PORT:-8080}' AETHERVILLE_VISION_PORT='${AETHERVILLE_VISION_PORT:-8001}' AETHERVILLE_VLLM_PORT='${AETHERVILLE_VLLM_PORT:-8000}' && bash infra/runpod/start_direct_processes.sh && AETHERVILLE_HEALTH_RETRIES='30' AETHERVILLE_HEALTH_SLEEP='0.5' bash infra/runpod/health_check_direct.sh"
-    ;;
-  compose)
-    ssh_capture "cd '$RUNPOD_REMOTE_DIR' && docker compose -f docker-compose.yml -f docker-compose.cloud.yml up -d --build"
+    ssh_capture "cd '$RUNPOD_REMOTE_DIR' && export AETHERVILLE_VLLM_MODE='${AETHERVILLE_VLLM_MODE:-mock}' AETHERVILLE_REDIS_MODE='${AETHERVILLE_REDIS_MODE:-memory}' AETHERVILLE_BOOTSTRAP_UV='${AETHERVILLE_BOOTSTRAP_UV:-0}' AETHERVILLE_ORCHESTRATOR_PORT='${AETHERVILLE_ORCHESTRATOR_PORT:-8080}' AETHERVILLE_VISION_PORT='${AETHERVILLE_VISION_PORT:-18001}' AETHERVILLE_VLLM_PORT='${AETHERVILLE_VLLM_PORT:-8000}' && bash infra/runpod/start_direct_processes.sh && AETHERVILLE_HEALTH_RETRIES='30' AETHERVILLE_HEALTH_SLEEP='0.5' bash infra/runpod/health_check_direct.sh"
     ;;
 esac
 

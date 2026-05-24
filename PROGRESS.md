@@ -2,9 +2,9 @@
 
 ## Current objective
 
-- Active master goal: complete `.codex/goals/MASTER_AETHERVILLE_FULL_DELIVERY.md` phase-by-phase through final demo readiness.
-- Current phase state: **Phase 04 Simulation Engine Minimal Slice complete** as of 2026-05-24T20:39:15+09:00.
-- Next phase: `.codex/goals/05-client-city-scene.md`.
+- Active master goal: complete; post-audit continuation uses direct-process runtime only for cloud milestones.
+- Current phase state: **Phase 99 Final Audit complete** as of 2026-05-24T21:57:21+09:00.
+- Current follow-up: patch goal/status documents so verified RunPod execution strategy is explicitly direct-process runtime, not Docker-first.
 
 ## Phase 00 — RunPod SSH Bootstrap
 
@@ -12,7 +12,7 @@
 - RunPod SSH connectivity: passed.
 - GPU visibility: passed; pod reports NVIDIA GeForce RTX 4090.
 - Docker daemon: unavailable; do not blind retry Docker.
-- Deployment mode: direct-process fallback.
+- Deployment mode: direct-process runtime.
 - Runtime inventory from prior verification: Python 3.11.10 present; node, pnpm, uv, and redis-server missing on pod.
 - Remote workspace: absent during dry-run; actual deploy script is responsible for creating it.
 - No vLLM/model download/GPU workload has been started.
@@ -102,10 +102,12 @@
 - `DECISIONS.md`
 
 
-## Phase 02 — Cloud Services Direct Process
+## Phase 02 — Cloud Services Direct Process Runtime
 
 - Status: complete as of 2026-05-24T20:16:05+09:00.
-- Added Docker/Compose artifacts for future Docker-capable environments:
+- Goal 02 is treated as **Cloud Services Direct Process Runtime** while retaining filename compatibility with `.codex/goals/02-cloud-services-docker-compose.md`.
+- Current acceptance does not require Docker execution.
+- Docker/Compose artifacts are retained only for future Docker-capable portability documentation:
   - `docker-compose.yml`
   - `docker-compose.cloud.yml`
   - `infra/docker/server.Dockerfile`
@@ -127,7 +129,7 @@
 - pass: `uv run pytest` — 11 tests passed
 - pass: `uv run ruff check server packages`
 - pass: `uv run mypy server packages`
-- pass: `docker compose -f docker-compose.yml -f docker-compose.cloud.yml config`
+- not current acceptance: Docker Compose config validation is portability-only and must not be required for the verified RunPod path.
 - pass: local direct-process smoke with mock vLLM, vision, orchestrator, Redis memory fallback
 - pass: `bash infra/runpod/verify_runpod.sh` after deployment; SSH/GPU still pass and Docker remains unavailable
 - pass: `bash infra/runpod/deploy_over_ssh.sh --dry-run --mode direct`; remote `rsync` missing, tar-over-SSH fallback selected
@@ -139,6 +141,7 @@
 
 - Remote workspace exists and has the repo synced through tar-over-SSH fallback because remote `rsync` is unavailable.
 - User-level `uv` was installed on the pod through `python -m pip install --user uv`; no Docker install or system cleanup was attempted.
+- The RunPod pod itself is the execution environment; Docker is not required for the current service path.
 - Running direct-process services:
   - orchestrator: `:8080`
   - vLLM OpenAI-compatible mock fallback: `:8000`
@@ -151,7 +154,7 @@
 
 - RunPod public URL envs are not configured, so only in-pod/local SSH health checks were verified.
 - Real vLLM remains opt-in and requires model access/disk/cost confirmation.
-- Vision default architecture port `8001` is blocked by pod nginx; direct-process fallback uses `18001` until port mapping/proxy is resolved.
+- Vision default architecture port `8001` is blocked by pod nginx; direct-process runtime uses `18001` until port mapping/proxy is resolved.
 - Remote `rsync` is missing; tar-over-SSH sync does not delete stale remote files.
 
 
@@ -264,7 +267,7 @@
 ## RunPod state — Phase 05
 
 - RunPod was not touched during Phase 05 client-only work.
-- Existing known state remains: direct-process fallback only, Docker daemon unavailable, orchestrator `:8080`, vLLM fallback `:8000`, vision `:18001`, Redis memory fallback.
+- Existing known state remains: direct-process runtime only, Docker daemon unavailable, orchestrator `:8080`, vLLM fallback `:8000`, vision `:18001`, Redis memory fallback.
 - No real vLLM model download, training, or GPU inference workload was started.
 
 ## Next recommended goal
@@ -306,7 +309,7 @@
 ## RunPod state — Phase 06
 
 - RunPod was not touched during Phase 06 code work.
-- Existing known state remains: direct-process fallback only, Docker daemon unavailable, orchestrator `:8080`, vLLM fallback `:8000`, vision `:18001`, Redis memory fallback.
+- Existing known state remains: direct-process runtime only, Docker daemon unavailable, orchestrator `:8080`, vLLM fallback `:8000`, vision `:18001`, Redis memory fallback.
 - No real vLLM model download, training, or GPU inference workload was started.
 
 ## Next recommended goal
@@ -492,7 +495,7 @@
 ## RunPod state — Phase 10
 
 - RunPod was not touched during Phase 10 because changes were docs/scripts/client test metadata only.
-- Existing known state remains from Phase 09: direct-process fallback only, Docker daemon unavailable, orchestrator `:8080`, vLLM fallback `:8000`, vision `:18001`, Redis memory fallback.
+- Existing known state remains from Phase 09: direct-process runtime only, Docker daemon unavailable, orchestrator `:8080`, vLLM fallback `:8000`, vision `:18001`, Redis memory fallback.
 - No real model download, training, STT, YOLO, PPO/LSTM, or GPU inference workload was started.
 
 ## Next recommended goal
@@ -525,9 +528,86 @@
 
 ## Final residual risks
 
-- Docker daemon is unavailable on the current RunPod; direct-process fallback is the verified cloud runtime.
+- Docker daemon is unavailable on the current RunPod; direct-process runtime is the verified cloud runtime.
 - Vision target port `:8001` remains occupied by template nginx; verified vision service runs on `:18001` internally.
 - Public RunPod REST/WSS URLs are not configured in tracked files; final smokes used in-pod SSH execution.
 - Real vLLM, YOLO, PPO/LSTM, and STT workloads are deferred behind explicit model/cost approval.
 - Remote `rsync` is unavailable; deployment uses tar-over-SSH fallback without delete semantics.
 - pass: final client start smoke — `pnpm --filter @aetherville/client exec next start -p 3100`, then `curl /` and `curl /replay` returned Aetherville/replay content; local server was stopped after smoke.
+
+## Post-audit runtime strategy patch — 2026-05-24
+
+- Status: complete.
+- Updated master and Goal 02 documents to make **direct-process runtime** the active cloud strategy.
+- Explicitly removed Docker execution from current cloud acceptance criteria.
+- Docker Compose artifacts remain future portability/deployment documentation only.
+- ADR-009 records why Docker is optional packaging rather than an execution dependency on the verified RunPod pod.
+- No Docker command was run for this patch.
+
+## Phase 99 re-audit after direct-process hardening — 2026-05-24T22:39:21+09:00
+
+- Status: complete.
+- Next incomplete/invalidated phase selected: **Phase 99 Final Audit**, because the post-audit direct-process strategy patch changed runtime goal/docs after the previous final audit.
+- Hardened RunPod automation so current scripts enforce the direct-process policy:
+  - `infra/runpod/verify_runpod.sh` records Docker as unavailable/skipped by policy and does not invoke Docker commands.
+  - `infra/runpod/bootstrap_runpod.sh` prints direct-process commands only.
+  - `infra/runpod/deploy_over_ssh.sh --mode compose` now fails fast as unsupported for the current RunPod execution path.
+- Updated related docs/checklists to remove Docker-first or Docker-execution guidance for the verified RunPod pod.
+
+## Verification evidence — Phase 99 re-audit
+
+- pass: `git status --short` ran and showed only tracked direct-process hardening/docs/status edits.
+- pass: `bash -n infra/runpod/verify_runpod.sh infra/runpod/deploy_over_ssh.sh infra/runpod/bootstrap_runpod.sh infra/runpod/start_direct_processes.sh infra/runpod/stop_direct_processes.sh infra/runpod/health_check_direct.sh`
+- pass: `python3 -m json.tool TASKS.json`
+- pass: markdown fenced-code/local-link check for changed goal/docs/status files.
+- pass: `uv run pytest` — 29 tests.
+- pass: `uv run pytest packages server` — 52 tests.
+- pass: `uv run ruff check server packages scripts`.
+- pass: `uv run mypy server packages`.
+- pass: `pnpm lint`.
+- pass: `pnpm typecheck`.
+- pass: `pnpm test` — 3 Node tests.
+- pass: `pnpm test:e2e` — 1 replay fallback test.
+- pass: `pnpm --filter @aetherville/client build`.
+- pass: local client start smoke for `/` and `/replay` on port `3100`.
+- pass: `bash infra/runpod/verify_runpod.sh`; SSH/GPU passed, RTX 4090 visible, no GPU compute process, Docker commands skipped by policy.
+- pass: `bash infra/runpod/deploy_over_ssh.sh --dry-run --mode direct`; tar-over-SSH fallback selected because remote `rsync` is unavailable.
+- pass: `AETHERVILLE_BOOTSTRAP_UV=1 AETHERVILLE_VLLM_MODE=mock AETHERVILLE_REDIS_MODE=memory AETHERVILLE_VISION_PORT=18001 bash infra/runpod/deploy_over_ssh.sh --mode direct`; direct-process health passed.
+- pass: final in-pod integration smoke for orchestrator health, world state, vehicle camera, vision `/detect`, God command, and Socket.IO polling `aetherville:state_update`.
+- retry note: the first remote smoke used an invalid God command payload and returned HTTP 422; it was corrected to the shared `GodCommand` schema and passed.
+
+## RunPod state — Phase 99 re-audit
+
+- The RunPod pod itself remains the execution environment.
+- Direct-process services are healthy: orchestrator `:8080`, vLLM fallback `:8000`, vision `:18001`, Redis memory fallback.
+- Docker daemon setup, Docker Compose execution, Docker-in-Docker, and blind Docker retries were not attempted.
+- GPU remains visible as NVIDIA GeForce RTX 4090 with no compute process during verification.
+
+## Final residual risks after re-audit
+
+- Public RunPod REST/WSS URLs are not configured in tracked files; final cloud smokes used in-pod SSH execution.
+- Vision target port `:8001` remains occupied by template nginx on the current pod; verified direct-process vision uses `:18001`.
+- Real vLLM, YOLO, PPO/LSTM, and STT workloads remain opt-in upgrade paths behind explicit model/cost approval.
+- Remote `rsync` is unavailable; deployment uses tar-over-SSH fallback without delete semantics.
+
+## Final demo freeze pass — 2026-05-24T23:03:56+09:00
+
+- Status: complete as of 2026-05-24T23:11:38+09:00; commit pending.
+- Master implementation phases were not reopened; this pass prepares the already-complete direct-process demo for live local-browser-to-RunPod operation.
+- Added `docs/live-demo-runbook.md` with two supported connection modes:
+  - Mode A: public RunPod endpoint.
+  - Mode B: local SSH tunnel fallback.
+- Added `docs/demo-script-15min.md` for the presentation sequence.
+- Added a final freeze checklist to `docs/demo-readiness-checklist.md`.
+- Updated RunPod demo docs and env examples so verified vision service port `18001` is used for the current pod.
+- Updated direct-process script defaults so omitted `AETHERVILLE_VISION_PORT` uses the verified `18001` runtime path.
+- Docker daemon setup, Docker Compose execution, Docker-in-Docker, and blind Docker retries remain out of scope and were not performed.
+
+## Verification evidence — final demo freeze
+
+- pass: `python3 -m json.tool TASKS.json`
+- pass: `bash -n infra/runpod/*.sh`
+- pass: `git diff --check`
+- pass: `pnpm typecheck`
+- pass: `pnpm --filter @aetherville/client build`
+- pass: SSH tunnel direct-process smoke with `python3 scripts/demo_smoke.py --orchestrator-url http://127.0.0.1:18080`; health `ok`, 20 citizens, 1 vehicle, forecast offsets `[5, 10, 15]`.

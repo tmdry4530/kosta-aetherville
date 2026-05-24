@@ -2,7 +2,7 @@
 
 ## Objective
 
-Verify the rented RunPod instance, establish a safe SSH deployment path, and choose Docker Compose or direct-process mode based on actual remote capabilities.
+Verify the rented RunPod instance, establish a safe SSH deployment path, and record the verified direct-process runtime decision for the current pod.
 
 ## Scope
 
@@ -13,10 +13,11 @@ Verify the rented RunPod instance, establish a safe SSH deployment path, and cho
 ## Acceptance criteria
 
 - `.env.runpod` template exists and is ignored.
-- `verify_runpod.sh` can check SSH, GPU, Python, Node, Docker, remote directory, and optional public URLs.
+- `verify_runpod.sh` can check SSH, GPU, Python, Node, remote directory, optional public URLs, and the no-Docker direct-process policy.
 - Deployment mode decision is recorded in `PROGRESS.md`.
 - If SSH or GPU fails, blocker is precise and actionable.
-- If Docker daemon is unavailable, direct-process fallback is documented.
+- Docker daemon setup, Docker Compose execution, Docker-in-Docker, and blind Docker retries are not attempted.
+- Direct-process runtime is documented.
 
 ## Verification commands
 
