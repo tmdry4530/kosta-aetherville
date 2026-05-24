@@ -1,0 +1,17 @@
+{
+  "name": "@aetherville/shared-schemas",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/typescript/index.ts",
+  "types": "./src/typescript/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/typescript/index.ts",
+      "default": "./src/typescript/index.ts"
+    }
+  },
+  "scripts": {
+    "generate:ts": "python3 scripts/generate_typescript.py"
+  }
+}

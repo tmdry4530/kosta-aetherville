@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "type": "ack",
+  "ts": 1700000003.5,
+  "tick": 15,
+  "payload": {
+    "ok": true,
+    "message": "accepted",
+    "correlation_id": "cmd_001"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "v": 1,
+  "type": "command",
+  "ts": 1700000002.5,
+  "tick": 14,
+  "payload": {
+    "kind": "god_command",
+    "input_modality": "text",
+    "raw_text": "도시에 갑자기 폭우가 내립니다",
+    "audio_blob_b64": null,
+    "user_id": "presenter"
+  }
+}

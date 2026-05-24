@@ -1,0 +1,13 @@
+{
+  "name": "aetherville-monorepo",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "scripts": {
+    "dev": "pnpm --filter @aetherville/client dev",
+    "build": "pnpm --filter @aetherville/client build",
+    "lint": "pnpm --filter @aetherville/client lint",
+    "typecheck": "pnpm --filter @aetherville/client typecheck",
+    "test": "pnpm --filter @aetherville/client test",
+    "test:e2e": "pnpm --filter @aetherville/client test:e2e"
+  }
+}

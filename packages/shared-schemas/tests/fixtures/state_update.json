@@ -1,0 +1,60 @@
+{
+  "v": 1,
+  "type": "state_update",
+  "ts": 1700000000.123,
+  "tick": 12,
+  "payload": {
+    "world": {
+      "time_of_day": "09:30",
+      "weather": "clear",
+      "temperature": 21.5
+    },
+    "citizens": [
+      {
+        "id": "c01",
+        "name": "민준",
+        "pos": [0, 0, 0],
+        "rot": [0, 0, 0],
+        "anim": "idle",
+        "current_action": "opening cafe",
+        "talking_to": null
+      }
+    ],
+    "vehicles": [
+      {
+        "id": "v01",
+        "type": "taxi",
+        "pos": [4, 0, 1],
+        "rot": [0, 1.57, 0],
+        "speed": 3.2,
+        "passenger_id": null,
+        "destination": [8, 0, 8],
+        "yolo_detections": [
+          {
+            "label": "pedestrian",
+            "confidence": 0.92,
+            "bbox": [10, 20, 80, 160],
+            "traffic_light_state": null,
+            "distance_m": 12.5
+          }
+        ]
+      }
+    ],
+    "drones": [],
+    "traffic_lights": [
+      {
+        "id": "tl_01",
+        "pos": [2, 0, 2],
+        "state": "green",
+        "remaining_sec": 18
+      }
+    ],
+    "traffic_forecast": [
+      {
+        "minute_offset": 15,
+        "expected_vehicle_count": 42,
+        "congestion_index": 0.31
+      }
+    ]
+  }
+}

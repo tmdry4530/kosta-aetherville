@@ -1,0 +1,29 @@
+services:
+  orchestrator:
+    restart: unless-stopped
+    environment:
+      AETHERVILLE_DEPLOYMENT: runpod
+
+  vision:
+    restart: unless-stopped
+
+  vllm:
+    restart: unless-stopped
+    environment:
+      MODEL_NAME: ${MODEL_NAME:-Qwen/Qwen2.5-14B-Instruct-AWQ}
+      VLLM_GPU_MEMORY_UTILIZATION: ${VLLM_GPU_MEMORY_UTILIZATION:-0.90}
+
+  redis:
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["tls"]
+    ports:
+      - "443:443"
+    volumes:
+      - ./infra/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - orchestrator
+      - vision
+      - vllm

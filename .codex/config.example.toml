@@ -1,0 +1,6 @@
+# Example Codex project-local config. Copy to ~/.codex/config.toml or use CODEX_HOME if desired.
+project_doc_fallback_filenames = ["AGENTS.md"]
+project_doc_max_bytes = 65536
+
+# Keep approval/sandbox settings explicit in your own environment.
+# Use `codex status` to inspect active settings before long goals.

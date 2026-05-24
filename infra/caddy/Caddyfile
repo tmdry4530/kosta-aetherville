@@ -1,0 +1,10 @@
+{
+  auto_https off
+}
+
+:443 {
+  reverse_proxy /api/* orchestrator:8080
+  reverse_proxy /socket.io/* orchestrator:8080
+  reverse_proxy /vision/* vision:8001
+  reverse_proxy /v1/* vllm:8000
+}

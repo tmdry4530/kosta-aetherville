@@ -1,0 +1,28 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+coverage/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Logs and local artifacts
+*.log
+.DS_Store
+
+# Local agent/runtime state
+.omx/
+
+# TypeScript incremental state
+*.tsbuildinfo

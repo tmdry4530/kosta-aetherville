@@ -1,0 +1,55 @@
+[project]
+name = "aetherville"
+version = "0.1.0"
+description = "Project Aetherville monorepo workspace"
+requires-python = ">=3.11"
+dependencies = [
+  "aetherville-schemas",
+  "aetherville-server",
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+aetherville-schemas = { workspace = true }
+aetherville-server = { workspace = true }
+
+[tool.uv.workspace]
+members = [
+  "packages/shared-schemas",
+  "server",
+]
+
+[dependency-groups]
+dev = [
+  "httpx>=0.27.0",
+  "mypy>=1.10.0",
+  "pytest>=8.2.0",
+  "ruff>=0.6.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = [
+  "packages/shared-schemas/tests",
+  "server/tests",
+]
+pythonpath = [
+  "packages/shared-schemas/src/python",
+  "server/src",
+]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["packages/shared-schemas/src/python", "server/src", "packages/shared-schemas/tests", "server/tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+mypy_path = ["packages/shared-schemas/src/python", "server/src"]
+packages = ["aetherville_schemas", "aetherville_server"]

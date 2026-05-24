@@ -1,0 +1,15 @@
+.git
+.venv
+node_modules
+client/node_modules
+client/.next
+__pycache__
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.env
+.env.*
+infra/runpod/.env.runpod
+models
+data/raw
+.omx/logs

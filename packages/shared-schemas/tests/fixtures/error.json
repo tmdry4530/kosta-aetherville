@@ -1,0 +1,11 @@
+{
+  "v": 1,
+  "type": "error",
+  "ts": 1700000004.5,
+  "tick": 16,
+  "payload": {
+    "code": "bad_command",
+    "message": "Unsupported command",
+    "retryable": false
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "v": 1,
+  "type": "event",
+  "ts": 1700000001.5,
+  "tick": 13,
+  "payload": {
+    "kind": "weather_changed",
+    "message": "비가 내리기 시작했습니다",
+    "entity_id": null,
+    "metadata": {"weather": "rain"}
+  }
+}
