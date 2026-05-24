@@ -33,6 +33,21 @@ def test_reset_is_deterministic_for_same_seed() -> None:
     assert state_a == state_b
 
 
+def test_citizens_follow_waypoint_corridors_not_orbits() -> None:
+    engine = SimulationEngine(SimulationConfig(seed=7))
+
+    state_at_start = engine.snapshot()
+    engine.tick = 20
+    state_later = engine.snapshot()
+
+    first_start = state_at_start.citizens[0]
+    first_later = state_later.citizens[0]
+    assert first_later.pos[0] > first_start.pos[0]
+    assert first_later.pos[2] == first_start.pos[2]
+    assert abs(first_later.rot[1] - 1.571) < 0.01
+    assert first_later.anim == "idle"
+
+
 def test_async_run_broadcasts_sequential_ticks() -> None:
     async def scenario() -> list[int]:
         engine = SimulationEngine(SimulationConfig(tick_rate_hz=200))

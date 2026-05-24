@@ -59,6 +59,16 @@ OCCUPATIONS = [
 TRAITS = ["curious", "cautious", "social", "methodical", "playful", "resilient"]
 DISTRICTS = ["harbor", "midtown", "skyline", "garden", "old-town"]
 
+CitizenRoute = tuple[tuple[float, float], ...]
+
+CITIZEN_ROUTES: tuple[CitizenRoute, ...] = (
+    ((-5.2, -2.7), (-2.4, -2.7), (-0.8, -0.9), (1.6, -0.9), (4.9, 0.8)),
+    ((2.8, -5.1), (2.8, -1.4), (1.1, 0.0), (-1.3, 0.0), (-1.3, 4.8)),
+    ((-4.8, 2.9), (-2.0, 2.9), (-0.7, 1.0), (0.7, 1.0), (3.9, 3.6)),
+    ((4.9, -2.6), (2.1, -2.6), (0.9, -0.4), (-0.9, -0.4), (-4.7, -1.5)),
+    ((-5.1, 0.9), (-2.2, 0.9), (-0.6, 2.4), (1.3, 2.4), (4.7, 1.2)),
+)
+
 
 def generate_citizen_personas(count: int = 20, seed: int = 42) -> list[CitizenPersona]:
     """Generate deterministic demo personas without touching an external LLM."""
@@ -238,21 +248,22 @@ class CitizenAgentService:
     def world_states(self, tick: int, running: bool) -> list[CitizenState]:
         states: list[CitizenState] = []
         for index, persona in enumerate(self._personas):
-            lane = index % 5
-            ring = index // 5
-            angle = tick * 0.025 + index * 0.45
-            radius = 1.2 + ring * 0.95
+            route = CITIZEN_ROUTES[index % len(CITIZEN_ROUTES)]
+            group_offset = (index // len(CITIZEN_ROUTES)) * 0.18
+            lane_offset = ((index % 3) - 1) * 0.14
+            progress = tick * (0.045 + (index % 4) * 0.006) + index * 1.35
+            x, z, yaw = _pose_on_route(route, progress)
             pos = [
-                round(math.cos(angle) * radius + lane - 2, 3),
+                round(x + lane_offset, 3),
                 0.0,
-                round(math.sin(angle) * radius + ring - 1.5, 3),
+                round(z + group_offset, 3),
             ]
             states.append(
                 CitizenState(
                     id=persona.id,
                     name=persona.name,
                     pos=pos,
-                    rot=[0.0, angle % (math.pi * 2), 0.0],
+                    rot=[0.0, round(yaw, 3), 0.0],
                     anim="walk" if running else "idle",
                     current_action=self._plans[persona.id].children[1].title,
                     talking_to=None,
@@ -282,3 +293,32 @@ class CitizenAgentService:
     @staticmethod
     def _tokens(text: str) -> set[str]:
         return {token.strip(".,:;!?").lower() for token in text.split() if token.strip(".,:;!?")}
+
+
+def _pose_on_route(route: CitizenRoute, progress: float) -> tuple[float, float, float]:
+    """Return a deterministic sidewalk/crosswalk pose on a waypoint route."""
+
+    if len(route) < 2:
+        x, z = route[0]
+        return x, z, 0.0
+
+    segments: list[tuple[tuple[float, float], tuple[float, float], float]] = []
+    total_length = 0.0
+    for start, end in zip(route, route[1:], strict=False):
+        length = math.dist(start, end)
+        segments.append((start, end, length))
+        total_length += length
+
+    distance = progress % total_length
+    for start, end, length in segments:
+        if distance <= length:
+            local = distance / max(length, 0.001)
+            x = start[0] + (end[0] - start[0]) * local
+            z = start[1] + (end[1] - start[1]) * local
+            yaw = math.atan2(end[0] - start[0], end[1] - start[1])
+            return x, z, yaw
+        distance -= length
+
+    start, end, _ = segments[-1]
+    yaw = math.atan2(end[0] - start[0], end[1] - start[1])
+    return end[0], end[1], yaw

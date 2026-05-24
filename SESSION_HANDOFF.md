@@ -143,3 +143,20 @@ Continue demo operation with `docs/live-demo-runbook.md`; do not start real mode
 - Demo runbook continues to prefer `pnpm dev` with explicit endpoint envs for Mode A/Mode B.
 - Checklist now requires matching build-time envs when an operator chooses `next build && next start`.
 - This closes the endpoint drift risk observed when a production build made without demo envs displayed default localhost service URLs.
+
+## Actor visual distinction polish — 2026-05-25T02:52:00+09:00
+
+- Status: complete locally; 3D city scene now separates actor classes by shape and color, not just position.
+- Citizens render as two-part people with pink heads, teal bodies, and floor halos.
+- Vehicles render as yellow taxi-like cars with blue cabs, black wheels, and roof lights.
+- Traffic lights render as pole-mounted three-color signal heads instead of single dots.
+- Drones render as bright octahedrons with purple propeller arms.
+- Buildings were muted so they no longer compete with live actors, and a scene legend explains every category.
+
+## Waypoint movement polish — 2026-05-25T03:21:00+09:00
+
+- Status: complete and deployed to the direct-process RunPod runtime.
+- Replaced circular citizen motion with deterministic sidewalk/crosswalk waypoint routes.
+- Updated client replay/fallback motion so citizens, taxi, and drone also follow straight route segments instead of circular sine/cosine loops.
+- Added regression coverage proving the first citizen advances along a corridor segment with stable lane position, not an orbit.
+- Verified RunPod tunnel state after redeploy: simulation running, tick advancing, and sampled citizens moving between route waypoints.

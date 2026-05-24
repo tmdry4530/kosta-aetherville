@@ -16,6 +16,8 @@ test('client socket bridge listens for generated state_update envelope', () => {
   const godModeSource = readFileSync(new URL('../src/ui/GodModeMicPanel.tsx', import.meta.url), 'utf8');
   const trafficPanelSource = readFileSync(new URL('../src/ui/TrafficChartPanel.tsx', import.meta.url), 'utf8');
   const vehiclePanelSource = readFileSync(new URL('../src/ui/VehicleCamPanel.tsx', import.meta.url), 'utf8');
+  const citySource = readFileSync(new URL('../src/components/CityPlaceholder.tsx', import.meta.url), 'utf8');
+  const mockWorldSource = readFileSync(new URL('../src/lib/mockWorld.ts', import.meta.url), 'utf8');
   const typesSource = readFileSync(
     new URL('../../packages/shared-schemas/src/typescript/index.ts', import.meta.url),
     'utf8'
@@ -47,6 +49,16 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(vehiclePanelSource, /YoloDetection/);
   assert.match(vehiclePanelSource, /cameraBox/);
   assert.match(vehiclePanelSource, /Vehicle cam/);
+  assert.match(citySource, /SceneLegend/);
+  assert.match(citySource, /CitizenActor/);
+  assert.match(citySource, /VehicleActor/);
+  assert.match(citySource, /TrafficLightActor/);
+  assert.match(citySource, /DroneActor/);
+  assert.match(citySource, /노란 택시/);
+  assert.match(mockWorldSource, /poseOnRoute/);
+  assert.match(mockWorldSource, /vehicleRoute/);
+  assert.doesNotMatch(mockWorldSource, /Math\.sin\(angle/);
+  assert.doesNotMatch(mockWorldSource, /Math\.cos\(angle/);
   assert.match(trafficPanelSource, /Traffic forecast/);
   assert.match(godModeSource, /God Mode/);
   assert.match(typesSource, /export interface SimStatusResponse/);

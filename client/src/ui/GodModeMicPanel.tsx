@@ -61,7 +61,7 @@ export function GodModeMicPanel({ mode, worldState }: GodModeMicPanelProps) {
       </p>
       <label className="godInputLabel">
         <span>Text command</span>
-        <textarea value={text} onChange={(event) => setText(event.target.value)} />
+        <textarea suppressHydrationWarning value={text} onChange={(event) => setText(event.target.value)} />
       </label>
       <div className="macroGrid" aria-label="God Mode fallback macros">
         {MACROS.map((macro) => (

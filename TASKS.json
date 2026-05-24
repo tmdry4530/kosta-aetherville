@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "all_known_demo_and_tooling_risks_resolved",
+  "status": "demo_waypoint_movement_polished",
   "source_prd": "source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -436,6 +436,46 @@
         "bun_runtime": "user_level_non_snap_bun_precedes_snap_bun_on_path",
         "project_runtime": "no_project_runtime_change_no_docker_no_secrets",
         "client_endpoint_docs": "runbook_and_checklist_document_next_public_build_time_env_behavior_and_prefer_pnpm_dev_for_demo"
+      }
+    },
+    {
+      "id": "M7-009",
+      "title": "Clarify city actor visual categories for live demo",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "client/src/components/CityPlaceholder.tsx",
+      "depends_on": [
+        "M7-008"
+      ],
+      "unblocked_by": "M7-008",
+      "last_checked_at": "2026-05-25T02:52:00+09:00",
+      "completed_at": "2026-05-25T02:52:00+09:00",
+      "diagnostics": {
+        "citizens": "two_part_human_marker_with_pink_head_teal_body_and_halo",
+        "vehicles": "yellow_taxi_body_blue_cab_black_wheels_roof_light",
+        "traffic_lights": "three_lamp_signal_head_on_pole_with_active_emissive_state",
+        "drones": "octahedron_with_purple_propeller_arms",
+        "legend": "dom_scene_legend_lists_actor_categories_and_visual_signatures",
+        "runtime": "frontend_only_no_runpod_runtime_change_no_docker"
+      }
+    },
+    {
+      "id": "M7-010",
+      "title": "Replace circular actor motion with waypoint routes",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "server/src/aetherville_server/agents/citizens.py",
+      "depends_on": [
+        "M7-009"
+      ],
+      "unblocked_by": "M7-009",
+      "last_checked_at": "2026-05-25T03:21:00+09:00",
+      "completed_at": "2026-05-25T03:21:00+09:00",
+      "diagnostics": {
+        "server_citizens": "deterministic_sidewalk_crosswalk_waypoint_routes_replace_orbit_formula",
+        "client_fallback": "replay_citizens_taxi_drone_use_poseOnRoute_waypoint_interpolation_no_angle_sine_cosine_orbits",
+        "verification": "runpod_direct_redeploy_sim_start_state_samples_show_actor_positions_advancing_between_waypoints",
+        "runtime": "direct_process_only_no_docker_no_secret_output"
       }
     }
   ]
