@@ -13,6 +13,7 @@ from typing import Any, Literal
 
 import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from aetherville_schemas import (
     AckPayload,
@@ -53,6 +54,31 @@ fastapi_app = FastAPI(
     docs_url="/api/docs",
     openapi_url="/api/openapi.json",
     lifespan=app_lifespan,
+)
+
+
+def parse_cors_origins() -> list[str]:
+    """Return explicit browser origins allowed to call REST demo endpoints."""
+
+    configured = os.getenv("AETHERVILLE_CORS_ORIGINS")
+    if configured:
+        return [origin.strip() for origin in configured.split(",") if origin.strip()]
+    return [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://0.0.0.0:3000",
+        "http://localhost:3100",
+        "http://127.0.0.1:3100",
+        "http://0.0.0.0:3100",
+    ]
+
+
+fastapi_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=parse_cors_origins(),
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["content-type", "authorization"],
 )
 
 sio = socketio.AsyncServer(

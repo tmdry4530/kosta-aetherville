@@ -89,6 +89,8 @@ EXCLUDES=(
   --exclude dist
   --exclude build
   --exclude .venv
+  --exclude .gstack
+  --exclude dogfood-output
   --exclude __pycache__
   --exclude .env
   --exclude .env.local
@@ -108,6 +110,8 @@ TAR_EXCLUDES=(
   --exclude=dist
   --exclude=build
   --exclude=.venv
+  --exclude=.gstack
+  --exclude=dogfood-output
   --exclude=__pycache__
   --exclude=.env
   --exclude=.env.local
@@ -202,7 +206,7 @@ case "$DEPLOY_MODE" in
     echo "Deploy sync completed; no remote start command requested."
     ;;
   direct)
-    ssh_capture "cd '$RUNPOD_REMOTE_DIR' && export AETHERVILLE_VLLM_MODE='${AETHERVILLE_VLLM_MODE:-mock}' AETHERVILLE_REDIS_MODE='${AETHERVILLE_REDIS_MODE:-memory}' AETHERVILLE_BOOTSTRAP_UV='${AETHERVILLE_BOOTSTRAP_UV:-0}' AETHERVILLE_ORCHESTRATOR_PORT='${AETHERVILLE_ORCHESTRATOR_PORT:-8080}' AETHERVILLE_VISION_PORT='${AETHERVILLE_VISION_PORT:-18001}' AETHERVILLE_VLLM_PORT='${AETHERVILLE_VLLM_PORT:-8000}' && bash infra/runpod/start_direct_processes.sh && AETHERVILLE_HEALTH_RETRIES='30' AETHERVILLE_HEALTH_SLEEP='0.5' bash infra/runpod/health_check_direct.sh"
+    ssh_capture "cd '$RUNPOD_REMOTE_DIR' && export AETHERVILLE_VLLM_MODE='${AETHERVILLE_VLLM_MODE:-mock}' AETHERVILLE_REDIS_MODE='${AETHERVILLE_REDIS_MODE:-memory}' AETHERVILLE_BOOTSTRAP_UV='${AETHERVILLE_BOOTSTRAP_UV:-0}' AETHERVILLE_ORCHESTRATOR_PORT='${AETHERVILLE_ORCHESTRATOR_PORT:-8080}' AETHERVILLE_VISION_PORT='${AETHERVILLE_VISION_PORT:-18001}' AETHERVILLE_VLLM_PORT='${AETHERVILLE_VLLM_PORT:-8000}' AETHERVILLE_RESTART_PROCESSES='1' && bash infra/runpod/start_direct_processes.sh && AETHERVILLE_HEALTH_RETRIES='30' AETHERVILLE_HEALTH_SLEEP='0.5' bash infra/runpod/health_check_direct.sh"
     ;;
 esac
 

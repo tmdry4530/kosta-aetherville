@@ -49,8 +49,15 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm test:e2e
+NEXT_PUBLIC_ORCHESTRATOR_URL=http://127.0.0.1:18080 \
+NEXT_PUBLIC_SOCKET_URL=http://127.0.0.1:18080 \
+NEXT_PUBLIC_SOCKET_TRANSPORTS=polling \
 pnpm dev
 ```
+
+For production-style `next build && next start`, set the same `NEXT_PUBLIC_*`
+values during `next build`; the live demo runbook uses `pnpm dev` to avoid
+endpoint drift.
 
 - Live client: `http://localhost:3000/`
 - Replay fallback: `http://localhost:3000/replay`

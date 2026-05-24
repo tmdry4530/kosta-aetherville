@@ -1,7 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import type { GodCommandResponse, WorldStatePayload } from '@aetherville/shared-schemas';
+import type {
+  GodCommand,
+  GodCommandResponse,
+  WorldStatePayload
+} from '@aetherville/shared-schemas';
 
 interface GodModeMicPanelProps {
   mode: string;
@@ -20,29 +24,35 @@ export function GodModeMicPanel({ mode, worldState }: GodModeMicPanelProps) {
   const [lastResult, setLastResult] = useState<string>('text fallback ready');
 
   async function submitCommand(rawText = text) {
+    setText(rawText);
     setLastResult('sending command...');
     try {
       const baseUrl = process.env.NEXT_PUBLIC_ORCHESTRATOR_URL ?? 'http://localhost:8080';
+      const commandPayload: GodCommand = {
+        kind: 'god_command',
+        input_modality: 'text',
+        raw_text: rawText,
+        audio_blob_b64: null,
+        user_id: 'presenter'
+      };
       const response = await fetch(`${baseUrl}/api/v1/god/command`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          kind: 'god_command',
-          input_modality: 'text',
-          raw_text: rawText,
-          audio_blob_b64: null,
-          user_id: 'presenter'
-        })
+        body: JSON.stringify(commandPayload)
       });
-      const payload = (await response.json()) as GodCommandResponse;
-      setLastResult(`${payload.category}: ${payload.event.message}`);
+      if (!response.ok) {
+        setLastResult(`command rejected: HTTP ${response.status}`);
+        return;
+      }
+      const responsePayload = (await response.json()) as GodCommandResponse;
+      setLastResult(`${responsePayload.category}: ${responsePayload.event.message}`);
     } catch {
       setLastResult('offline fallback: command queued for replay/demo');
     }
   }
 
   return (
-    <article className="sidePanel godPanel">
+    <article className="sidePanel godPanel" id="god-mode-panel">
       <div className="panelKicker">God Mode</div>
       <h2>명령 콘솔</h2>
       <p>
@@ -66,7 +76,9 @@ export function GodModeMicPanel({ mode, worldState }: GodModeMicPanelProps) {
       <button className="godVoice" type="button" disabled>
         Voice STT optional
       </button>
-      <small className="godResult">{lastResult}</small>
+      <small className="godResult" aria-live="polite">
+        {lastResult}
+      </small>
     </article>
   );
 }

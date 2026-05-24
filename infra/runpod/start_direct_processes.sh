@@ -29,6 +29,7 @@ REDIS_PORT="${AETHERVILLE_REDIS_PORT:-6379}"
 VLLM_MODE="${AETHERVILLE_VLLM_MODE:-mock}"
 REDIS_MODE="${AETHERVILLE_REDIS_MODE:-auto}"
 MODEL_NAME="${MODEL_NAME:-Qwen/Qwen2.5-14B-Instruct-AWQ}"
+RESTART_PROCESSES="${AETHERVILLE_RESTART_PROCESSES:-0}"
 
 redacted_cmd() {
   printf '%s' "$*" | sed -E 's/(HF_TOKEN=)[^ ]+/\1<redacted>/g; s/(AETHERVILLE_JWT_SECRET=)[^ ]+/\1<redacted>/g'
@@ -63,8 +64,14 @@ start_process() {
   local log_file="$LOG_DIR/$name.log"
 
   if [[ -f "$pid_file" ]] && kill -0 "$(cat "$pid_file")" >/dev/null 2>&1; then
-    echo "$name already running with pid $(cat "$pid_file")"
-    return 0
+    if [[ "$RESTART_PROCESSES" == "1" ]]; then
+      echo "restarting $name pid=$(cat "$pid_file")"
+      kill "$(cat "$pid_file")" >/dev/null 2>&1 || true
+      sleep 0.5
+    else
+      echo "$name already running with pid $(cat "$pid_file")"
+      return 0
+    fi
   fi
 
   if [[ "$DRY_RUN" == "1" ]]; then

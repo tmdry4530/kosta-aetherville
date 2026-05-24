@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "demo_risks_accepted",
+  "status": "all_known_demo_and_tooling_risks_resolved",
   "source_prd": "source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -370,6 +370,72 @@
         "accepted_model_policy": "real_vllm_yolo_ppo_lstm_stt_remain_opt_in_no_start_without_separate_explicit_request",
         "accepted_sync_policy": "remote_rsync_unavailable_tar_over_ssh_fallback_accepted",
         "side_effects": "documentation_status_only_no_runpod_change_no_model_download_no_docker"
+      }
+    },
+    {
+      "id": "M7-006",
+      "title": "Run gstack and dogfood QA audit for playable demo",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "docs/gstack-dogfood-audit.md",
+      "depends_on": [
+        "M7-005"
+      ],
+      "unblocked_by": "M7-005",
+      "last_checked_at": "2026-05-25T00:36:00+09:00",
+      "completed_at": "2026-05-25T00:36:00+09:00",
+      "diagnostics": {
+        "scope": "report_only_ui_ux_project_completeness_functional_audit",
+        "gstack": "gstack_repo_found_original_qa_rubric_used_later_global_codex_skills_registered_and_browse_host_issue_repaired",
+        "dogfood": "agent_browser_session_collected_screenshots_video_console_curl_smoke_evidence",
+        "runtime_pass": "home_replay_orchestrator_health_sim_status_vision_18001_socketio_polling_demo_smoke_passed",
+        "major_finding": "god_mode_browser_command_blocked_by_cors_preflight_and_client_server_payload_schema_mismatch",
+        "non_blocking_findings": "replay_route_not_discoverable_websocket_upgrade_warning_mobile_layout_crowding",
+        "docker_policy": "no_docker_commands_no_compose_no_dind",
+        "secrets": "no_env_runpod_or_secret_material_printed_or_committed"
+      }
+    },
+    {
+      "id": "M7-007",
+      "title": "Resolve gstack/dogfood demo risk findings",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "docs/gstack-dogfood-audit.md",
+      "depends_on": [
+        "M7-006"
+      ],
+      "unblocked_by": "M7-006",
+      "last_checked_at": "2026-05-25T01:24:00+09:00",
+      "completed_at": "2026-05-25T01:24:00+09:00",
+      "diagnostics": {
+        "god_mode": "fastapi_cors_local_demo_origins_added_client_uses_shared_GodCommand_payload_remote_browser_macro_passed",
+        "replay_discoverability": "live_page_replay_link_and_replay_page_live_return_link_added",
+        "socket_console": "default_socket_transport_polling_with_env_override_and_ui_transport_label_no_console_errors_after_browser_submit",
+        "mobile_polish": "mobile_connection_card_static_between_hero_and_scene_hero_scale_reduced",
+        "deploy_hardening": "direct_deploy_excludes_local_qa_artifacts_and_restarts_repo_managed_processes_after_sync",
+        "runpod": "direct_process_redeployed_restarted_health_passed_no_docker",
+        "secrets": "no_env_runpod_or_secret_material_printed_or_committed",
+        "gstack_tooling_followup": "global_gstack_codex_skills_and_browse_command_verified_after_resolution"
+      }
+    },
+    {
+      "id": "M7-008",
+      "title": "Repair global gstack tooling follow-up",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "docs/gstack-dogfood-audit.md",
+      "depends_on": [
+        "M7-007"
+      ],
+      "unblocked_by": "M7-007",
+      "last_checked_at": "2026-05-25T02:22:00+09:00",
+      "completed_at": "2026-05-25T02:22:00+09:00",
+      "diagnostics": {
+        "global_registration": "codex_gstack_namespaced_skills_linked_under_home_codex_skills",
+        "browser_tooling": "browse_resolves_to_gstack_binary_and_status_health_passes",
+        "bun_runtime": "user_level_non_snap_bun_precedes_snap_bun_on_path",
+        "project_runtime": "no_project_runtime_change_no_docker_no_secrets",
+        "client_endpoint_docs": "runbook_and_checklist_document_next_public_build_time_env_behavior_and_prefer_pnpm_dev_for_demo"
       }
     }
   ]

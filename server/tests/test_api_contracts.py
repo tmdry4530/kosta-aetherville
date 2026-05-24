@@ -51,6 +51,23 @@ def test_god_command_uses_shared_request_and_response_models() -> None:
     assert Envelope.model_validate(body.envelope.model_dump()).type is EnvelopeType.EVENT
 
 
+def test_god_command_allows_local_browser_cors_preflight() -> None:
+    client = TestClient(fastapi_app)
+    for origin in ("http://127.0.0.1:3000", "http://127.0.0.1:3100"):
+        response = client.options(
+            "/api/v1/god/command",
+            headers={
+                "Origin": origin,
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "content-type",
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.headers["access-control-allow-origin"] == origin
+        assert "POST" in response.headers["access-control-allow-methods"]
+
+
 def test_sim_control_and_snapshot_endpoints_use_shared_models() -> None:
     client = TestClient(fastapi_app)
     reset = client.post("/api/v1/sim/reset", json={"seed": 99})

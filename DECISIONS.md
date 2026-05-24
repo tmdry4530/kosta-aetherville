@@ -106,3 +106,19 @@
   - Deterministic stubs remain demo-valid for ML-heavy paths until real workloads are separately approved with model names, cost/disk expectations, and rollback plan.
   - tar-over-SSH fallback is acceptable despite no delete semantics; stale remote file risk remains documented.
 - Revisit when: public REST/WSS endpoints are configured, the pod template frees/proxies `8001`, remote `rsync` is installed, or real model workloads are explicitly requested.
+
+## ADR-010 — Use explicit local CORS and quiet polling transport for the live demo
+
+Date: 2026-05-25
+
+Decision: The direct-process orchestrator allows only explicit local browser demo origins by default (`localhost`/`127.0.0.1`/`0.0.0.0` on ports `3000` and `3100`) and the browser client defaults Socket.IO to polling via `NEXT_PUBLIC_SOCKET_TRANSPORTS=polling`. Public or WSS demos can opt into `websocket,polling` through environment configuration.
+
+Context: Dogfood QA showed the UI could display `connected` while REST God Mode commands were blocked by CORS, and WebSocket upgrade warnings created misleading console noise even though polling worked.
+
+Consequences:
+- Local-browser-to-RunPod tunnel demos can execute God Mode text commands without CORS failures.
+- The default demo console stays quiet by using the verified polling path.
+- Public deployment can still opt into WSS without changing code.
+- Docker remains out of the current RunPod execution path.
+
+Rejected: Enabling wildcard CORS for every origin by default, because explicit local demo origins are safer and enough for the approved presentation path.

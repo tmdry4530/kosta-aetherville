@@ -1,5 +1,6 @@
 import { io, type Socket } from 'socket.io-client';
 import type { Envelope, WorldStatePayload } from '@aetherville/shared-schemas';
+import type { SocketTransport } from '@/lib/config';
 import { useConnectionStore } from '@/store/connection';
 
 export const STATE_UPDATE_EVENT = 'aetherville:state_update';
@@ -13,13 +14,17 @@ export function handleServerEnvelope(envelope: Envelope<unknown>): void {
   }
 }
 
-export function createOrchestratorSocket(socketUrl: string): Socket {
+export function createOrchestratorSocket(
+  socketUrl: string,
+  transports: SocketTransport[] = ['polling']
+): Socket {
   const socket = io(socketUrl, {
     path: '/socket.io',
-    transports: ['websocket', 'polling'],
+    transports,
     reconnection: true,
     reconnectionAttempts: Infinity,
-    reconnectionDelayMax: 3000
+    reconnectionDelayMax: 3000,
+    upgrade: transports.includes('websocket') && transports.length > 1
   });
 
   socket.on('connect', () => useConnectionStore.getState().setState('connected'));

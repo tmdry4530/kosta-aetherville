@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { CityPlaceholder } from '@/components/CityPlaceholder';
 import { ReplayDriver } from '@/components/ReplayDriver';
 import { SidePanels } from '@/components/SidePanels';
@@ -12,6 +13,9 @@ export default function ReplayPage() {
           RunPod 연결이 불안정한 데모 상황에서도 deterministic fallback state를 사용해
           도시, 패널, tick 흐름을 검증합니다.
         </p>
+        <nav className="demoNav" aria-label="Replay navigation">
+          <Link href="/">Live city로 돌아가기</Link>
+        </nav>
       </section>
       <ReplayDriver />
       <section className="sceneColumn" aria-label="Replay city state">

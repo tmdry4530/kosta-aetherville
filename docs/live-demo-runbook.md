@@ -132,8 +132,16 @@ set +a
 
 NEXT_PUBLIC_ORCHESTRATOR_URL="$RUNPOD_PUBLIC_ORCHESTRATOR_URL" \
 NEXT_PUBLIC_SOCKET_URL="${RUNPOD_PUBLIC_SOCKET_URL:-$RUNPOD_PUBLIC_ORCHESTRATOR_URL}" \
+NEXT_PUBLIC_SOCKET_TRANSPORTS="${NEXT_PUBLIC_SOCKET_TRANSPORTS:-polling}" \
 pnpm dev
 ```
+
+
+> Production build note: `NEXT_PUBLIC_*` values are baked into the Next.js
+> bundle at build time. For demo safety, prefer `pnpm dev` as shown above. If
+> using `next build && next start`, run the build command with the same
+> `NEXT_PUBLIC_ORCHESTRATOR_URL`, `NEXT_PUBLIC_SOCKET_URL`, and
+> `NEXT_PUBLIC_SOCKET_TRANSPORTS` values selected for Mode A.
 
 Open:
 
@@ -174,8 +182,15 @@ Start the local client against the tunnel:
 ```bash
 NEXT_PUBLIC_ORCHESTRATOR_URL=http://127.0.0.1:18080 \
 NEXT_PUBLIC_SOCKET_URL=http://127.0.0.1:18080 \
+NEXT_PUBLIC_SOCKET_TRANSPORTS=polling \
 pnpm dev
 ```
+
+
+> Production build note: `NEXT_PUBLIC_*` values are baked into the Next.js
+> bundle at build time. For demo safety, prefer `pnpm dev` as shown above. If
+> using `next build && next start`, run the build command with the same tunnel
+> endpoint values shown here.
 
 Open:
 
@@ -186,7 +201,9 @@ Open:
 
 - If RunPod SSH/GPU fails: stop live backend attempts and use `/replay`.
 - If public endpoints fail: use Mode B SSH tunnel.
-- If Socket.IO WebSocket upgrade fails: polling smoke is acceptable for demo.
+- If Socket.IO WebSocket upgrade fails: keep
+  `NEXT_PUBLIC_SOCKET_TRANSPORTS=polling`; polling is the verified quiet demo
+  transport and avoids misleading browser WebSocket warnings.
 - If voice/STT is unavailable: use God Mode text input or macro buttons.
 - If real YOLO/RL/LSTM/vLLM is unavailable: use deterministic stubs and explain
   the documented upgrade paths.

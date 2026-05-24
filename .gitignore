@@ -26,3 +26,7 @@ coverage/
 
 # TypeScript incremental state
 *.tsbuildinfo
+.gstack/
+
+# Local browser QA artifacts
+dogfood-output/
