@@ -93,3 +93,16 @@
   - `deploy_over_ssh.sh --mode compose` must fail fast as unsupported for the current execution path.
   - Future Docker packaging can be revisited only when a Docker-capable environment is explicitly selected and verified.
 - Revisit when: the user moves to a Docker-capable VM/pod, adopts a managed inference endpoint, or explicitly approves a new containerized deployment target.
+
+
+## ADR-010: Final demo operational risks are accepted for direct-process presentation
+
+- Status: accepted
+- Context: The master goal, Phase 99 re-audit, and final demo freeze pass are complete. The user explicitly accepted the remaining operational risks for the live demo.
+- Decision: Proceed with the verified direct-process demo posture: public RunPod REST/WSS endpoints may remain untracked/unconfigured, SSH tunnel mode is an accepted fallback, vision runs on verified port `18001` while canonical `8001` is blocked on the current pod, real vLLM/YOLO/PPO/LSTM/STT workloads remain opt-in and are not started without a separate explicit model/runtime command, and remote sync may use tar-over-SSH while `rsync` is unavailable.
+- Consequences:
+  - The live demo can proceed using `docs/live-demo-runbook.md` Mode B when public endpoints are not configured.
+  - `18001` is the accepted vision service port for the current pod demo.
+  - Deterministic stubs remain demo-valid for ML-heavy paths until real workloads are separately approved with model names, cost/disk expectations, and rollback plan.
+  - tar-over-SSH fallback is acceptable despite no delete semantics; stale remote file risk remains documented.
+- Revisit when: public REST/WSS endpoints are configured, the pod template frees/proxies `8001`, remote `rsync` is installed, or real model workloads are explicitly requested.

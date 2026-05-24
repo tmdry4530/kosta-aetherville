@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "demo_freeze_ready",
+  "status": "demo_risks_accepted",
   "source_prd": "source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -350,6 +350,26 @@
         "secrets": "no_env_runpod_values_or_key_paths_committed",
         "verification": "json_bash_n_diff_check_pnpm_typecheck_client_build_demo_smoke_via_ssh_tunnel_passed",
         "commit_ready": "all_lightweight_freeze_checks_passed"
+      }
+    },
+    {
+      "id": "M7-005",
+      "title": "Record user acceptance of final demo operational risks",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "docs/risk-register.md",
+      "depends_on": [
+        "M7-004"
+      ],
+      "unblocked_by": "M7-004",
+      "last_checked_at": "2026-05-24T23:51:11+09:00",
+      "completed_at": "2026-05-24T23:51:11+09:00",
+      "diagnostics": {
+        "accepted_public_urls": "public_RunPod_REST_WSS_not_tracked_use_local_env_or_ssh_tunnel",
+        "accepted_vision_port": "current_pod_demo_uses_verified_18001_because_8001_blocked",
+        "accepted_model_policy": "real_vllm_yolo_ppo_lstm_stt_remain_opt_in_no_start_without_separate_explicit_request",
+        "accepted_sync_policy": "remote_rsync_unavailable_tar_over_ssh_fallback_accepted",
+        "side_effects": "documentation_status_only_no_runpod_change_no_model_download_no_docker"
       }
     }
   ]

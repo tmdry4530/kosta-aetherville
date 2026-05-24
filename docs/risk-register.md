@@ -13,3 +13,13 @@
 | Client FPS below 60 | medium | medium | LOD, dynamic entity count, lower shadows |
 | Voice recognition fails | medium | low | headset, text fallback, macro buttons |
 | Cost overrun | low | low | daily cap/checklist, stop idle pod |
+
+
+## Accepted for final demo freeze
+
+As of 2026-05-24T23:51:11+09:00, the user accepted these operational risks for the live demo:
+
+- Public RunPod REST/WSS URLs are not stored in tracked config; use ignored env values or SSH tunnel mode.
+- Vision canonical port `8001` is blocked on the current pod; demo vision uses verified port `18001`.
+- Real vLLM, YOLO, PPO/LSTM, and STT remain opt-in upgrade paths and are not started by default.
+- Remote `rsync` is unavailable; tar-over-SSH sync fallback is accepted.

@@ -611,3 +611,14 @@
 - pass: `pnpm typecheck`
 - pass: `pnpm --filter @aetherville/client build`
 - pass: SSH tunnel direct-process smoke with `python3 scripts/demo_smoke.py --orchestrator-url http://127.0.0.1:18080`; health `ok`, 20 citizens, 1 vehicle, forecast offsets `[5, 10, 15]`.
+
+
+## Final demo operational risk acceptance — 2026-05-24T23:51:11+09:00
+
+- Status: accepted by user.
+- Accepted for the final live demo:
+  - Public RunPod REST/WSS URLs are not tracked; use ignored local env values or SSH tunnel Mode B.
+  - Vision canonical `8001` is blocked on the current pod; verified demo port is `18001`.
+  - Real vLLM, YOLO, PPO/LSTM, and STT remain opt-in and will not start without a separate explicit model/runtime command.
+  - Remote `rsync` is unavailable; tar-over-SSH sync fallback is accepted.
+- No RunPod change, model download, training job, Docker command, or code implementation change was performed for this acceptance record.

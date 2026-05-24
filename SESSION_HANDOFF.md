@@ -95,3 +95,15 @@ Final demo freeze verification:
 - `pnpm typecheck`: pass.
 - `pnpm --filter @aetherville/client build`: pass.
 - SSH tunnel smoke with `scripts/demo_smoke.py`: pass against local tunnel endpoint.
+
+
+## User-accepted final demo risks — 2026-05-24T23:51:11+09:00
+
+The user approved the remaining operational risks for the live demo:
+
+- Public RunPod REST/WSS URL not tracked; use local ignored env or SSH tunnel.
+- Vision uses verified `18001` because canonical `8001` is blocked on this pod.
+- Real vLLM/YOLO/PPO/LSTM/STT remain opt-in and require a separate explicit start request.
+- tar-over-SSH sync fallback is accepted while remote `rsync` is unavailable.
+
+Continue demo operation with `docs/live-demo-runbook.md`; do not start real model workloads or Docker without a new explicit request.
