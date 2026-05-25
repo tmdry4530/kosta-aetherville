@@ -323,6 +323,9 @@ export interface GodCommandResponse {
   envelope: Envelope;
   events: EventPayload[];
   envelopes: Envelope[];
+  ai_mode: 'rules' | 'vllm';
+  ai_confidence?: number | null;
+  ai_reason?: string | null;
 }
 
 export interface ServiceStatus {

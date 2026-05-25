@@ -45,7 +45,12 @@ export function GodModeMicPanel({ mode, worldState }: GodModeMicPanelProps) {
         return;
       }
       const responsePayload = (await response.json()) as GodCommandResponse;
-      setLastResult(`${responsePayload.category}: ${responsePayload.event.message}`);
+      const aiBadge =
+        responsePayload.ai_mode === 'vllm'
+          ? `vLLM ${Math.round((responsePayload.ai_confidence ?? 0) * 100)}%`
+          : 'rules fallback';
+      const aiReason = responsePayload.ai_reason ? ` · ${responsePayload.ai_reason}` : '';
+      setLastResult(`${aiBadge} · ${responsePayload.category}: ${responsePayload.event.message}${aiReason}`);
     } catch {
       setLastResult('offline fallback: command queued for replay/demo');
     }

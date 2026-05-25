@@ -327,6 +327,9 @@ class SimulationEngine:
             envelope=envelope,
             events=events,
             envelopes=envelopes,
+            ai_mode=effect.ai_mode,
+            ai_confidence=effect.ai_confidence,
+            ai_reason=effect.ai_reason,
         )
 
     def _record_event(self, event: EventPayload) -> None:

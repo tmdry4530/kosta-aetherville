@@ -327,6 +327,9 @@ class GodCommandResponse(StrictModel):
     envelope: Envelope
     events: list[EventPayload] = Field(default_factory=list)
     envelopes: list[Envelope] = Field(default_factory=list)
+    ai_mode: Literal["rules", "vllm"] = "rules"
+    ai_confidence: float | None = Field(default=None, ge=0, le=1)
+    ai_reason: str | None = None
 
 
 class ServiceStatus(StrictModel):

@@ -385,3 +385,43 @@ Demo talking point:
 - `client/.next` was cleared before restart to resolve a stale missing chunk error.
 - `/` and `/replay` HTTP smokes passed after recompilation.
 - The traffic panel source now reads both `traffic_ai` and `traffic_forecast_ai`; when connected to the current RunPod state it should show `GPU POLICY` and `LSTM FORECAST` badges.
+
+## Real vLLM God Mode interpretation handoff — 2026-05-25T14:27:17+09:00
+
+Current implementation state:
+
+- God Mode text is still the reliable primary path; voice/STT remains optional/deferred.
+- Set `AETHERVILLE_GOD_MODE_LLM=vllm` when starting the direct-process orchestrator to classify presenter commands through the real RunPod vLLM endpoint.
+- The vLLM classifier is constrained to a fixed safe action vocabulary and cannot directly mutate simulation state. The deterministic dispatcher still applies all world effects.
+- `GodCommandResponse.ai_mode` reports `vllm` or `rules`; `ai_confidence` and `ai_reason` are shown in the browser command result.
+- If vLLM is slow, unreachable, or returns invalid JSON, God Mode falls back to the existing rules path so the demo remains usable.
+
+Next operator check after redeploy:
+
+```bash
+curl -fsS -H 'content-type: application/json' \
+  -d '{"kind":"god_command","input_modality":"text","raw_text":"출근길을 혼잡하게 만들어줘","audio_blob_b64":null,"user_id":"presenter"}' \
+  http://127.0.0.1:18080/api/v1/god/command | python3 -m json.tool
+```
+
+Expected marker when enabled: `"ai_mode": "vllm"` and `"action": "traffic_jam"` inside event metadata. If marker is `rules`, check `AETHERVILLE_GOD_MODE_LLM` and vLLM health. Do not run Docker on this pod.
+
+## Real vLLM God Mode deployment handoff — 2026-05-25T14:42:00+09:00
+
+Verified runtime state:
+
+- RunPod direct-process services are running without Docker.
+- Real vLLM and real YOLO stayed resident; only the orchestrator was restarted after sync.
+- Orchestrator is now running with:
+  - `AETHERVILLE_LLM_MODE=vllm`
+  - `AETHERVILLE_GOD_MODE_LLM=vllm`
+  - `AETHERVILLE_CAMERA_VISION_MODE=real` inherited from vision mode
+  - traffic policy and LSTM forecast checkpoint paths under the RunPod model cache
+- Local tunnel God Mode smoke returned `ai_mode=vllm`, event action `traffic_jam`, and confidence `1.0` for “출근길을 혼잡하게 만들어줘”.
+- Local browser server is running on `http://127.0.0.1:3000/` via `next start` with tunnel `NEXT_PUBLIC_ORCHESTRATOR_URL` and `NEXT_PUBLIC_SOCKET_URL` values.
+
+Demo talking point:
+
+- God Mode is no longer only keyword matching in the real-AI demo mode. Natural text is first interpreted by the real RunPod vLLM into a constrained action vocabulary, then the deterministic dispatcher applies visible weather/taxi/traffic/relationship/person effects. If vLLM fails, the UI reports `rules fallback` and the demo remains safe.
+
+Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.

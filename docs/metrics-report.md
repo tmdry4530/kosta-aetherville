@@ -91,3 +91,11 @@
   `trained_on_gpu=true`, and `training_backend=torch_cuda`.
 - Metric: `MAPE 11.84%`, training loss `2.911555`.
 - UI: traffic panel displays an `LSTM FORECAST` badge and MAPE from shared state.
+
+## Real 4090 God Mode vLLM interpretation — 2026-05-25
+
+- Runtime flag: `AETHERVILLE_GOD_MODE_LLM=vllm`.
+- Model path: OpenAI-compatible RunPod vLLM endpoint already serving `Qwen/Qwen2.5-14B-Instruct-AWQ`.
+- Safety: vLLM only classifies text into a fixed safe action vocabulary; deterministic dispatcher applies effects.
+- Contract/UI evidence: `GodCommandResponse` includes `ai_mode`, `ai_confidence`, and `ai_reason`; browser God Mode result displays `vLLM NN%` or `rules fallback`.
+- Verification: targeted schema/orchestrator/simulation/API tests passed locally; RunPod smoke should confirm `ai_mode=vllm` after direct-process redeploy.

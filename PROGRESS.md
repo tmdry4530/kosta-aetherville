@@ -831,3 +831,21 @@
 - Status: complete locally.
 - After the LSTM panel/schema update, the old Next dev cache produced a transient missing chunk error.
 - Cleared `client/.next`, restarted Next dev on port `3000` with tunnel `NEXT_PUBLIC_*` values, and re-smoked `/` plus `/replay` successfully.
+
+## Real 4090 vLLM God Mode interpretation — 2026-05-25T14:27:17+09:00
+
+- Status: complete locally; direct-process RunPod redeploy/smoke follows in this turn.
+- Added a constrained OpenAI-compatible vLLM interpreter for God Mode text commands behind `AETHERVILLE_GOD_MODE_LLM=vllm`.
+- Safety model: vLLM does not execute arbitrary effects. It only selects one action from the fixed demo vocabulary (`rain`, `traffic_jam`, `taxi_call`, `meeting`, etc.), then the existing deterministic dispatcher applies the effect. Timeout, invalid JSON, disabled env, or model failure falls back to the rules path.
+- `GodCommandResponse` now exposes `ai_mode`, `ai_confidence`, and `ai_reason`; generated TypeScript was refreshed and the browser God Mode panel shows `vLLM NN%` or `rules fallback` after command execution.
+- Direct-process startup now passes `AETHERVILLE_GOD_MODE_LLM` into the orchestrator. Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## Real 4090 vLLM God Mode deployment — 2026-05-25T14:42:00+09:00
+
+- Status: complete and deployed to the verified direct-process RunPod runtime.
+- RunPod verify passed: SSH/GPU visible, NVIDIA GeForce RTX 4090 active with real vLLM memory resident; Docker commands remained skipped by policy.
+- Sync used tar-over-SSH fallback; existing real vLLM and real YOLO processes were preserved, then only the orchestrator was stopped and restarted with `AETHERVILLE_GOD_MODE_LLM=vllm`.
+- Direct health passed when run with `AETHERVILLE_VLLM_MODE=real`: orchestrator `ok`, vision `yolo:ok`, vLLM `/v1/models` returned `Qwen/Qwen2.5-14B-Instruct-AWQ`, Redis memory fallback active. The default mock-mode health invocation correctly failed against real vLLM and was rerun with the real-mode env.
+- Local tunnel God Mode smoke passed: `출근길을 혼잡하게 만들어줘` returned `ai_mode=vllm`, `ai_confidence=1.0`, event action `traffic_jam`, and world state showed `traffic_ai=checkpoint/torch_cuda`, `traffic_forecast_ai=lstm_checkpoint/torch_cuda`, and congestion tags on vehicles.
+- Local Next production server was rebuilt with tunnel `NEXT_PUBLIC_*` values and restarted on port `3000`; `/` and `/replay` HTTP smokes passed.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.

@@ -48,13 +48,14 @@
 
 ## 11:00–13:30 — God Mode command demo + AI learning panel
 
-- Enter a text command such as “make it rainy” or use a macro button.
+- Enter a text command such as “출근길을 혼잡하게 만들어줘” or use a macro button.
+- Point out `vLLM NN%` in the God Mode result when `AETHERVILLE_GOD_MODE_LLM=vllm` is enabled; if it says `rules fallback`, explain the safety fallback.
 - Confirm the visible world-state effect and event timeline update.
 - Show the `AI 학습 루프` panel and point out experience count, epoch, policy
   version, traffic bias, and taxi success signal changing after commands.
 - State clearly that this is persistent deterministic adaptation for demo
   safety, not live training of new vLLM/YOLO/PPO/LSTM weights.
-- If voice is unavailable, explain that text is the supported reliable path.
+- If voice is unavailable, explain that text is the supported reliable path and STT remains optional/deferred.
 
 ## 13:30–15:00 — Fallback and wrap-up
 

@@ -48,6 +48,7 @@ with explicit opt-in variables:
 AETHERVILLE_BOOTSTRAP_UV=1 \
 AETHERVILLE_VLLM_MODE=real \
 AETHERVILLE_LLM_MODE=vllm \
+AETHERVILLE_GOD_MODE_LLM=vllm \
 AETHERVILLE_VISION_MODE=real \
 AETHERVILLE_BOOTSTRAP_YOLO=1 \
 AETHERVILLE_REDIS_MODE=memory \
@@ -75,6 +76,7 @@ ssh "$RUNPOD_USER@$RUNPOD_HOST" -p "$RUNPOD_SSH_PORT" -i "$RUNPOD_SSH_KEY" \
 AETHERVILLE_BOOTSTRAP_UV=1 \
 AETHERVILLE_VLLM_MODE=real \
 AETHERVILLE_LLM_MODE=vllm \
+AETHERVILLE_GOD_MODE_LLM=vllm \
 AETHERVILLE_VISION_MODE=real \
 AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT=/workspace/aetherville-model-cache/traffic/traffic_policy_v1.json \
 AETHERVILLE_REDIS_MODE=memory \
@@ -101,6 +103,7 @@ ssh "$RUNPOD_USER@$RUNPOD_HOST" -p "$RUNPOD_SSH_PORT" -i "$RUNPOD_SSH_KEY" \
 AETHERVILLE_BOOTSTRAP_UV=1 \
 AETHERVILLE_VLLM_MODE=real \
 AETHERVILLE_LLM_MODE=vllm \
+AETHERVILLE_GOD_MODE_LLM=vllm \
 AETHERVILLE_VISION_MODE=real \
 AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT=/workspace/aetherville-model-cache/traffic/traffic_policy_v1.json \
 AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT=/workspace/aetherville-model-cache/traffic/traffic_lstm_v1.json \
@@ -114,6 +117,16 @@ bash infra/runpod/deploy_over_ssh.sh --mode direct
 Expected state marker after restart:
 `traffic_forecast_ai.mode="lstm_checkpoint"` and
 `traffic_forecast_ai.training_backend="torch_cuda"`.
+
+God Mode vLLM smoke after real-mode restart:
+
+```bash
+curl -fsS -H 'content-type: application/json' \
+  -d '{"kind":"god_command","input_modality":"text","raw_text":"출근길을 혼잡하게 만들어줘","audio_blob_b64":null,"user_id":"presenter"}' \
+  http://127.0.0.1:18080/api/v1/god/command | python3 -m json.tool
+```
+
+Expected marker when enabled: `ai_mode="vllm"` with event metadata action `traffic_jam`. If vLLM is unavailable, the command remains demo-safe and falls back to `ai_mode="rules"`.
 
 ## 2. Verify RunPod health
 

@@ -1,18 +1,19 @@
 """God Mode text command dispatcher.
 
-The dispatcher is intentionally deterministic and rule-based for the demo.  It
-keeps command categories stable while the future voice/STT path and LLM command
-parser mature.
+The dispatcher keeps effects deterministic while optionally using the RunPod
+vLLM endpoint to interpret free-form presenter text into a constrained safe
+action vocabulary.  If vLLM is disabled, slow, or invalid, rules still own the
+demo path.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, Protocol
 
 from aetherville_schemas import EventPayload, GodCommand
 
-GodCommandCategory = Literal["environment", "event", "person", "infrastructure", "relationship"]
+from .vllm_command import GodCommandCategory, GodCommandInterpretation, VllmGodCommandInterpreter
 
 NAME_TO_CITIZEN_ID = {
     "민지": "c01",
@@ -23,6 +24,10 @@ NAME_TO_CITIZEN_ID = {
     "지호": "c06",
     "민준": "c07",
 }
+
+
+class GodCommandInterpreter(Protocol):
+    def interpret(self, command: GodCommand) -> GodCommandInterpretation | None: ...
 
 
 @dataclass(frozen=True)
@@ -40,12 +45,31 @@ class GodCommandEffect:
     active_event: str | None = None
     infrastructure_status: str | None = None
     memories: list[MemoryInjection] = field(default_factory=list)
+    ai_mode: Literal["rules", "vllm"] = "rules"
+    ai_confidence: float | None = None
+    ai_reason: str | None = None
 
 
 class GodCommandDispatcher:
     """Map text commands into deterministic simulation effects."""
 
+    def __init__(self, interpreter: GodCommandInterpreter | None = None) -> None:
+        self.interpreter = (
+            interpreter if interpreter is not None else VllmGodCommandInterpreter.from_env()
+        )
+
     def dispatch(self, command: GodCommand) -> GodCommandEffect:
+        interpretation = (
+            self.interpreter.interpret(command) if self.interpreter is not None else None
+        )
+        if interpretation is not None:
+            return self._decorate_with_interpretation(
+                self._effect_from_interpretation(command.raw_text.strip(), interpretation),
+                interpretation,
+            )
+        return self._decorate_with_rules(self._dispatch_by_rules(command))
+
+    def _dispatch_by_rules(self, command: GodCommand) -> GodCommandEffect:
         text = command.raw_text.strip()
         lowered = text.lower()
         category = self.classify(text)
@@ -111,6 +135,95 @@ class GodCommandDispatcher:
                 metadata={"category": "event"},
             ),
         )
+
+    def _effect_from_interpretation(
+        self, text: str, interpretation: GodCommandInterpretation
+    ) -> GodCommandEffect:
+        action = interpretation.action
+        if action in {"rain", "clear", "snow"} or interpretation.category == "environment":
+            weather = (
+                action
+                if action in {"rain", "clear", "snow"}
+                else self._weather_from_text(text, text.lower())
+            )
+            return GodCommandEffect(
+                category="environment",
+                weather=weather,
+                active_event=f"weather:{weather}",
+                event=EventPayload(
+                    kind="weather_changed",
+                    message=f"Weather changed to {weather}",
+                    metadata={"category": "environment", "weather": weather, "action": weather},
+                ),
+                memories=[
+                    MemoryInjection(
+                        citizen_id="c01",
+                        text=f"God Mode changed the weather to {weather}",
+                        tags=["god-mode", "weather", weather],
+                    )
+                ],
+            )
+        if action == "taxi_call":
+            return self._taxi_effect(text)
+        if action == "traffic_jam":
+            return GodCommandEffect(
+                category="infrastructure",
+                active_event="traffic congestion",
+                infrastructure_status="traffic congestion active",
+                event=EventPayload(
+                    kind="infrastructure_changed",
+                    message=f"Traffic congestion surge applied: {text}",
+                    metadata={
+                        "category": "infrastructure",
+                        "action": "traffic_jam",
+                        "status": "traffic congestion active",
+                    },
+                ),
+            )
+        if action == "meeting" or interpretation.category == "relationship":
+            return self._relationship_effect(text)
+        if action in {"memory", "person_update"} or interpretation.category == "person":
+            return self._person_effect(text)
+        return GodCommandEffect(
+            category="event",
+            active_event=text,
+            event=EventPayload(
+                kind="event_injected",
+                message=f"City event injected: {text}",
+                metadata={"category": "event", "action": "generic"},
+            ),
+        )
+
+    @staticmethod
+    def _decorate_with_interpretation(
+        effect: GodCommandEffect, interpretation: GodCommandInterpretation
+    ) -> GodCommandEffect:
+        effect.event.metadata.update(
+            {
+                "ai_mode": interpretation.source,
+                "ai_action": interpretation.action,
+                "ai_confidence": interpretation.confidence,
+                "ai_reason": interpretation.reason,
+            }
+        )
+        if interpretation.target is not None:
+            effect.event.metadata["ai_target"] = interpretation.target
+        return GodCommandEffect(
+            category=effect.category,
+            event=effect.event,
+            weather=effect.weather,
+            active_event=effect.active_event,
+            infrastructure_status=effect.infrastructure_status,
+            memories=effect.memories,
+            ai_mode=interpretation.source,
+            ai_confidence=interpretation.confidence,
+            ai_reason=interpretation.reason,
+        )
+
+    @staticmethod
+    def _decorate_with_rules(effect: GodCommandEffect) -> GodCommandEffect:
+        effect.event.metadata.setdefault("ai_mode", "rules")
+        return effect
 
     def classify(self, text: str) -> GodCommandCategory:
         lowered = text.lower()

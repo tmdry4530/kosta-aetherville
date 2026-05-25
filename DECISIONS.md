@@ -185,3 +185,16 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - Missing or invalid forecast checkpoints fall back to deterministic forecast bars.
   - Docker remains excluded from the current RunPod execution strategy.
 - Revisit when: live traffic telemetry is collected, a richer multi-intersection forecast target exists, or forecast inference moves to a dedicated model-serving process.
+
+## ADR-016: God Mode uses constrained vLLM interpretation before deterministic effects
+
+- Status: accepted
+- Context: The demo already has real vLLM, YOLO, traffic policy, and LSTM forecast paths, but God Mode could still look scripted if natural text commands were matched only by keywords. At the same time, allowing an LLM to execute arbitrary simulation mutations would be unsafe and hard to verify during a live demo.
+- Decision: Add an opt-in God Mode interpretation layer behind `AETHERVILLE_GOD_MODE_LLM=vllm`. The RunPod vLLM endpoint classifies free-form presenter text into a fixed action vocabulary and confidence/reason metadata. The deterministic dispatcher remains the only code that applies weather, taxi, traffic, person, relationship, or event effects. Invalid/slow vLLM output falls back to rules.
+- Consequences:
+  - The live demo can truthfully show a real 4090-backed LLM path for God Mode command understanding.
+  - Simulation state remains bounded by audited deterministic effects and shared schemas.
+  - The UI can expose whether a command was vLLM-interpreted or rule-fallback.
+  - Voice/STT remains a separate opt-in path; this ADR does not claim live STT or autonomous model self-training.
+  - Docker remains excluded from the current RunPod execution strategy.
+- Revisit when: multi-action command planning is needed, voice transcription is approved, or public endpoint latency requires a separate command-understanding service.

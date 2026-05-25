@@ -698,6 +698,29 @@
         "client": "Traffic panel displays LSTM FORECAST badge and MAPE from shared traffic_forecast_ai state",
         "docker_policy": "no_docker_no_compose_no_dind"
       }
+    },
+    {
+      "id": "M8-007",
+      "title": "Connect God Mode text commands to real 4090 vLLM interpretation with safe rule fallback",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/09-god-mode.md",
+      "depends_on": [
+        "M8-006"
+      ],
+      "unblocked_by": "user_requested_immediate_extreme_4090_progress",
+      "last_checked_at": "2026-05-25T14:42:00+09:00",
+      "completed_at": "2026-05-25T14:42:00+09:00",
+      "diagnostics": {
+        "schema": "GodCommandResponse exposes ai_mode ai_confidence and ai_reason; generated TypeScript refreshed",
+        "backend": "GodCommandDispatcher can call a constrained OpenAI-compatible vLLM classifier when AETHERVILLE_GOD_MODE_LLM=vllm and falls back to deterministic rules on timeout invalid output or disabled mode",
+        "safety": "vLLM output only selects a fixed safe action vocabulary before existing deterministic effects are applied",
+        "client": "local production Next server restarted on port_3000 with tunnel NEXT_PUBLIC urls; index_and_replay_http_smokes_passed",
+        "runpod_script": "direct-process startup passes AETHERVILLE_GOD_MODE_LLM into the orchestrator without using Docker",
+        "verification": "json_bash_gitdiff_pytest_ruff_mypy_pnpm_lint_test_typecheck_e2e_build_passed",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
+        "runpod": "sync_only_deploy_then_orchestrator_only_restart_preserved_existing_real_vllm_and_real_yolo; direct health passed with AETHERVILLE_VLLM_MODE=real; local tunnel God command returned ai_mode_vllm action_traffic_jam"
+      }
     }
   ]
 }

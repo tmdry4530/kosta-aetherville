@@ -11,6 +11,7 @@ from aetherville_schemas import (
     Envelope,
     EnvelopeType,
     GodCommand,
+    GodCommandResponse,
     HealthResponse,
     LearningSnapshot,
     LearningStatusResponse,
@@ -63,6 +64,41 @@ def test_god_command_validates_text_payload() -> None:
 
     assert command.raw_text.startswith("도시에")
 
+
+
+def test_god_command_response_contract_exposes_ai_interpretation_metadata() -> None:
+    response = GodCommandResponse.model_validate(
+        {
+            "accepted": True,
+            "command_id": "cmd_test",
+            "category": "infrastructure",
+            "event": {
+                "kind": "infrastructure_changed",
+                "message": "Traffic congestion surge applied",
+                "metadata": {"action": "traffic_jam", "ai_mode": "vllm"},
+            },
+            "envelope": {
+                "v": 1,
+                "type": "event",
+                "ts": 1,
+                "tick": 0,
+                "payload": {"kind": "infrastructure_changed"},
+            },
+            "events": [],
+            "envelopes": [],
+            "ai_mode": "vllm",
+            "ai_confidence": 0.87,
+            "ai_reason": "vLLM selected traffic_jam",
+        }
+    )
+
+    assert response.ai_mode == "vllm"
+    assert response.ai_confidence == 0.87
+
+    with pytest.raises(ValidationError):
+        GodCommandResponse.model_validate(
+            response.model_dump(mode="json") | {"ai_mode": "unbounded"}
+        )
 
 def test_make_state_update_roundtrip() -> None:
     raw = json.loads((FIXTURES / "state_update.json").read_text(encoding="utf-8"))

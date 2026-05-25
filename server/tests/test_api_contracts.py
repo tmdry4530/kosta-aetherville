@@ -54,6 +54,7 @@ def test_god_command_uses_shared_request_and_response_models() -> None:
     assert body.accepted is True
     assert body.category == "environment"
     assert body.event.kind == "weather_changed"
+    assert body.ai_mode == "rules"
     assert Envelope.model_validate(body.envelope.model_dump()).type is EnvelopeType.EVENT
 
 

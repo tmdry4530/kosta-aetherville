@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from aetherville_schemas import GodCommand, WorldStatePayload
+from aetherville_server.orchestrator import GodCommandDispatcher
+from aetherville_server.orchestrator.vllm_command import GodCommandInterpretation
 from aetherville_server.sim import SimulationEngine
 
 
@@ -66,3 +68,28 @@ def test_taxi_command_adds_visible_taxi_tag() -> None:
     assert state.vehicles[0].display_tags[0] == "택시 호출"
     assert "민지에게 이동" in state.vehicles[0].display_tags
     assert state.learning.taxi_success_rate > 0.5
+
+
+class FakeInterpreter:
+    def interpret(self, command: GodCommand) -> GodCommandInterpretation:
+        del command
+        return GodCommandInterpretation(
+            category="infrastructure",
+            action="traffic_jam",
+            target="commute",
+            confidence=0.93,
+            reason="vLLM mapped the natural command to congestion",
+        )
+
+
+def test_god_command_response_exposes_vllm_interpretation_metadata() -> None:
+    engine = SimulationEngine()
+    engine.command_dispatcher = GodCommandDispatcher(interpreter=FakeInterpreter())
+
+    response = engine.execute_god_command(make_command("출근길 압박감을 만들어줘"))
+
+    assert response.ai_mode == "vllm"
+    assert response.ai_confidence == 0.93
+    assert response.ai_reason == "vLLM mapped the natural command to congestion"
+    assert response.event.metadata["ai_mode"] == "vllm"
+    assert response.event.metadata["action"] == "traffic_jam"
