@@ -563,3 +563,21 @@ Current demo UI state:
 - Browser smoke now requires those markers, so a future regression that hides the presentation impact UI will fail before the demo.
 
 Presenter cue: after the combined God Mode command, point to the HUD/cards first, then explain the specific rain/taxi/congestion/meeting state changes.
+
+## Screenshot visual smoke handoff — 2026-05-25T17:08:33+09:00
+
+Current demo gate:
+
+- Run `python3 scripts/demo_rehearsal.py --orchestrator-url http://127.0.0.1:18080 --client-url http://127.0.0.1:3000 --expected-client-endpoint http://127.0.0.1:18080` before presenting. It now includes the screenshot visual smoke by default.
+- To run only the visual gate:
+
+```bash
+python3 scripts/browser_visual_smoke.py \
+  --mode both \
+  --client-url http://127.0.0.1:3000 \
+  --expected-endpoint http://127.0.0.1:18080
+```
+
+Expected evidence: both live and replay screenshots are 1920x1080 PNGs, larger than 200 KB, visually diverse, and not blank. Artifacts go to ignored `dogfood-output/visual-smoke/` and must not be committed.
+
+Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.

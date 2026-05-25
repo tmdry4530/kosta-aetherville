@@ -850,6 +850,26 @@
         "presentation": "demo_script_checklist_runbook_updated_to_call_out_HUD_and_cards_after_God_Mode",
         "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
       }
+    },
+    {
+      "id": "M10-007",
+      "title": "Add screenshot-based browser visual smoke gate",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/10-polish-demo.md",
+      "depends_on": [
+        "M10-006"
+      ],
+      "unblocked_by": "visual_demo_gate_needed_after_scene_director_polish",
+      "last_checked_at": "2026-05-25T17:08:33+09:00",
+      "completed_at": "2026-05-25T17:08:33+09:00",
+      "diagnostics": {
+        "script": "scripts/browser_visual_smoke.py captures live and replay headless Chromium screenshots, validates PNG dimensions, file size, color diversity, luminance range, and DOM smoke markers",
+        "integration": "scripts/demo_rehearsal.py now includes visual smoke by default unless --skip-visual-smoke is set",
+        "artifacts": "screenshots are written under ignored dogfood-output/visual-smoke and are not committed",
+        "evidence": "live screenshot 942655 bytes unique_colors_1454 luma_range_236; replay screenshot 946968 bytes unique_colors_1750 luma_range_236",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+      }
     }
   ]
 }

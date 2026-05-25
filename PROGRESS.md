@@ -929,3 +929,12 @@
 - Updated browser smoke expectations so live/replay Chromium checks fail if the Scene Director and impact board disappear.
 - Updated the 15-minute script, runbook, readiness checklist, TASKS, and SESSION_HANDOFF to make the impact board part of the presentation gate.
 - Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## Screenshot visual smoke gate — 2026-05-25T17:08:33+09:00
+
+- Status: complete locally; the live browser demo now has a real screenshot-based visual QA gate in addition to DOM marker smoke.
+- Added `scripts/browser_visual_smoke.py`, which captures live/replay Chromium screenshots, validates 1920x1080 PNG dimensions, minimum bytes, sampled color diversity, luminance range, and optional DOM markers.
+- Integrated the visual gate into `scripts/demo_rehearsal.py`; the full rehearsal now runs it by default and offers `--skip-visual-smoke` only for environments where Chromium screenshots cannot run.
+- Verified current local client screenshots through the RunPod tunnel: live PNG `942655` bytes with `1454` sampled colors and luma range `236`; replay PNG `946968` bytes with `1750` sampled colors and luma range `236`.
+- Screenshot artifacts are written under ignored `dogfood-output/visual-smoke/`; root one-off captures were removed before commit.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.

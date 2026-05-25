@@ -54,6 +54,7 @@
 - [ ] `python3 scripts/demo_rehearsal.py --orchestrator-url http://127.0.0.1:18080 --client-url http://127.0.0.1:3000 --expected-client-endpoint http://127.0.0.1:18080` passes.
 - [ ] `python3 scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18080` passes with no client-side exception.
 - [ ] `python3 scripts/browser_demo_smoke.py --mode replay --url http://127.0.0.1:3000/replay` passes.
+- [ ] `python3 scripts/browser_visual_smoke.py --mode both --client-url http://127.0.0.1:3000 --expected-endpoint http://127.0.0.1:18080` passes and records 1920x1080 nonblank screenshots under ignored `dogfood-output/visual-smoke/`.
 - [ ] Live route `/` renders city state.
 - [ ] Replay route `/replay` works before the live demo begins.
 - [ ] `SCENE DIRECTOR · LIVE IMPACT` HUD and `Live impact board` are visible before God Mode, then active cards light up after the combined command.

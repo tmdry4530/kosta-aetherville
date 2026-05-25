@@ -276,9 +276,13 @@ python3 scripts/browser_demo_smoke.py \
 python3 scripts/browser_demo_smoke.py \
   --mode replay \
   --url http://127.0.0.1:3000/replay
+python3 scripts/browser_visual_smoke.py \
+  --mode both \
+  --client-url http://127.0.0.1:3000 \
+  --expected-endpoint "$RUNPOD_PUBLIC_ORCHESTRATOR_URL"
 ```
 
-The live route is dynamically server-rendered, so `next start` reads the selected endpoint values at process start and passes the runtime orchestrator URL into browser panels.
+The live route is dynamically server-rendered, so `next start` reads the selected endpoint values at process start and passes the runtime orchestrator URL into browser panels. The visual smoke writes screenshots to ignored `dogfood-output/visual-smoke/` and fails if the rendered PNG is the wrong viewport, too small, visually low-diversity, or missing the DOM demo markers.
 
 Open:
 
@@ -349,9 +353,13 @@ python3 scripts/browser_demo_smoke.py \
 python3 scripts/browser_demo_smoke.py \
   --mode replay \
   --url http://127.0.0.1:3000/replay
+python3 scripts/browser_visual_smoke.py \
+  --mode both \
+  --client-url http://127.0.0.1:3000 \
+  --expected-endpoint http://127.0.0.1:18080
 ```
 
-The live route is dynamically server-rendered, so `next start` reads the selected tunnel values at process start and passes the runtime orchestrator URL into browser panels.
+The live route is dynamically server-rendered, so `next start` reads the selected tunnel values at process start and passes the runtime orchestrator URL into browser panels. The visual smoke writes screenshots to ignored `dogfood-output/visual-smoke/` and verifies the 1920x1080 city render is not blank or visually collapsed.
 
 Full presenter rehearsal smoke after the client is running:
 
@@ -363,6 +371,7 @@ python3 scripts/demo_rehearsal.py \
 ```
 
 This one command verifies orchestrator dependencies, 4090 traffic policy and LSTM evidence, real vehicle camera mode, learning status, vLLM multi-action God Mode effects, live/replay browser smoke, and the `SCENE DIRECTOR · LIVE IMPACT` / `Live impact board` markers.
+By default it also runs the screenshot-based visual smoke. Use `--skip-visual-smoke` only when Chromium screenshots are impossible in the rehearsal environment, and record that as a skipped visual check.
 
 Open:
 

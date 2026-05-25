@@ -32,6 +32,7 @@ def main() -> None:
     parser.add_argument("--god-command", default=DEFAULT_COMMAND)
     parser.add_argument("--expect-ai-mode", default="vllm", choices=("vllm", "rules", "any"))
     parser.add_argument("--skip-browser", action="store_true")
+    parser.add_argument("--skip-visual-smoke", action="store_true")
     parser.add_argument("--skip-god-command", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
@@ -49,6 +50,7 @@ def main() -> None:
                     "expected_client_endpoint": expected_endpoint,
                     "god_command": args.god_command,
                     "skip_browser": args.skip_browser,
+                    "skip_visual_smoke": args.skip_visual_smoke,
                     "skip_god_command": args.skip_god_command,
                 },
                 ensure_ascii=False,
@@ -115,6 +117,8 @@ def main() -> None:
             )
         )
         checks.append(run_browser_smoke(mode="replay", url=f"{client_url}/replay"))
+        if not args.skip_visual_smoke:
+            checks.append(run_visual_smoke(client_url=client_url))
 
     failures = [check for check in checks if not check["ok"]]
     summary = {
@@ -227,6 +231,26 @@ def run_browser_smoke(mode: str, url: str, expected_endpoint: str | None = None)
         "expected": "exit 0",
         "actual": f"exit {result.returncode}",
         "detail": (result.stdout + result.stderr)[-1200:],
+    }
+
+
+def run_visual_smoke(client_url: str) -> dict[str, Any]:
+    command = [
+        sys.executable,
+        "scripts/browser_visual_smoke.py",
+        "--mode",
+        "both",
+        "--client-url",
+        client_url,
+        "--skip-dom-smoke",
+    ]
+    result = subprocess.run(command, check=False, capture_output=True, text=True, timeout=90)
+    return {
+        "name": "browser visual smoke",
+        "ok": result.returncode == 0,
+        "expected": "exit 0",
+        "actual": f"exit {result.returncode}",
+        "detail": (result.stdout + result.stderr)[-1600:],
     }
 
 
