@@ -425,3 +425,42 @@ Demo talking point:
 - God Mode is no longer only keyword matching in the real-AI demo mode. Natural text is first interpreted by the real RunPod vLLM into a constrained action vocabulary, then the deterministic dispatcher applies visible weather/taxi/traffic/relationship/person effects. If vLLM fails, the UI reports `rules fallback` and the demo remains safe.
 
 Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.
+
+## Multi-action God Mode handoff — 2026-05-25T14:51:04+09:00
+
+Current implementation state:
+
+- God Mode can now decompose one natural-language command into up to four safe actions.
+- Real vLLM mode should return `ai_actions`, for example `rain + traffic_jam + taxi_call + meeting`.
+- The simulation applies all deterministic sub-effects, records their concrete events, and adds a final `god_command_executed` summary event.
+- Rules fallback also handles obvious combined Korean commands, so use this presenter command for a strong demo smoke:
+
+```bash
+curl -fsS -H 'content-type: application/json' \
+  -d '{"kind":"god_command","input_modality":"text","raw_text":"도시에 비를 내리고 민지가 택시를 부르게 하고 출근길을 혼잡하게 만들고 민수와 만나게 해줘","audio_blob_b64":null,"user_id":"presenter"}' \
+  http://127.0.0.1:18080/api/v1/god/command | python3 -m json.tool
+```
+
+Expected markers after RunPod redeploy: `ai_mode="vllm"`, at least three `ai_actions`, visible rain, congestion tags, taxi dispatch, and meeting/talking state. Do not run Docker on this pod.
+
+## Multi-action God Mode deployment handoff — 2026-05-25T15:08:57+09:00
+
+Verified runtime state:
+
+- RunPod direct-process services are running without Docker.
+- Real vLLM, real YOLO, traffic policy checkpoint, and LSTM forecast checkpoint remain active.
+- Orchestrator was restarted after sync and now merges vLLM semantic actions with obvious literal command cues, preventing missed visible cues like “비” in multi-action prompts.
+- Verified smoke command returned `ai_actions=[rain, traffic_jam, taxi_call, meeting]`, event kind `god_command_executed`, and 9 events.
+- Verified state after smoke:
+  - weather: `rain`
+  - infrastructure: `traffic congestion active`
+  - taxi v01 passenger: `c01`
+  - congestion tags present on vehicle v02
+  - 민지 and 민수 are mutually talking
+- Local browser server is running on `http://127.0.0.1:3000/` through `next start` with tunnel endpoint values.
+
+Presenter command to use:
+
+`도시에 비를 내리고 민지가 택시를 부르게 하고 출근길을 혼잡하게 만들고 민수와 만나게 해줘`
+
+Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.

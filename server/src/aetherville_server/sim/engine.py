@@ -271,50 +271,55 @@ class SimulationEngine:
 
     def execute_god_command(self, command: GodCommand) -> GodCommandResponse:
         effect = self.command_dispatcher.dispatch(command)
-        if effect.weather is not None:
-            self._weather = effect.weather
-            self._weather_lock_until_tick = self.tick + 900
-        if effect.active_event is not None:
-            self._active_event = effect.active_event
-        if effect.infrastructure_status is not None:
-            self._infrastructure_status = effect.infrastructure_status
-        if effect.event.metadata.get("action") == "meeting":
-            source = str(effect.event.metadata.get("source", "c01"))
-            target = str(effect.event.metadata.get("target", "c02"))
-            self.citizens.activate_meeting(source, target)
-        if effect.event.metadata.get("action") == "taxi_call":
-            passenger_id = str(effect.event.metadata.get("passenger_id", "c01"))
-            vehicle_id = str(effect.event.metadata.get("vehicle_id", "v01"))
-            passenger = next(
-                (
-                    citizen
-                    for citizen in self.citizens.world_states(self.tick, self.running)
-                    if citizen.id == passenger_id
-                ),
-                None,
-            )
-            pickup_xz = (passenger.pos[0], passenger.pos[2]) if passenger else None
-            self.vehicles.request_taxi(
-                passenger_id,
-                vehicle_id=vehicle_id,
-                pickup_xz=pickup_xz,
-                requested_tick=self.tick,
-            )
-        if effect.event.metadata.get("action") == "traffic_jam":
-            self.vehicles.activate_congestion(self.tick)
 
         events: list[EventPayload] = []
-        for memory in effect.memories:
-            events.append(
-                self.citizens.append_memory(
-                    memory.citizen_id,
-                    memory.text,
-                    tick=self.tick,
-                    importance=0.72,
-                    tags=memory.tags,
+        application_effects = effect.sub_effects or (effect,)
+        for applied_effect in application_effects:
+            if applied_effect.weather is not None:
+                self._weather = applied_effect.weather
+                self._weather_lock_until_tick = self.tick + 900
+            if applied_effect.active_event is not None:
+                self._active_event = applied_effect.active_event
+            if applied_effect.infrastructure_status is not None:
+                self._infrastructure_status = applied_effect.infrastructure_status
+            if applied_effect.event.metadata.get("action") == "meeting":
+                source = str(applied_effect.event.metadata.get("source", "c01"))
+                target = str(applied_effect.event.metadata.get("target", "c02"))
+                self.citizens.activate_meeting(source, target)
+            if applied_effect.event.metadata.get("action") == "taxi_call":
+                passenger_id = str(applied_effect.event.metadata.get("passenger_id", "c01"))
+                vehicle_id = str(applied_effect.event.metadata.get("vehicle_id", "v01"))
+                passenger = next(
+                    (
+                        citizen
+                        for citizen in self.citizens.world_states(self.tick, self.running)
+                        if citizen.id == passenger_id
+                    ),
+                    None,
                 )
-            )
-        events.append(effect.event)
+                pickup_xz = (passenger.pos[0], passenger.pos[2]) if passenger else None
+                self.vehicles.request_taxi(
+                    passenger_id,
+                    vehicle_id=vehicle_id,
+                    pickup_xz=pickup_xz,
+                    requested_tick=self.tick,
+                )
+            if applied_effect.event.metadata.get("action") == "traffic_jam":
+                self.vehicles.activate_congestion(self.tick)
+            for memory in applied_effect.memories:
+                events.append(
+                    self.citizens.append_memory(
+                        memory.citizen_id,
+                        memory.text,
+                        tick=self.tick,
+                        importance=0.72,
+                        tags=memory.tags,
+                    )
+                )
+            events.append(applied_effect.event)
+
+        if effect.sub_effects:
+            events.append(effect.event)
         for event in events:
             self._record_event(event)
         envelopes = [self._event_envelope(event) for event in events]
@@ -330,6 +335,7 @@ class SimulationEngine:
             ai_mode=effect.ai_mode,
             ai_confidence=effect.ai_confidence,
             ai_reason=effect.ai_reason,
+            ai_actions=list(effect.ai_actions),
         )
 
     def _record_event(self, event: EventPayload) -> None:

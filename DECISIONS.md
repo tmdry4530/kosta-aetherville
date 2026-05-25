@@ -198,3 +198,15 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - Voice/STT remains a separate opt-in path; this ADR does not claim live STT or autonomous model self-training.
   - Docker remains excluded from the current RunPod execution strategy.
 - Revisit when: multi-action command planning is needed, voice transcription is approved, or public endpoint latency requires a separate command-understanding service.
+
+## ADR-017: Bound God Mode to multi-action city direction instead of single-effect commands
+
+- Status: accepted
+- Context: A single God Mode effect per command still made the live city feel scripted when the presenter asked for a richer situation such as rain, taxi, congestion, and a citizen meeting together. The vLLM path was already safe but intentionally selected only one primary action.
+- Decision: Allow vLLM to return one to four actions from the existing safe vocabulary and aggregate them into deterministic sub-effects. Keep arbitrary mutation disallowed. The rules fallback also decomposes obvious multi-intent Korean commands so demo reliability does not depend entirely on model latency.
+- Consequences:
+  - The presenter can create a visibly richer city scene with one natural-language command.
+  - The UI and API expose `ai_actions`, making the vLLM plan auditable during the demo.
+  - Each concrete sub-effect is still recorded as a normal event for learning/timeline behavior, followed by one summary event.
+  - Docker remains excluded from the current RunPod execution strategy.
+- Revisit when: command planning needs branching, undo/rollback, or a richer multi-agent director model.

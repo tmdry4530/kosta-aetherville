@@ -22,11 +22,12 @@
 When `AETHERVILLE_GOD_MODE_LLM=vllm` is set on the orchestrator, the command path is:
 
 1. Send presenter text to the OpenAI-compatible RunPod vLLM `/chat/completions` endpoint.
-2. Require a compact JSON classification with one safe action from the fixed vocabulary: `rain`, `clear`, `snow`, `traffic_jam`, `taxi_call`, `meeting`, `memory`, `person_update`, `relationship`, or `generic`.
-3. Apply only the existing deterministic dispatcher effect for that action.
-4. Return `GodCommandResponse.ai_mode`, `ai_confidence`, and `ai_reason` so the browser can display `vLLM NN%` or `rules fallback`.
+2. Require a compact JSON classification with one to four safe actions from the fixed vocabulary: `rain`, `clear`, `snow`, `traffic_jam`, `taxi_call`, `meeting`, `memory`, `person_update`, `relationship`, or `generic`.
+3. Apply only the existing deterministic dispatcher effects for those actions.
+4. Emit concrete sub-effect events plus one `god_command_executed` summary event for multi-action plans.
+5. Return `GodCommandResponse.ai_mode`, `ai_confidence`, `ai_reason`, and `ai_actions` so the browser can display `vLLM NN%`, the action sequence, or `rules fallback`.
 
-The model never executes arbitrary state changes. Timeout, invalid JSON, disabled env, or vLLM failure falls back to the deterministic rules dispatcher.
+The model never executes arbitrary state changes. Timeout, invalid JSON, disabled env, or vLLM failure falls back to the deterministic rules dispatcher, which also handles obvious multi-intent commands such as rain + taxi + traffic.
 
 ## Broadcast behavior
 

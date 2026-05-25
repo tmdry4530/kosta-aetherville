@@ -48,8 +48,8 @@
 
 ## 11:00–13:30 — God Mode command demo + AI learning panel
 
-- Enter a text command such as “출근길을 혼잡하게 만들어줘” or use a macro button.
-- Point out `vLLM NN%` in the God Mode result when `AETHERVILLE_GOD_MODE_LLM=vllm` is enabled; if it says `rules fallback`, explain the safety fallback.
+- Enter a multi-action text command such as “도시에 비를 내리고 민지가 택시를 부르게 하고 출근길을 혼잡하게 만들고 민수와 만나게 해줘” or use a macro button.
+- Point out `vLLM NN%` and the `actions: rain + traffic_jam + taxi_call + meeting` sequence when `AETHERVILLE_GOD_MODE_LLM=vllm` is enabled; if it says `rules fallback`, explain the safety fallback.
 - Confirm the visible world-state effect and event timeline update.
 - Show the `AI 학습 루프` panel and point out experience count, epoch, policy
   version, traffic bias, and taxi success signal changing after commands.

@@ -95,3 +95,58 @@ def test_dispatcher_falls_back_to_rules_when_vllm_interpretation_missing() -> No
     assert effect.category == "environment"
     assert effect.ai_mode == "rules"
     assert effect.event.metadata["ai_mode"] == "rules"
+
+
+def test_vllm_interpretation_accepts_bounded_multi_action_plan() -> None:
+    interpretation = _interpret_payload(
+        {
+            "category": "event",
+            "action": "rain",
+            "actions": ["rain", "traffic_jam", "taxi_call", "meeting", "snow"],
+            "target": "city demo",
+            "confidence": 0.84,
+            "reason": "Presenter requested a combined scene",
+        }
+    )
+
+    assert interpretation is not None
+    assert interpretation.actions == ("rain", "traffic_jam", "taxi_call", "meeting")
+    assert interpretation.category == "environment"
+
+
+def test_dispatcher_builds_multi_effect_from_vllm_plan() -> None:
+    dispatcher = GodCommandDispatcher(
+        interpreter=FakeInterpreter(
+            GodCommandInterpretation(
+                category="environment",
+                action="rain",
+                secondary_actions=("traffic_jam", "taxi_call", "meeting"),
+                target="city demo",
+                confidence=0.9,
+                reason="multi-scene direction",
+            )
+        )
+    )
+
+    effect = dispatcher.dispatch(command("비 오게 하고 민지가 택시를 부르고 도로가 막혀 있게 해줘"))
+
+    assert effect.event.kind == "god_command_executed"
+    assert effect.event.metadata["action"] == "multi_action"
+    assert effect.ai_actions == ("rain", "traffic_jam", "taxi_call", "meeting")
+    assert [child.event.metadata["action"] for child in effect.sub_effects] == [
+        "rain",
+        "traffic_jam",
+        "taxi_call",
+        "meeting",
+    ]
+    assert all(child.event.metadata["ai_mode"] == "vllm" for child in effect.sub_effects)
+
+
+def test_rules_path_supports_multi_action_demo_macro() -> None:
+    dispatcher = GodCommandDispatcher(interpreter=FakeInterpreter(None))
+
+    effect = dispatcher.dispatch(command("비 오고 민지가 택시를 부르고 교통량도 증가시켜"))
+
+    assert effect.ai_mode == "rules"
+    assert effect.ai_actions == ("rain", "traffic_jam", "taxi_call")
+    assert effect.event.metadata["action"] == "multi_action"

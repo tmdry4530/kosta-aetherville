@@ -99,3 +99,12 @@
 - Safety: vLLM only classifies text into a fixed safe action vocabulary; deterministic dispatcher applies effects.
 - Contract/UI evidence: `GodCommandResponse` includes `ai_mode`, `ai_confidence`, and `ai_reason`; browser God Mode result displays `vLLM NN%` or `rules fallback`.
 - Verification: targeted schema/orchestrator/simulation/API tests passed locally; RunPod smoke should confirm `ai_mode=vllm` after direct-process redeploy.
+
+
+## Real 4090 multi-action God Mode direction — 2026-05-25
+
+- Runtime flag: `AETHERVILLE_GOD_MODE_LLM=vllm`.
+- Capability: one natural-language command can produce a bounded action sequence such as `rain + traffic_jam + taxi_call + meeting`.
+- Safety: every action still maps to deterministic dispatcher effects; arbitrary state mutation remains disallowed.
+- Contract/UI evidence: `GodCommandResponse.ai_actions` and event metadata expose the decomposed plan.
+- Verification: targeted orchestrator/simulation/schema tests passed locally; RunPod smoke should confirm multi-action `ai_mode=vllm` after redeploy.

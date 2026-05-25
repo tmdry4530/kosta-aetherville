@@ -311,6 +311,7 @@ export interface GodCommandResponse {
   ai_mode: 'rules' | 'vllm';
   ai_confidence?: number | null;
   ai_reason?: string | null;
+  ai_actions: string[];
 }
 
 export interface ServiceStatus {

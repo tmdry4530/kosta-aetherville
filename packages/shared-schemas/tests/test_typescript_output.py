@@ -12,6 +12,7 @@ def test_generated_typescript_contract_exists() -> None:
     assert "export type CommandPayload" in text
     assert "export interface SimStatusResponse" in text
     assert "export interface GodCommandResponse" in text
+    assert "ai_actions: string[]" in text
     assert "export interface CitizenDetailResponse" in text
     assert "export interface MemoryRecord" in text
     assert "export interface DialogueResponse" in text

@@ -721,6 +721,28 @@
         "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
         "runpod": "sync_only_deploy_then_orchestrator_only_restart_preserved_existing_real_vllm_and_real_yolo; direct health passed with AETHERVILLE_VLLM_MODE=real; local tunnel God command returned ai_mode_vllm action_traffic_jam"
       }
+    },
+    {
+      "id": "M8-008",
+      "title": "Expand God Mode into bounded vLLM multi-action city direction",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/09-god-mode.md",
+      "depends_on": [
+        "M8-007"
+      ],
+      "unblocked_by": "active_master_goal_extreme_4090_demo_continuation",
+      "last_checked_at": "2026-05-25T15:08:57+09:00",
+      "completed_at": "2026-05-25T15:08:57+09:00",
+      "diagnostics": {
+        "schema": "GodCommandResponse now carries ai_actions so the client can show decomposed command plans",
+        "backend": "vLLM interpretation accepts one_to_four safe actions and dispatcher aggregates deterministic sub_effects before recording one multi_action summary event",
+        "fallback": "rules path also decomposes obvious multi_intent Korean commands such as rain_plus_taxi_plus_traffic",
+        "client": "local_next_start_restarted_on_port_3000_with_tunnel_NEXT_PUBLIC_urls; index_and_replay_http_smokes_passed",
+        "verification": "json_bash_gitdiff_pytest_ruff_mypy_pnpm_lint_test_typecheck_e2e_build_passed",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
+        "runpod": "sync_only_deploy_then_orchestrator_only_restart_preserved_real_vllm_yolo; multi_action_smoke_returned_ai_mode_vllm_ai_actions_rain_traffic_jam_taxi_call_meeting_event_count_9_and_world_state_rain_congestion_taxi_meeting"
+      }
     }
   ]
 }

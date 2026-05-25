@@ -50,7 +50,11 @@ export function GodModeMicPanel({ mode, worldState }: GodModeMicPanelProps) {
           ? `vLLM ${Math.round((responsePayload.ai_confidence ?? 0) * 100)}%`
           : 'rules fallback';
       const aiReason = responsePayload.ai_reason ? ` · ${responsePayload.ai_reason}` : '';
-      setLastResult(`${aiBadge} · ${responsePayload.category}: ${responsePayload.event.message}${aiReason}`);
+      const aiActions = responsePayload.ai_actions ?? [];
+      const actionBadge = aiActions.length ? ` · actions: ${aiActions.join(' + ')}` : '';
+      setLastResult(
+        `${aiBadge}${actionBadge} · ${responsePayload.category}: ${responsePayload.event.message}${aiReason}`
+      );
     } catch {
       setLastResult('offline fallback: command queued for replay/demo');
     }

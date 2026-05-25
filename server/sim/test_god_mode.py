@@ -93,3 +93,39 @@ def test_god_command_response_exposes_vllm_interpretation_metadata() -> None:
     assert response.ai_reason == "vLLM mapped the natural command to congestion"
     assert response.event.metadata["ai_mode"] == "vllm"
     assert response.event.metadata["action"] == "traffic_jam"
+
+
+class MultiFakeInterpreter:
+    def interpret(self, command: GodCommand) -> GodCommandInterpretation:
+        del command
+        return GodCommandInterpretation(
+            category="environment",
+            action="rain",
+            secondary_actions=("traffic_jam", "taxi_call", "meeting"),
+            target="demo scene",
+            confidence=0.96,
+            reason="vLLM decomposed a combined presenter command",
+        )
+
+
+def test_multi_action_god_command_applies_all_visible_effects() -> None:
+    engine = SimulationEngine()
+    engine.command_dispatcher = GodCommandDispatcher(interpreter=MultiFakeInterpreter())
+
+    response = engine.execute_god_command(
+        make_command("비 오게 하고 민지가 택시를 부르고 민수와 만나게 하고 교통량을 늘려줘")
+    )
+    state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+    minji = next(citizen for citizen in state.citizens if citizen.name == "민지")
+    minsu = next(citizen for citizen in state.citizens if citizen.name == "민수")
+
+    assert response.ai_mode == "vllm"
+    assert response.ai_actions == ["rain", "traffic_jam", "taxi_call", "meeting"]
+    assert response.event.kind == "god_command_executed"
+    assert len(response.events) >= 6
+    assert state.world.weather == "rain"
+    assert state.world.infrastructure_status == "traffic congestion active"
+    assert state.vehicles[0].passenger_id == "c01"
+    assert state.vehicles[1].display_tags[:2] == ["정체", "저속"]
+    assert minji.talking_to == minsu.id
+    assert minsu.talking_to == minji.id

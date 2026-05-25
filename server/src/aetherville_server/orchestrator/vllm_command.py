@@ -68,6 +68,17 @@ class GodCommandInterpretation:
     confidence: float
     reason: str
     source: Literal["vllm"] = "vllm"
+    secondary_actions: tuple[GodCommandAction, ...] = ()
+
+    @property
+    def actions(self) -> tuple[GodCommandAction, ...]:
+        """Return the deduplicated bounded action sequence requested by vLLM."""
+
+        ordered: list[GodCommandAction] = []
+        for action in (self.action, *self.secondary_actions):
+            if action not in ordered:
+                ordered.append(action)
+        return tuple(ordered)
 
 
 class VllmGodCommandInterpreter:
@@ -125,7 +136,7 @@ class VllmGodCommandInterpreter:
                 },
                 {"role": "user", "content": prompt},
             ],
-            "max_tokens": 160,
+            "max_tokens": 220,
             "temperature": 0.0,
         }
         request = urllib.request.Request(
@@ -144,7 +155,7 @@ class VllmGodCommandInterpreter:
     @staticmethod
     def _prompt(raw_text: str) -> str:
         return (
-            "Classify the presenter command into one safe Aetherville action.\n"
+            "Classify the presenter command into one to four safe Aetherville actions.\n"
             "Allowed categories: environment, event, person, infrastructure, relationship.\n"
             "Allowed actions: rain, clear, snow, traffic_jam, taxi_call, meeting, memory, "
             "person_update, relationship, generic.\n"
@@ -154,8 +165,10 @@ class VllmGodCommandInterpreter:
             "- taxi_call means a citizen requests taxi v01.\n"
             "- meeting means named citizens should meet/talk.\n"
             "- memory/person_update means a citizen receives a remembered intervention.\n"
-            "- If several effects are requested, choose the most visible primary demo action.\n"
-            "Return exactly JSON with keys: category, action, target, confidence, reason.\n"
+            "- If several effects are requested, include them in actions in execution order.\n"
+            "- Keep actions to at most four items and only use the allowed action strings.\n"
+            "Return exactly JSON with keys: category, action, actions, target, "
+            "confidence, reason.\n"
             f"Command: {raw_text}"
         )
 
@@ -174,10 +187,9 @@ def _extract_json(content: str) -> dict[str, Any] | None:
 
 def _interpret_payload(payload: dict[str, Any]) -> GodCommandInterpretation | None:
     raw_category = str(payload.get("category", "event")).strip().lower()
-    raw_action = str(payload.get("action", "generic")).strip().lower()
-    if raw_action not in _ALLOWED_ACTIONS:
-        raw_action = "generic"
-    normalized_category = _ACTION_CATEGORY.get(raw_action, raw_category)
+    raw_actions = _coerce_actions(payload)
+    primary_action = raw_actions[0] if raw_actions else "generic"
+    normalized_category = _ACTION_CATEGORY.get(primary_action, raw_category)
     if normalized_category not in _ALLOWED_CATEGORIES:
         normalized_category = "event"
     confidence = _coerce_confidence(payload.get("confidence"))
@@ -189,11 +201,33 @@ def _interpret_payload(payload: dict[str, Any]) -> GodCommandInterpretation | No
         reason = "vLLM classified the God Mode command"
     return GodCommandInterpretation(
         category=normalized_category,  # type: ignore[arg-type]
-        action=raw_action,  # type: ignore[arg-type]
+        action=primary_action,  # type: ignore[arg-type]
         target=target,
         confidence=confidence,
         reason=reason,
+        secondary_actions=tuple(raw_actions[1:]),  # type: ignore[arg-type]
     )
+
+
+def _coerce_actions(payload: dict[str, Any]) -> list[str]:
+    raw_actions = payload.get("actions")
+    candidates: list[Any]
+    if isinstance(raw_actions, list):
+        candidates = raw_actions
+    else:
+        candidates = [payload.get("action", "generic")]
+    actions: list[str] = []
+    for candidate in candidates:
+        action = str(candidate).strip().lower()
+        if action not in _ALLOWED_ACTIONS:
+            continue
+        if action not in actions:
+            actions.append(action)
+        if len(actions) >= 4:
+            break
+    if not actions:
+        actions.append("generic")
+    return actions
 
 
 def _coerce_confidence(value: Any) -> float:

@@ -13,7 +13,12 @@ from typing import Literal, Protocol
 
 from aetherville_schemas import EventPayload, GodCommand
 
-from .vllm_command import GodCommandCategory, GodCommandInterpretation, VllmGodCommandInterpreter
+from .vllm_command import (
+    GodCommandAction,
+    GodCommandCategory,
+    GodCommandInterpretation,
+    VllmGodCommandInterpreter,
+)
 
 NAME_TO_CITIZEN_ID = {
     "민지": "c01",
@@ -48,6 +53,8 @@ class GodCommandEffect:
     ai_mode: Literal["rules", "vllm"] = "rules"
     ai_confidence: float | None = None
     ai_reason: str | None = None
+    ai_actions: tuple[GodCommandAction, ...] = ()
+    sub_effects: tuple[GodCommandEffect, ...] = ()
 
 
 class GodCommandDispatcher:
@@ -72,6 +79,15 @@ class GodCommandDispatcher:
     def _dispatch_by_rules(self, command: GodCommand) -> GodCommandEffect:
         text = command.raw_text.strip()
         lowered = text.lower()
+        rule_actions = self._actions_from_text(text, lowered)
+        if len(rule_actions) > 1:
+            return self._multi_effect_from_actions(
+                text,
+                rule_actions,
+                ai_mode="rules",
+                confidence=None,
+                reason=None,
+            )
         category = self.classify(text)
         if category == "environment":
             weather = self._weather_from_text(text, lowered)
@@ -139,8 +155,43 @@ class GodCommandDispatcher:
     def _effect_from_interpretation(
         self, text: str, interpretation: GodCommandInterpretation
     ) -> GodCommandEffect:
-        action = interpretation.action
-        if action in {"rain", "clear", "snow"} or interpretation.category == "environment":
+        actions = self._merge_interpreted_and_rule_actions(text, interpretation.actions)
+        if len(actions) > 1:
+            return self._multi_effect_from_actions(
+                text,
+                actions,
+                ai_mode=interpretation.source,
+                confidence=interpretation.confidence,
+                reason=interpretation.reason,
+                target=interpretation.target,
+            )
+        action = actions[0]
+        return self._effect_from_action(text, action, fallback_category=interpretation.category)
+
+    def _merge_interpreted_and_rule_actions(
+        self, text: str, interpreted_actions: tuple[GodCommandAction, ...]
+    ) -> tuple[GodCommandAction, ...]:
+        """Keep vLLM semantic intent but restore obvious literal demo cues it missed."""
+
+        rule_actions = self._actions_from_text(text, text.lower())
+        if rule_actions == ("generic",):
+            return interpreted_actions
+        merged: list[GodCommandAction] = []
+        for action in (*rule_actions, *interpreted_actions):
+            if action != "generic" and action not in merged:
+                merged.append(action)
+            if len(merged) >= 4:
+                break
+        return tuple(merged) or interpreted_actions
+
+    def _effect_from_action(
+        self,
+        text: str,
+        action: GodCommandAction,
+        *,
+        fallback_category: GodCommandCategory = "event",
+    ) -> GodCommandEffect:
+        if action in {"rain", "clear", "snow"} or fallback_category == "environment":
             weather = (
                 action
                 if action in {"rain", "clear", "snow"}
@@ -180,9 +231,9 @@ class GodCommandDispatcher:
                     },
                 ),
             )
-        if action == "meeting" or interpretation.category == "relationship":
-            return self._relationship_effect(text)
-        if action in {"memory", "person_update"} or interpretation.category == "person":
+        if action == "meeting" or fallback_category == "relationship":
+            return self._relationship_effect(text, force_meeting=action == "meeting")
+        if action in {"memory", "person_update"} or fallback_category == "person":
             return self._person_effect(text)
         return GodCommandEffect(
             category="event",
@@ -194,16 +245,68 @@ class GodCommandDispatcher:
             ),
         )
 
+    def _multi_effect_from_actions(
+        self,
+        text: str,
+        actions: tuple[GodCommandAction, ...],
+        *,
+        ai_mode: Literal["rules", "vllm"],
+        confidence: float | None,
+        reason: str | None,
+        target: str | None = None,
+    ) -> GodCommandEffect:
+        children = tuple(
+            self._effect_from_action(text, action, fallback_category="event") for action in actions
+        )
+        for index, child in enumerate(children):
+            child.event.metadata.update(
+                {
+                    "ai_mode": ai_mode,
+                    "ai_actions": list(actions),
+                    "ai_sequence_index": index,
+                }
+            )
+            if confidence is not None:
+                child.event.metadata["ai_confidence"] = confidence
+            if reason:
+                child.event.metadata["ai_reason"] = reason
+            if target:
+                child.event.metadata["ai_target"] = target
+        return GodCommandEffect(
+            category=children[0].category if children else "event",
+            active_event="multi-action intervention",
+            event=EventPayload(
+                kind="god_command_executed",
+                message=f"God Mode executed {len(children)} effects: {', '.join(actions)}",
+                metadata={
+                    "category": "event",
+                    "action": "multi_action",
+                    "ai_mode": ai_mode,
+                    "ai_actions": list(actions),
+                    "ai_confidence": confidence,
+                    "ai_reason": reason,
+                    "ai_target": target,
+                },
+            ),
+            ai_mode=ai_mode,
+            ai_confidence=confidence,
+            ai_reason=reason,
+            ai_actions=actions,
+            sub_effects=children,
+        )
+
     @staticmethod
     def _decorate_with_interpretation(
         effect: GodCommandEffect, interpretation: GodCommandInterpretation
     ) -> GodCommandEffect:
+        actions = effect.ai_actions or interpretation.actions
         effect.event.metadata.update(
             {
                 "ai_mode": interpretation.source,
-                "ai_action": interpretation.action,
+                "ai_action": actions[0],
                 "ai_confidence": interpretation.confidence,
                 "ai_reason": interpretation.reason,
+                "ai_actions": list(actions),
             }
         )
         if interpretation.target is not None:
@@ -218,12 +321,43 @@ class GodCommandDispatcher:
             ai_mode=interpretation.source,
             ai_confidence=interpretation.confidence,
             ai_reason=interpretation.reason,
+            ai_actions=actions,
+            sub_effects=effect.sub_effects,
         )
 
     @staticmethod
     def _decorate_with_rules(effect: GodCommandEffect) -> GodCommandEffect:
         effect.event.metadata.setdefault("ai_mode", "rules")
         return effect
+
+    def _actions_from_text(self, text: str, lowered: str) -> tuple[GodCommandAction, ...]:
+        actions: list[GodCommandAction] = []
+        if any(keyword in text for keyword in ("비", "폭우")) or "rain" in lowered:
+            actions.append("rain")
+        elif "눈" in text or "snow" in lowered:
+            actions.append("snow")
+        elif any(keyword in text for keyword in ("맑", "날씨")) or any(
+            keyword in lowered for keyword in ("clear", "sun", "weather")
+        ):
+            actions.append("clear")
+        if any(keyword in text for keyword in ("정체", "교통량", "혼잡", "막혀")) or any(
+            keyword in lowered for keyword in ("traffic jam", "congestion", "jam")
+        ):
+            actions.append("traffic_jam")
+        if "택시" in text or "taxi" in lowered:
+            actions.append("taxi_call")
+        relationship_keywords = ("관계", "친구", "대화", "만나", "만난", "만날", "만남")
+        if any(keyword in text for keyword in relationship_keywords) or any(
+            keyword in lowered for keyword in ("relationship", "friend", "rival", "meet")
+        ):
+            actions.append("meeting")
+        if not actions:
+            actions.append("generic")
+        deduped: list[GodCommandAction] = []
+        for action in actions:
+            if action not in deduped:
+                deduped.append(action)
+        return tuple(deduped[:4])
 
     def classify(self, text: str) -> GodCommandCategory:
         lowered = text.lower()
@@ -287,14 +421,14 @@ class GodCommandDispatcher:
         )
 
     @staticmethod
-    def _relationship_effect(text: str) -> GodCommandEffect:
+    def _relationship_effect(text: str, *, force_meeting: bool = False) -> GodCommandEffect:
         source_id, source_name = _first_named_citizen(text, default=("c01", "민지"))
         target_id, target_name = _second_named_citizen(
             text,
             source_id=source_id,
             default=("c02", "민수") if source_id != "c02" else ("c01", "민지"),
         )
-        is_meeting = (
+        is_meeting = force_meeting or (
             "만나" in text
             or "만난" in text
             or "만날" in text

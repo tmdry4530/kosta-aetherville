@@ -849,3 +849,22 @@
 - Local tunnel God Mode smoke passed: `출근길을 혼잡하게 만들어줘` returned `ai_mode=vllm`, `ai_confidence=1.0`, event action `traffic_jam`, and world state showed `traffic_ai=checkpoint/torch_cuda`, `traffic_forecast_ai=lstm_checkpoint/torch_cuda`, and congestion tags on vehicles.
 - Local Next production server was rebuilt with tunnel `NEXT_PUBLIC_*` values and restarted on port `3000`; `/` and `/replay` HTTP smokes passed.
 - Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## Real 4090 vLLM multi-action God Mode direction — 2026-05-25T14:51:04+09:00
+
+- Status: complete locally; direct-process RunPod redeploy/smoke follows in this turn.
+- Expanded the vLLM God Mode interpreter from one primary action to a bounded one-to-four action plan, still limited to the audited safe vocabulary.
+- The deterministic dispatcher now aggregates sub-effects for combined commands such as rain + traffic congestion + taxi dispatch + citizen meeting, records every concrete event, then emits a `god_command_executed` summary event.
+- The rules fallback also decomposes obvious multi-intent Korean commands, so the live demo remains visually strong even if vLLM falls back.
+- `GodCommandResponse.ai_actions` and the browser God Mode result now expose the decomposed action sequence.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries remain excluded.
+
+## Real 4090 vLLM multi-action God Mode deployment — 2026-05-25T15:08:57+09:00
+
+- Status: complete and deployed to the verified direct-process RunPod runtime.
+- Sync used tar-over-SSH fallback; existing real vLLM and real YOLO processes were preserved, then only the orchestrator was restarted with the updated multi-action interpreter.
+- Direct health passed with `AETHERVILLE_VLLM_MODE=real`: orchestrator `ok`, vision `yolo:ok`, vLLM model list returned `Qwen/Qwen2.5-14B-Instruct-AWQ`, Redis memory fallback active.
+- RunPod multi-action God Mode smoke passed: the command “도시에 비를 내리고 민지가 택시를 부르게 하고 출근길을 혼잡하게 만들고 민수와 만나게 해줘” returned `ai_mode=vllm`, `ai_actions=[rain, traffic_jam, taxi_call, meeting]`, `god_command_executed`, and 9 concrete/summary events.
+- World-state smoke after the command proved all visible effects: weather `rain`, infrastructure `traffic congestion active`, taxi `v01` passenger `c01`, vehicle congestion tags, and 민지/민수 talking state.
+- Local Next production server was restarted on port `3000` with tunnel `NEXT_PUBLIC_*` values; `/` and `/replay` HTTP smokes passed.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.

@@ -89,11 +89,13 @@ def test_god_command_response_contract_exposes_ai_interpretation_metadata() -> N
             "ai_mode": "vllm",
             "ai_confidence": 0.87,
             "ai_reason": "vLLM selected traffic_jam",
+            "ai_actions": ["traffic_jam"],
         }
     )
 
     assert response.ai_mode == "vllm"
     assert response.ai_confidence == 0.87
+    assert response.ai_actions == ["traffic_jam"]
 
     with pytest.raises(ValidationError):
         GodCommandResponse.model_validate(

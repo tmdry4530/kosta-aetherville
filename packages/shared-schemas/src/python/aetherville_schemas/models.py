@@ -330,6 +330,7 @@ class GodCommandResponse(StrictModel):
     ai_mode: Literal["rules", "vllm"] = "rules"
     ai_confidence: float | None = Field(default=None, ge=0, le=1)
     ai_reason: str | None = None
+    ai_actions: list[str] = Field(default_factory=list)
 
 
 class ServiceStatus(StrictModel):
