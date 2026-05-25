@@ -59,6 +59,7 @@
 - [ ] Live route `/` renders city state.
 - [ ] Replay route `/replay` works before the live demo begins.
 - [ ] `SCENE DIRECTOR · LIVE IMPACT` HUD and `Live impact board` are visible before God Mode, then active cards light up after the combined command.
+- [ ] `RunPod AI proof` / `4090 실행 증거` panel is visible and shows vLLM, YOLO vision, STT, 4090 policy, 4090 LSTM, adaptive loop, and direct-process runtime evidence.
 - [ ] God Mode text command has been tested once.
 - [ ] `AI 학습 루프` panel is visible, and presenter says it is persistent
       deterministic adaptation rather than real neural-weight training.

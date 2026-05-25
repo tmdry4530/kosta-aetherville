@@ -607,3 +607,28 @@ python3 scripts/browser_impact_smoke.py \
 Expected evidence: before weather is `clear`, after weather is `rain`, vLLM returns `rain + traffic_jam + taxi_call + meeting`, taxi/congestion/meeting state is present, and sampled screenshot pixel delta is nonzero. Latest verified run: mean RGB delta `11.036`, changed sample ratio `0.4531`.
 
 Do not commit `dogfood-output/impact-smoke/` screenshots. Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.
+
+## RunPod AI proof panel handoff — 2026-05-25T17:53:50+09:00
+
+Current presentation proof:
+
+- The live UI includes `RunPod AI proof` / `4090 실행 증거` next to the Scene Director panel.
+- It should show these evidence rows when connected to the current RunPod tunnel: vLLM LLM, YOLO vision, STT voice, 4090 policy, 4090 LSTM, adaptive loop, and direct-process runtime.
+- The panel is intentionally truthful: if health polling fails, it marks services offline/fallback instead of claiming active real AI.
+- `scripts/browser_demo_smoke.py` now fails if this proof panel disappears.
+
+Pre-demo gate remains:
+
+```bash
+python3 scripts/demo_rehearsal.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --client-url http://127.0.0.1:3000 \
+  --expected-client-endpoint http://127.0.0.1:18080
+```
+
+Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.
+
+Verification update — 2026-05-25T18:04:10+09:00:
+
+- Full `scripts/demo_rehearsal.py --orchestrator-url http://127.0.0.1:18080 --client-url http://127.0.0.1:3000 --expected-client-endpoint http://127.0.0.1:18080` passed after a fresh `pnpm --filter @aetherville/client build` and local `next start` restart.
+- Browser smoke found the RunPod proof markers; impact smoke reported mean RGB delta `22.062` and changed sample ratio `0.6373`.

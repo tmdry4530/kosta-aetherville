@@ -379,7 +379,7 @@ python3 scripts/demo_rehearsal.py \
 ```
 
 This one command verifies orchestrator dependencies, 4090 traffic policy and LSTM evidence, real vehicle camera mode, learning status, vLLM multi-action God Mode effects, live/replay browser smoke, and the `SCENE DIRECTOR · LIVE IMPACT` / `Live impact board` markers.
-By default it also runs the screenshot-based visual smoke and before/after impact smoke. Use `--skip-visual-smoke` or `--skip-impact-smoke` only when Chromium screenshots are impossible in the rehearsal environment, and record that as a skipped visual check.
+It also verifies the browser contains the `RunPod AI proof` / `4090 실행 증거` panel. By default it runs the screenshot-based visual smoke and before/after impact smoke. Use `--skip-visual-smoke` or `--skip-impact-smoke` only when Chromium screenshots are impossible in the rehearsal environment, and record that as a skipped visual check.
 
 Open:
 

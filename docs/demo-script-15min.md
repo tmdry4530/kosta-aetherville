@@ -15,6 +15,7 @@
 - Point out the `SCENE DIRECTOR · LIVE IMPACT` HUD first, then weather, tick count, citizens, vehicles, drones, traffic lights, and
   connection status.
 - If challenged that the scene looks like a loop, show the impact-smoke result: it reset to clear, sent the God Mode command, then measured a before/after pixel delta and verified rain/taxi/traffic/meeting state changes.
+- Point out the `RunPod AI proof` / `4090 실행 증거` panel before opening individual panels: vLLM, YOLO vision, faster-whisper STT, 4090 traffic policy, 4090 LSTM forecast, adaptive loop, and direct-process runtime should all be visible or honestly marked as fallback/offline.
 - Explain that state arrives from the orchestrator REST/Socket.IO contract.
 
 ## 5:00–7:00 — Citizen and memory panel

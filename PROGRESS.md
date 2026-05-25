@@ -947,3 +947,17 @@
 - Integrated the impact smoke into `scripts/demo_rehearsal.py`; full rehearsal now runs it by default, with `--skip-impact-smoke` only for environments where screenshots cannot run.
 - Verification evidence: impact smoke passed with `ai_mode=vllm`, `ai_actions=[rain, traffic_jam, taxi_call, meeting]`, clear→rain world state, taxi dispatch, congestion tags, citizen meeting, mean RGB delta `11.036`, and changed sample ratio `0.4531`.
 - Screenshot artifacts are written under ignored `dogfood-output/impact-smoke/` and are not committed. Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## RunPod 4090 AI proof panel — 2026-05-25T17:53:50+09:00
+
+- Status: complete locally; the live browser UI now has an explicit `RunPod AI proof` / `4090 실행 증거` panel for presentation truthfulness.
+- Added `RunPodProofPanel`, which combines `/api/v1/health` dependency status with shared world state to show vLLM, YOLO vision, faster-whisper STT, 4090 traffic policy, 4090 LSTM forecast, adaptive loop, and direct-process/no-Docker runtime evidence.
+- `SidePanels` now receives the server-fetched initial RunPod world state on the live route, so proof/traffic/learning panels no longer start from replay fallback before Socket.IO hydration.
+- Browser smoke now requires the RunPod proof markers on both live and replay routes, while the panel honestly shows fallback/offline states if the live orchestrator is not available.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+Verification update — 2026-05-25T18:04:10+09:00:
+
+- Full `scripts/demo_rehearsal.py` passed after rebuilding/restarting the local production client with tunnel envs.
+- Browser smoke confirmed `RunPod AI proof` / `4090 실행 증거` markers on live and replay routes.
+- Impact smoke after the proof panel update measured mean RGB delta `22.062` and changed sample ratio `0.6373` while vLLM returned `rain + traffic_jam + taxi_call + meeting`.

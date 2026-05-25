@@ -38,7 +38,7 @@ export default async function HomePage() {
       <ConnectionBridge socketUrl={config.socketUrl} transports={config.socketTransports} />
       <section className="sceneColumn" aria-label="Live city state">
         <CityPlaceholder initialWorldState={initialWorldState} />
-        <SidePanels orchestratorUrl={config.orchestratorUrl} />
+        <SidePanels orchestratorUrl={config.orchestratorUrl} initialWorldState={initialWorldState} />
       </section>
     </main>
   );

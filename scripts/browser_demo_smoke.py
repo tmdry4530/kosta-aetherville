@@ -15,6 +15,8 @@ import sys
 COMMON_PANEL_MARKERS = (
     "SCENE DIRECTOR · LIVE IMPACT",
     "Live impact board",
+    "RunPod AI proof",
+    "4090 실행 증거",
     "Memory stream",
     "Vehicle cam",
     "Traffic forecast",

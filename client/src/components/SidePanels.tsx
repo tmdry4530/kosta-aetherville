@@ -7,11 +7,14 @@ import { useConnectionStore } from '@/store/connection';
 import { GodModeMicPanel } from '@/ui/GodModeMicPanel';
 import { LearningPanel } from '@/ui/LearningPanel';
 import { MemoryPanel } from '@/ui/MemoryPanel';
+import { RunPodProofPanel } from '@/ui/RunPodProofPanel';
 import { SceneImpactPanel } from '@/ui/SceneImpactPanel';
 import { TrafficChartPanel } from '@/ui/TrafficChartPanel';
 import { VehicleCamPanel } from '@/ui/VehicleCamPanel';
 
-function usePanelWorldState(): { tick: number; worldState: WorldStatePayload; mode: string } {
+function usePanelWorldState(
+  initialWorldState: WorldStatePayload | null
+): { tick: number; worldState: WorldStatePayload; mode: string } {
   const tick = useConnectionStore((state) => state.lastTick);
   const liveWorldState = useConnectionStore((state) => state.lastWorldState);
   const mode = useConnectionStore((state) => state.state);
@@ -19,21 +22,28 @@ function usePanelWorldState(): { tick: number; worldState: WorldStatePayload; mo
   return useMemo(
     () => ({
       tick,
-      worldState: liveWorldState ?? createFallbackWorldState(tick),
+      worldState: liveWorldState ?? initialWorldState ?? createFallbackWorldState(tick),
       mode
     }),
-    [liveWorldState, mode, tick]
+    [initialWorldState, liveWorldState, mode, tick]
   );
 }
 
-export function SidePanels({ orchestratorUrl }: { orchestratorUrl: string | null }) {
-  const { tick, worldState, mode } = usePanelWorldState();
+export function SidePanels({
+  orchestratorUrl,
+  initialWorldState = null
+}: {
+  orchestratorUrl: string | null;
+  initialWorldState?: WorldStatePayload | null;
+}) {
+  const { tick, worldState, mode } = usePanelWorldState(initialWorldState);
   const primaryCitizen = worldState.citizens[0];
   const primaryVehicle = worldState.vehicles[0];
 
   return (
     <section className="panelDeck" aria-label="Aetherville side panels">
       <SceneImpactPanel worldState={worldState} />
+      <RunPodProofPanel worldState={worldState} orchestratorUrl={orchestratorUrl} />
       <MemoryPanel citizen={primaryCitizen} tick={tick} worldState={worldState} />
       <VehicleCamPanel vehicle={primaryVehicle} orchestratorUrl={orchestratorUrl} />
       <TrafficChartPanel
