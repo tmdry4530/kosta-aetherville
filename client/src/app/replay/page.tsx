@@ -20,7 +20,7 @@ export default function ReplayPage() {
       <ReplayDriver />
       <section className="sceneColumn" aria-label="Replay city state">
         <CityPlaceholder />
-        <SidePanels />
+        <SidePanels orchestratorUrl={null} />
       </section>
     </main>
   );

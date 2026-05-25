@@ -25,7 +25,7 @@ function usePanelWorldState(): { tick: number; worldState: WorldStatePayload; mo
   );
 }
 
-export function SidePanels() {
+export function SidePanels({ orchestratorUrl }: { orchestratorUrl: string | null }) {
   const { tick, worldState, mode } = usePanelWorldState();
   const primaryCitizen = worldState.citizens[0];
   const primaryVehicle = worldState.vehicles[0];
@@ -33,14 +33,14 @@ export function SidePanels() {
   return (
     <section className="panelDeck" aria-label="Aetherville side panels">
       <MemoryPanel citizen={primaryCitizen} tick={tick} worldState={worldState} />
-      <VehicleCamPanel vehicle={primaryVehicle} />
+      <VehicleCamPanel vehicle={primaryVehicle} orchestratorUrl={orchestratorUrl} />
       <TrafficChartPanel
         forecast={worldState.traffic_forecast}
         trafficAi={worldState.traffic_ai}
         forecastAi={worldState.traffic_forecast_ai}
       />
       <LearningPanel learning={worldState.learning} />
-      <GodModeMicPanel mode={mode} worldState={worldState} />
+      <GodModeMicPanel mode={mode} worldState={worldState} orchestratorUrl={orchestratorUrl} />
     </section>
   );
 }

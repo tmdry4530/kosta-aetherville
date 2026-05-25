@@ -48,8 +48,11 @@
 - [ ] Local client starts with `NEXT_PUBLIC_ORCHESTRATOR_URL`,
       `NEXT_PUBLIC_SOCKET_URL`, and `NEXT_PUBLIC_SOCKET_TRANSPORTS=polling`
       set to the selected endpoint.
-- [ ] If using `next build && next start` instead of `pnpm dev`, the build was
-      created with the same selected `NEXT_PUBLIC_*` endpoint values.
+- [ ] If using `next build && next start` instead of `pnpm dev`, `next start` was
+      launched with the selected `NEXT_PUBLIC_*` endpoint values; the live route is
+      dynamic and reads them at process start.
+- [ ] `python3 scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18080` passes with no client-side exception.
+- [ ] `python3 scripts/browser_demo_smoke.py --mode replay --url http://127.0.0.1:3000/replay` passes.
 - [ ] Live route `/` renders city state.
 - [ ] Replay route `/replay` works before the live demo begins.
 - [ ] God Mode text command has been tested once.

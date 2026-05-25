@@ -529,3 +529,15 @@ Presentation truthfulness:
 - Server-side faster-whisper STT is verified with a real audio blob.
 - Live browser microphone still depends on browser permission/codecs; claim it as real microphone STT only when the UI/API response shows `stt_status=ok`.
 - Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.
+
+## Browser demo endpoint/runtime handoff — 2026-05-25T16:12:00+09:00
+
+Verified local client state:
+
+- `next build` now reports the live `/` route as dynamic server-rendered on demand.
+- `next start` was launched with tunnel `NEXT_PUBLIC_*` values and rendered `http://127.0.0.1:18080` in the live endpoint grid.
+- `scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18080` passed: required demo panels were present and no client-side application error marker appeared.
+- `scripts/browser_demo_smoke.py --mode replay --url http://127.0.0.1:3000/replay` passed.
+- Replay mode passes `orchestratorUrl=null`, so it stays deterministic and does not accidentally call live camera/God Mode endpoints.
+
+Use this browser smoke before presenting because plain `curl /` cannot catch hydrated client-side errors or stale endpoint rendering.

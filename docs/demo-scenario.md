@@ -2,11 +2,9 @@
 
 ## Screen layout
 
-- Main: 3D city view
-- Right top: Memory stream for selected citizen
-- Right middle: Vehicle cam + YOLO boxes
-- Bottom left: Traffic forecast chart
-- Bottom right: God Mode mic/text command
+- Top: RunPod endpoint/connection controls and fallback navigation
+- Middle: large 3D city view with scene legend, weather, traffic, and actor labels
+- Bottom panel deck: Memory stream, Vehicle cam + YOLO boxes, Traffic forecast, AI learning loop, and God Mode mic/text command
 
 ## 15-minute flow
 

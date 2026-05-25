@@ -32,15 +32,19 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(configSource, /'polling'/);
   assert.match(connectionBridgeSource, /transport:/);
   assert.match(pageSource, /SidePanels/);
+  assert.match(pageSource, /force-dynamic/);
+  assert.match(pageSource, /orchestratorUrl=\{config\.orchestratorUrl\}/);
   assert.match(pageSource, /Replay fallback 열기/);
   assert.ok(pageSource.includes('href="/replay"'));
   assert.match(replaySource, /ReplayDriver/);
+  assert.match(replaySource, /orchestratorUrl=\{null\}/);
   assert.match(replaySource, /Live city로 돌아가기/);
   assert.match(sidePanelSource, /MemoryPanel/);
   assert.match(sidePanelSource, /VehicleCamPanel/);
   assert.match(sidePanelSource, /TrafficChartPanel/);
   assert.match(sidePanelSource, /LearningPanel/);
   assert.match(sidePanelSource, /GodModeMicPanel/);
+  assert.match(sidePanelSource, /orchestratorUrl: string \| null/);
   assert.match(memoryPanelSource, /MemoryRecord/);
   assert.match(godModeSource, /GodCommandResponse/);
   assert.match(godModeSource, /GodCommand/);
@@ -50,6 +54,8 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(godModeSource, /VoiceCommandResponse/);
   assert.match(godModeSource, /MediaRecorder/);
   assert.match(godModeSource, /Voice STT/);
+  assert.match(godModeSource, /orchestratorUrl: string \| null/);
+  assert.doesNotMatch(godModeSource, /process\.env\.NEXT_PUBLIC_ORCHESTRATOR_URL/);
   assert.match(godModeSource, /민지·민수 만남/);
   assert.match(godModeSource, /택시 호출/);
   assert.match(trafficPanelSource, /TrafficForecastPoint/);
@@ -63,6 +69,8 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(learningPanelSource, /learningMetrics/);
   assert.match(vehiclePanelSource, /YoloDetection/);
   assert.match(vehiclePanelSource, /VehicleCameraFrame/);
+  assert.match(vehiclePanelSource, /orchestratorUrl: string \| null/);
+  assert.doesNotMatch(vehiclePanelSource, /getClientConfig/);
   assert.ok(vehiclePanelSource.includes('/api/v1/vehicles/'));
   assert.match(vehiclePanelSource, /REAL YOLO · RunPod 4090/);
   assert.match(vehiclePanelSource, /cameraBox/);

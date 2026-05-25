@@ -4,6 +4,8 @@ import { ConnectionBridge } from '@/components/ConnectionBridge';
 import { SidePanels } from '@/components/SidePanels';
 import { getClientConfig } from '@/lib/config';
 
+export const dynamic = 'force-dynamic';
+
 export default function HomePage() {
   const config = getClientConfig();
 
@@ -34,7 +36,7 @@ export default function HomePage() {
       <ConnectionBridge socketUrl={config.socketUrl} transports={config.socketTransports} />
       <section className="sceneColumn" aria-label="Live city state">
         <CityPlaceholder />
-        <SidePanels />
+        <SidePanels orchestratorUrl={config.orchestratorUrl} />
       </section>
     </main>
   );

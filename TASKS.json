@@ -790,6 +790,26 @@
         "truthfulness": "server_side_real_audio_stt_verified; human_browser_microphone_still_requires_ui_response_stt_status_ok",
         "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
       }
+    },
+    {
+      "id": "M10-004",
+      "title": "Harden production browser demo endpoint runtime smoke",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/10-polish-demo.md",
+      "depends_on": [
+        "M8-010"
+      ],
+      "unblocked_by": "headless_chromium_demo_audit_found_stale_endpoint_risk",
+      "last_checked_at": "2026-05-25T16:12:00+09:00",
+      "completed_at": "2026-05-25T16:12:00+09:00",
+      "diagnostics": {
+        "client_runtime": "live_page_force_dynamic_and_runtime_orchestrator_url_passed_to_side_panels_vehicle_camera_god_mode",
+        "replay": "replay_route_passes_orchestratorUrl_null_to_prevent_live_endpoint_calls",
+        "browser_smoke": "scripts_browser_demo_smoke_py_verified_live_route_expected_endpoint_panels_no_application_error_and_replay_route_panels_no_application_error",
+        "build": "pnpm_filter_client_build_reports_live_route_dynamic_server_rendered_on_demand",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+      }
     }
   ]
 }

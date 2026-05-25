@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { VehicleCameraFrame, VehicleState, YoloDetection } from '@aetherville/shared-schemas';
-import { getClientConfig } from '@/lib/config';
 
 interface VehicleCamPanelProps {
   vehicle: VehicleState | undefined;
+  orchestratorUrl: string | null;
 }
 
 function boxStyle(detection: YoloDetection, width: number, height: number): CSSProperties {
@@ -19,13 +19,13 @@ function boxStyle(detection: YoloDetection, width: number, height: number): CSSP
   };
 }
 
-export function VehicleCamPanel({ vehicle }: VehicleCamPanelProps) {
+export function VehicleCamPanel({ vehicle, orchestratorUrl }: VehicleCamPanelProps) {
   const [cameraFrame, setCameraFrame] = useState<VehicleCameraFrame | null>(null);
   const [cameraStatus, setCameraStatus] = useState<'state' | 'loading' | 'live' | 'offline'>('state');
   const vehicleId = vehicle?.id;
 
   useEffect(() => {
-    if (!vehicleId) {
+    if (!vehicleId || !orchestratorUrl) {
       setCameraFrame(null);
       setCameraStatus('state');
       return;
@@ -33,12 +33,12 @@ export function VehicleCamPanel({ vehicle }: VehicleCamPanelProps) {
 
     let cancelled = false;
     let timer: number | undefined;
-    const orchestratorUrl = getClientConfig().orchestratorUrl.replace(/\/$/, '');
+    const baseUrl = orchestratorUrl.replace(/\/$/, '');
 
     const fetchCameraFrame = async () => {
       setCameraStatus((current) => (current === 'live' ? 'live' : 'loading'));
       try {
-        const response = await fetch(`${orchestratorUrl}/api/v1/vehicles/${encodeURIComponent(vehicleId)}/camera`, {
+        const response = await fetch(`${baseUrl}/api/v1/vehicles/${encodeURIComponent(vehicleId)}/camera`, {
           cache: 'no-store'
         });
         if (!response.ok) {
@@ -68,7 +68,7 @@ export function VehicleCamPanel({ vehicle }: VehicleCamPanelProps) {
         window.clearTimeout(timer);
       }
     };
-  }, [vehicleId]);
+  }, [orchestratorUrl, vehicleId]);
 
   const detections = cameraFrame ? cameraFrame.detections : (vehicle?.yolo_detections ?? []);
   const frameWidth = cameraFrame?.width ?? 320;

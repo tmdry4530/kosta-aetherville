@@ -900,3 +900,13 @@
 - Real-audio smoke passed: transcript `도시에 비를 내리고 민지가 택시를 부르게 해줘`, `stt_status=ok`, `stt_mode=faster_whisper`, detail `model=base device=cuda compute=int8_float16`, nested `command.accepted=true`, `ai_mode=vllm`, and `ai_actions=[rain, taxi_call]`.
 - Updated demo runbook, metrics, God Mode docs, demo script, readiness checklist, TASKS, and SESSION_HANDOFF to distinguish server-side real-audio STT proof from live browser microphone QA.
 - Temporary audio/TTS artifacts were not committed. Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## Browser demo runtime endpoint smoke hardening — 2026-05-25T16:12:00+09:00
+
+- Status: complete locally; no RunPod service restart required.
+- Headless Chromium demo audit found that plain `curl /` was too weak: the production page could render stale `http://localhost:8080` endpoint values if `next start` was launched after a build made with different `NEXT_PUBLIC_*` values.
+- Updated the live Next page to `force-dynamic` and passed the runtime orchestrator URL into `SidePanels`, `VehicleCamPanel`, and `GodModeMicPanel` as props. Vehicle camera and God Mode browser calls no longer read stale client-bundle endpoint constants.
+- Replay mode now passes `orchestratorUrl=null`, keeping replay deterministic and preventing background live camera/God Mode calls.
+- Added `scripts/browser_demo_smoke.py` to run headless Chromium against live and replay routes, check required demo panels, verify selected endpoint rendering, and fail on Next client-side error markers.
+- Verified production-style `next build && next start` with tunnel envs: live browser smoke saw `http://127.0.0.1:18080`, all core panels, no application error; replay smoke also passed.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.

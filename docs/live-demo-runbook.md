@@ -254,11 +254,31 @@ pnpm dev
 ```
 
 
-> Production build note: `NEXT_PUBLIC_*` values are baked into the Next.js
-> bundle at build time. For demo safety, prefer `pnpm dev` as shown above. If
-> using `next build && next start`, run the build command with the same
-> `NEXT_PUBLIC_ORCHESTRATOR_URL`, `NEXT_PUBLIC_SOCKET_URL`, and
-> `NEXT_PUBLIC_SOCKET_TRANSPORTS` values selected for Mode A.
+Production-style browser smoke after `next build && next start`:
+
+Terminal 1:
+
+```bash
+pnpm --filter @aetherville/client build
+NEXT_PUBLIC_ORCHESTRATOR_URL="$RUNPOD_PUBLIC_ORCHESTRATOR_URL" \
+NEXT_PUBLIC_SOCKET_URL="${RUNPOD_PUBLIC_SOCKET_URL:-$RUNPOD_PUBLIC_ORCHESTRATOR_URL}" \
+NEXT_PUBLIC_SOCKET_TRANSPORTS="${NEXT_PUBLIC_SOCKET_TRANSPORTS:-polling}" \
+pnpm --filter @aetherville/client exec next start -H 0.0.0.0 -p 3000
+```
+
+Terminal 2:
+
+```bash
+python3 scripts/browser_demo_smoke.py \
+  --mode live \
+  --url http://127.0.0.1:3000/ \
+  --expected-endpoint "$RUNPOD_PUBLIC_ORCHESTRATOR_URL"
+python3 scripts/browser_demo_smoke.py \
+  --mode replay \
+  --url http://127.0.0.1:3000/replay
+```
+
+The live route is dynamically server-rendered, so `next start` reads the selected endpoint values at process start and passes the runtime orchestrator URL into browser panels.
 
 Open:
 
@@ -307,10 +327,31 @@ pnpm dev
 ```
 
 
-> Production build note: `NEXT_PUBLIC_*` values are baked into the Next.js
-> bundle at build time. For demo safety, prefer `pnpm dev` as shown above. If
-> using `next build && next start`, run the build command with the same tunnel
-> endpoint values shown here.
+Production-style browser smoke after `next build && next start`:
+
+Terminal 1:
+
+```bash
+pnpm --filter @aetherville/client build
+NEXT_PUBLIC_ORCHESTRATOR_URL=http://127.0.0.1:18080 \
+NEXT_PUBLIC_SOCKET_URL=http://127.0.0.1:18080 \
+NEXT_PUBLIC_SOCKET_TRANSPORTS=polling \
+pnpm --filter @aetherville/client exec next start -H 0.0.0.0 -p 3000
+```
+
+Terminal 2:
+
+```bash
+python3 scripts/browser_demo_smoke.py \
+  --mode live \
+  --url http://127.0.0.1:3000/ \
+  --expected-endpoint http://127.0.0.1:18080
+python3 scripts/browser_demo_smoke.py \
+  --mode replay \
+  --url http://127.0.0.1:3000/replay
+```
+
+The live route is dynamically server-rendered, so `next start` reads the selected tunnel values at process start and passes the runtime orchestrator URL into browser panels.
 
 Open:
 

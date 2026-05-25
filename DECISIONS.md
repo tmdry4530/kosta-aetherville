@@ -234,3 +234,14 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - No generated audio artifact is committed; temporary TTS/audio files stay outside the repository.
   - Docker remains excluded from the current RunPod execution strategy.
 - Revisit when: a human browser microphone smoke is recorded, or STT is split into a dedicated service with its own health and benchmark report.
+
+## ADR-020: Production client reads demo endpoints at Next start time
+
+- Status: accepted
+- Context: The local demo often runs with `next build && next start`, but `NEXT_PUBLIC_*` values can be baked into a static bundle and become stale if the RunPod tunnel changes after build.
+- Decision: Force the live page to dynamic server rendering and pass the runtime orchestrator URL into browser panels as props. The vehicle camera and God Mode client calls now use that prop instead of reading `process.env.NEXT_PUBLIC_ORCHESTRATOR_URL` inside the browser bundle.
+- Consequences:
+  - Starting `next start` with Mode A public URLs or Mode B tunnel URLs updates the rendered endpoint display and browser REST calls without rebuilding.
+  - Replay mode disables live camera/God Mode REST calls by passing a null orchestrator URL, keeping fallback deterministic.
+  - `scripts/browser_demo_smoke.py` now catches hydrated client-side exceptions and stale endpoint rendering that plain `curl` cannot detect.
+- Revisit when: a dedicated runtime config endpoint or public deployment platform replaces local `next start` demos.

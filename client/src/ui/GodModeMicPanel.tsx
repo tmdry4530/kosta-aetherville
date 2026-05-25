@@ -12,6 +12,7 @@ import type {
 interface GodModeMicPanelProps {
   mode: string;
   worldState: WorldStatePayload;
+  orchestratorUrl: string | null;
 }
 
 const MACROS = [
@@ -21,7 +22,7 @@ const MACROS = [
   { label: '차량 정체', text: '동쪽 도로에 정체 이벤트를 만들어줘' }
 ];
 
-export function GodModeMicPanel({ mode, worldState }: GodModeMicPanelProps) {
+export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMicPanelProps) {
   const [text, setText] = useState('민지랑 민수가 만난다');
   const [lastResult, setLastResult] = useState<string>('text fallback ready');
   const [recorder, setRecorder] = useState<MediaRecorder | null>(null);
@@ -31,7 +32,11 @@ export function GodModeMicPanel({ mode, worldState }: GodModeMicPanelProps) {
     setText(rawText);
     setLastResult('sending command...');
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_ORCHESTRATOR_URL ?? 'http://localhost:8080';
+      if (!orchestratorUrl) {
+        setLastResult('live orchestrator unavailable; use replay fallback');
+        return;
+      }
+      const baseUrl = orchestratorUrl;
       const commandPayload: GodCommand = {
         kind: 'god_command',
         input_modality: 'text',
@@ -68,7 +73,11 @@ export function GodModeMicPanel({ mode, worldState }: GodModeMicPanelProps) {
   async function submitVoiceCommand(audioBlobB64: string, mimeType: string) {
     setLastResult('transcribing voice command...');
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_ORCHESTRATOR_URL ?? 'http://localhost:8080';
+      if (!orchestratorUrl) {
+        setLastResult('live orchestrator unavailable; use replay fallback');
+        return;
+      }
+      const baseUrl = orchestratorUrl;
       const voicePayload: VoiceCommandRequest = {
         kind: 'voice_command',
         audio_blob_b64: audioBlobB64,
