@@ -256,6 +256,30 @@ export function createFallbackWorldState(tick = 0): WorldStatePayload {
       weather_bias: Math.min(1, Math.floor(tick / 90) * 0.08),
       last_updated_tick: tick,
       insights: ['Replay fallback에서도 학습 패널 형태를 유지합니다.']
+    },
+    city_ai: {
+      mode: 'rules',
+      status: 'applied',
+      plan_id: `replay_city_${Math.floor(tick / 120)}`,
+      last_planned_tick: Math.max(0, tick - (tick % 120)),
+      next_plan_tick: Math.max(120, tick - (tick % 120) + 120),
+      summary: 'Replay 도시 AI가 시민 이동·교통·날씨 상황을 순환 계획합니다.',
+      actions: [
+        {
+          type: 'move_citizen',
+          actor_id: 'c03',
+          target_id: 'c01',
+          vehicle_id: null,
+          destination_actor_id: 'c01',
+          destination: null,
+          weather: null,
+          memory: null,
+          label: '민지에게 자율 이동',
+          after: null,
+          reason: 'replay fallback city planner'
+        }
+      ],
+      reason: 'replay fallback city planner'
     }
   };
 }

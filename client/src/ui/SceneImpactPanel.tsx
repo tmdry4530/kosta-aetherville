@@ -26,6 +26,7 @@ export function buildImpactItems(worldState: WorldStatePayload): ImpactItem[] {
   const taxi = worldState.vehicles.find((vehicle) => vehicle.id === 'v01');
   const minji = worldState.citizens.find((citizen) => citizen.id === 'c01' || citizen.name === '민지');
   const minsu = worldState.citizens.find((citizen) => citizen.id === 'c02' || citizen.name === '민수');
+  const cityAiActions = worldState.city_ai.actions.map((action) => action.type).join(', ');
 
   return [
     {
@@ -60,6 +61,12 @@ export function buildImpactItems(worldState: WorldStatePayload): ImpactItem[] {
         minsu?.talking_to === minji?.id ||
         tags.includes('대화') ||
         activeEvent.includes('relationship')
+    },
+    {
+      key: 'city-ai',
+      label: 'CITY AI',
+      detail: `${worldState.city_ai.mode}/${worldState.city_ai.status} · ${cityAiActions || worldState.city_ai.summary}`,
+      active: worldState.city_ai.mode !== 'disabled' && worldState.city_ai.status === 'applied'
     },
     {
       key: 'gpu-policy',
@@ -101,7 +108,8 @@ export function SceneImpactPanel({ worldState }: SceneImpactPanelProps) {
       </div>
       <small className="impactLearning">
         AI 학습 루프: {learning.policy_version} · 경험 {learning.experience_count} · taxi{' '}
-        {Math.round(learning.taxi_success_rate * 100)}%
+        {Math.round(learning.taxi_success_rate * 100)}% · 도시 AI {worldState.city_ai.mode}/
+        {worldState.city_ai.status}
       </small>
     </article>
   );

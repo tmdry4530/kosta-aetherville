@@ -632,3 +632,50 @@ Verification update — 2026-05-25T18:04:10+09:00:
 
 - Full `scripts/demo_rehearsal.py --orchestrator-url http://127.0.0.1:18080 --client-url http://127.0.0.1:3000 --expected-client-endpoint http://127.0.0.1:18080` passed after a fresh `pnpm --filter @aetherville/client build` and local `next start` restart.
 - Browser smoke found the RunPod proof markers; impact smoke reported mean RGB delta `22.062` and changed sample ratio `0.6373`.
+
+## vLLM autonomous City AI handoff — 2026-05-25T21:37:47+09:00
+
+Current branch: `feat/llm-driven-city-loop`.
+
+What changed:
+
+- Shared schemas now include `CityWorldContext`, `CityAiAction`, `CityAiPlan`, `CityAiSnapshot`, `WorldStatePayload.city_ai`, and `city_ai_plan` events.
+- Server now has `aetherville_server.city_ai` with:
+  - deterministic rules fallback,
+  - OpenAI-compatible vLLM planner,
+  - JSON extraction/coercion into bounded actions.
+- `SimulationEngine` periodically builds city context, calls the planner off the tick loop via `asyncio.to_thread`, validates actions, records timeline events, and applies visible city mutations.
+- Citizen runtime supports temporary AI-directed movement with `AI계획` tags and non-looping target motion.
+- Browser 3D scene and Scene Director expose `CITY AI PLAN`, city AI status, and focus on the AI-selected actor/vehicle.
+- `scripts/city_ai_smoke.py` verifies that the autonomous planner applied a non-empty plan, recorded `city_ai_plan`, and produced actor movement or visible execution markers.
+- RunPod direct-process scripts pass `AETHERVILLE_CITY_AI_MODE`, `AETHERVILLE_CITY_AI_INTERVAL_TICKS`, and `AETHERVILLE_CITY_AI_LLM_TIMEOUT_SEC` into the orchestrator.
+
+Current verified runtime:
+
+- RunPod orchestrator direct process is running with `AETHERVILLE_CITY_AI_MODE=vllm` and short planning interval for demo proof.
+- vLLM real model endpoint, vision `18001`, STT, traffic policy/LSTM checkpoint paths, and Redis memory fallback health passed.
+- Remote City AI smoke passed in-pod against `http://127.0.0.1:8080` with `city_ai.mode=vllm` and `actions=[call_taxi, meet]`.
+- Local tunnel City AI smoke passed against `http://127.0.0.1:18080` with `actions=[move_citizen, call_taxi]`, visible `AI계획` and taxi dispatch markers.
+- Local Next production server was restarted on `0.0.0.0:3000` with tunnel endpoints and live browser smoke passed.
+
+Commands to recheck quickly:
+
+```bash
+python3 scripts/city_ai_smoke.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --expect-mode vllm \
+  --wait-seconds 20 \
+  --post-plan-seconds 2
+
+python3 scripts/browser_demo_smoke.py \
+  --mode live \
+  --url http://127.0.0.1:3000/ \
+  --expected-endpoint http://127.0.0.1:18080
+```
+
+Truthfulness constraints:
+
+- It is now fair to say vLLM is selecting bounded city plans when `city_ai.mode=vllm` is visible/verified.
+- Do not say vLLM is directly animating every frame; Python simulation executors apply the model's high-level actions.
+- Do not say the model is self-training just because the server stays on; separate approved training jobs are still required for new model weights.
+- Keep using direct-process runtime only. Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on the current pod.

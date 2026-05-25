@@ -117,3 +117,11 @@
 - Runtime: default fallback/stub mode, optional `AETHERVILLE_STT_MODE=faster_whisper` for real STT.
 - Truthfulness: `stt_status` distinguishes real transcription from typed fallback.
 - Verification: local schema/API/voice tests passed; RunPod fallback smoke passed; real-audio smoke using a temporary Korean WAV returned `stt_status=ok`, `stt_mode=faster_whisper`, transcript match, and `ai_actions=[rain, taxi_call]`.
+
+## Real 4090 autonomous City AI smoke — 2026-05-25
+
+- Runtime flag: `AETHERVILLE_CITY_AI_MODE=vllm` with interval-scoped planning.
+- Model path: existing RunPod vLLM OpenAI-compatible endpoint serving `Qwen/Qwen2.5-14B-Instruct-AWQ`.
+- Safety: vLLM returns bounded `CityAiPlan` JSON only; Python simulation executors apply citizen movement, taxi, meeting, memory, traffic, and weather actions.
+- Remote in-pod verification: `scripts/city_ai_smoke.py --orchestrator-url http://127.0.0.1:8080 --expect-mode vllm --wait-seconds 50 --post-plan-seconds 4` passed with `city_ai.mode=vllm`, `status=applied`, `actions=[call_taxi, meet]`, observed actor/vehicle movement, taxi dispatch marker, and `city_ai_plan` timeline event.
+- Local tunnel verification: `scripts/city_ai_smoke.py --orchestrator-url http://127.0.0.1:18080 --expect-mode vllm --wait-seconds 20 --post-plan-seconds 2` passed with `actions=[move_citizen, call_taxi]`, observed movement, `AI계획`, taxi dispatch marker, and `city_ai_plan` timeline event.

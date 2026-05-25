@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "real_4090_vllm_yolo_traffic_policy_and_lstm_forecast_active",
+  "status": "llm_city_loop_verified_pending_push",
   "source_prd": "source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -911,6 +911,28 @@
         "truthfulness": "Panel shows fallback/offline states instead of claiming unavailable services; direct-process/no-Docker runtime is explicit",
         "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
         "verification": "full_demo_rehearsal_passed_with_RunPod_AI_proof_markers_dom_bytes_live_27711_replay_14047_and_impact_smoke_mean_rgb_delta_22.062_changed_sample_ratio_0.6373"
+      }
+    },
+    {
+      "id": "M11-001",
+      "title": "Add interval-scoped vLLM autonomous City AI planning loop",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "active-thread-goal: llm-driven-city-loop",
+      "depends_on": [
+        "M10-009"
+      ],
+      "unblocked_by": "user_requested_real_ai_driven_city_after_looping_demo_feedback",
+      "last_checked_at": "2026-05-25T21:37:47+09:00",
+      "completed_at": "2026-05-25T21:37:47+09:00",
+      "diagnostics": {
+        "schemas": "CityWorldContext CityAiAction CityAiPlan CityAiSnapshot added to shared Pydantic source and generated TypeScript; WorldStatePayload.city_ai and city_ai_plan event are in the contract",
+        "backend": "SimulationEngine builds CityWorldContext, calls vLLM or rules planner on interval, validates bounded JSON actions, and executes citizen movement taxi meeting memory traffic and weather through Python executors",
+        "client": "3D city and Scene Director now surface CITY AI PLAN, city AI status, actor focus, and AI계획/taxi markers from shared world state",
+        "runpod_runtime": "targeted sync deployed changes; orchestrator restarted direct-process only with AETHERVILLE_CITY_AI_MODE=vllm and existing real vLLM/YOLO/STT/traffic paths preserved",
+        "smoke": "RunPod city_ai_smoke passed mode_vllm status_applied actions_call_taxi_meet_then_local_tunnel_passed actions_move_citizen_call_taxi with movement markers",
+        "verification": "uv_run_pytest_47_passed ruff_passed mypy_passed pnpm_lint_passed pnpm_typecheck_passed pnpm_test_passed pnpm_test_e2e_passed client_build_passed browser_live_smoke_passed git_diff_check_passed",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
       }
     }
   ]

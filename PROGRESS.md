@@ -961,3 +961,39 @@ Verification update — 2026-05-25T18:04:10+09:00:
 - Full `scripts/demo_rehearsal.py` passed after rebuilding/restarting the local production client with tunnel envs.
 - Browser smoke confirmed `RunPod AI proof` / `4090 실행 증거` markers on live and replay routes.
 - Impact smoke after the proof panel update measured mean RGB delta `22.062` and changed sample ratio `0.6373` while vLLM returned `rain + traffic_jam + taxi_call + meeting`.
+
+## M11 — vLLM Autonomous City AI Loop — 2026-05-25T21:37:47+09:00
+
+- Status: complete on branch `feat/llm-driven-city-loop` pending commit/push at the time of this update.
+- Added interval-scoped City AI planning so the city is no longer only deterministic loop motion:
+  - `CityWorldContext` summarizes citizens, vehicles, weather, traffic, learning, and recent events.
+  - `OpenAICompatibleCityPlanner` calls the RunPod vLLM OpenAI-compatible endpoint only on an interval/event window, never per tick.
+  - vLLM output is constrained to `CityAiPlan` JSON with safe actions: citizen movement, taxi dispatch, meeting, memory, traffic surge, weather, or no-op.
+  - `SimulationEngine` validates plans and applies state only through Python executors.
+  - Citizens can receive AI movement directives and visibly carry `AI계획` tags while moving.
+  - `WorldStatePayload.city_ai` and `city_ai_plan` timeline events expose what the city AI decided.
+  - Client Scene Director / 3D HUD now shows `CITY AI PLAN`, city AI mode/status, and actor focus derived from shared world state.
+- Direct-process RunPod state:
+  - SSH/GPU read-only verification succeeded after one transient SSH timeout retry; GPU remains NVIDIA GeForce RTX 4090.
+  - Docker was not run.
+  - Targeted tar-over-SSH sync was used because full repo tar sync can hang and remote `rsync` is unavailable.
+  - Orchestrator was restarted only; existing real vLLM, real YOLO vision, STT, and traffic checkpoint paths were preserved.
+  - Direct health passed for orchestrator, vision `18001`, real vLLM `8000/v1`, and Redis memory fallback.
+- RunPod City AI smoke evidence:
+  - Remote in-pod smoke: `scripts/city_ai_smoke.py --orchestrator-url http://127.0.0.1:8080 --expect-mode vllm --wait-seconds 50 --post-plan-seconds 4` passed with `mode=vllm`, `status=applied`, actions `call_taxi, meet`, movement observed for `c01`, `c02`, `v01`, and `city_ai_plan` in timeline.
+  - Local tunnel smoke: `python3 scripts/city_ai_smoke.py --orchestrator-url http://127.0.0.1:18080 --expect-mode vllm --wait-seconds 20 --post-plan-seconds 2` passed with actions `move_citizen, call_taxi`, movement observed for `c01`, `c03`, `c04`, `v01`, and markers `citizen_ai_directive`, `taxi_dispatch`.
+- Local verification passed:
+  - `uv run pytest` — 47 passed.
+  - `uv run ruff check server packages scripts` — pass.
+  - `uv run mypy server packages` — pass.
+  - `python3 -m py_compile scripts/city_ai_smoke.py` — pass.
+  - `bash -n infra/runpod/*.sh` — pass.
+  - `python3 -m json.tool TASKS.json` — pass.
+  - `pnpm lint` — pass.
+  - `pnpm typecheck` — pass.
+  - `pnpm test` — 3 passed.
+  - `pnpm test:e2e` — 1 passed.
+  - `pnpm --filter @aetherville/client build` — pass.
+  - `git diff --check` — pass.
+  - `scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18080` — pass.
+- Operational note: vLLM can plan and direct city actions, but this is not model weight self-training. Persistent improvement still comes from the existing learning/memory state unless a separate approved training job is run.

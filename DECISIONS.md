@@ -245,3 +245,16 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - Replay mode disables live camera/God Mode REST calls by passing a null orchestrator URL, keeping fallback deterministic.
   - `scripts/browser_demo_smoke.py` now catches hydrated client-side exceptions and stale endpoint rendering that plain `curl` cannot detect.
 - Revisit when: a dedicated runtime config endpoint or public deployment platform replaces local `next start` demos.
+
+## ADR-018: City AI uses interval-scoped vLLM plans with bounded simulation executors
+
+- Status: accepted
+- Context: The live demo needed to move beyond deterministic loop-looking actors. A persuasive “LLM runs the city” claim requires vLLM to decide high-level city actions, while the existing architecture still forbids per-tick LLM calls and arbitrary LLM state mutation.
+- Decision: Add an optional autonomous City AI loop behind `AETHERVILLE_CITY_AI_MODE`. The orchestrator periodically summarizes `CityWorldContext`, asks the OpenAI-compatible vLLM endpoint for a compact `CityAiPlan`, validates the returned JSON against shared schemas, and applies only a fixed executor vocabulary: citizen movement, taxi dispatch, meeting, memory, traffic surge, weather, or no-op. Direct-process startup passes City AI env values to the orchestrator; Docker remains excluded.
+- Consequences:
+  - The demo can truthfully show vLLM-selected city plans through `WorldStatePayload.city_ai` and `city_ai_plan` timeline events when `AETHERVILLE_CITY_AI_MODE=vllm` is verified.
+  - The model does not control raw coordinates frame-by-frame; simulation code executes movement and safety boundaries.
+  - If vLLM is slow, invalid, or unavailable, the loop falls back to deterministic rules without crashing the demo.
+  - Keeping the server running accumulates experience and repeated planning context, but it still does not train new vLLM/YOLO/PPO/LSTM weights without a separate approved training job.
+- Rejected: Calling vLLM every tick or letting raw model prose mutate state directly, because that would violate latency, cost, safety, and contract constraints.
+- Revisit when: a queue-backed planning worker, persistent vector memory, or real reinforcement/fine-tuning loop is explicitly approved.

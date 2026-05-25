@@ -51,3 +51,11 @@ Real vLLM/YOLO/PPO/LSTM/STT remain opt-in upgrade paths, not current demo blocke
 | Checkpoint underperforms fixed cycle on a broader scenario | medium | low | Runtime fallback remains fixed-cycle/pressure-safe; metric is stated only for the deterministic `TrafficSignalEnv` benchmark. |
 | vLLM + YOLO + traffic training VRAM pressure | medium | medium | Traffic checkpoint trainer is lightweight and was verified with real vLLM/YOLO still active; stage heavier jobs separately. |
 | LSTM forecast overfits deterministic synthetic distribution | medium | low | State MAPE scope honestly; next production-hardening step is live telemetry validation. |
+
+## Autonomous City AI risk update — 2026-05-25
+
+| Risk | Likelihood | Impact | Mitigation |
+|---|---:|---:|---|
+| vLLM City AI returns invalid JSON or unsafe intent | medium | medium | Shared schema coercion plus fixed safe action vocabulary; fallback planner keeps demo moving. |
+| City AI planning latency stalls visible state | medium | medium | Planner runs off the tick loop with timeout and interval cadence; no per-tick LLM calls. |
+| Presenter overstates “self-learning” | medium | high | Docs/UI distinguish vLLM planning from persistent adaptation and separate model training jobs. |

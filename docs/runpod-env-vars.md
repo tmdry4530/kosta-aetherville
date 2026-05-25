@@ -19,4 +19,14 @@ Optional:
 Optional model/runtime secret variables stay local only. Do not copy values into
 tracked docs or chat.
 
+Autonomous City AI runtime:
+
+- `AETHERVILLE_CITY_AI_MODE=disabled` by default.
+- Use `AETHERVILLE_CITY_AI_MODE=vllm` only when the orchestrator should ask the
+  RunPod vLLM endpoint for bounded city plans.
+- `AETHERVILLE_CITY_AI_INTERVAL_TICKS` controls planning cadence; keep it
+  event/interval scoped and never call vLLM on every simulation tick.
+- `AETHERVILLE_CITY_AI_LLM_TIMEOUT_SEC` bounds the vLLM planning request before
+  the simulation uses its safe fallback.
+
 Never commit this file.

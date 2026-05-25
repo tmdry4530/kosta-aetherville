@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 import random
 import time
+from dataclasses import dataclass
 
 from aetherville_schemas import (
     CitizenDetailResponse,
@@ -79,6 +80,16 @@ MEETING_OFFSETS = {
 }
 
 
+@dataclass(frozen=True)
+class CitizenDirective:
+    citizen_id: str
+    start_xz: tuple[float, float]
+    target_xz: tuple[float, float]
+    label: str
+    requested_tick: int
+    hold_until_tick: int
+
+
 def generate_citizen_personas(count: int = 20, seed: int = 42) -> list[CitizenPersona]:
     """Generate deterministic demo personas without touching an external LLM."""
 
@@ -113,6 +124,7 @@ class CitizenAgentService:
         self._plans: dict[str, PlanNode] = {}
         self._memories: dict[str, list[MemoryRecord]] = {}
         self._active_meeting: tuple[str, str] | None = None
+        self._directives: dict[str, CitizenDirective] = {}
         for persona in self._personas:
             self._plans[persona.id] = self._planner.daily_plan(
                 persona.id, f"{persona.name} {persona.occupation} {persona.home_district}"
@@ -150,6 +162,28 @@ class CitizenAgentService:
         self._get_persona(citizen_id)
         self._get_persona(target_citizen_id)
         self._active_meeting = (citizen_id, target_citizen_id)
+
+    def move_citizen(
+        self,
+        citizen_id: str,
+        *,
+        start_xz: tuple[float, float],
+        target_xz: tuple[float, float],
+        label: str,
+        requested_tick: int,
+        hold_ticks: int = 720,
+    ) -> None:
+        """Set an event-scoped autonomous movement directive for a citizen."""
+
+        self._get_persona(citizen_id)
+        self._directives[citizen_id] = CitizenDirective(
+            citizen_id=citizen_id,
+            start_xz=start_xz,
+            target_xz=target_xz,
+            label=label,
+            requested_tick=requested_tick,
+            hold_until_tick=requested_tick + hold_ticks,
+        )
 
     def detail(self, citizen_id: str) -> CitizenDetailResponse:
         persona = self._get_persona(citizen_id)
@@ -273,6 +307,7 @@ class CitizenAgentService:
 
     def world_states(self, tick: int, running: bool) -> list[CitizenState]:
         states: list[CitizenState] = []
+        expired_directives: list[str] = []
         for index, persona in enumerate(self._personas):
             route = CITIZEN_ROUTES[index % len(CITIZEN_ROUTES)]
             group_offset = (index // len(CITIZEN_ROUTES)) * 0.18
@@ -282,6 +317,15 @@ class CitizenAgentService:
             talking_to: str | None = None
             action = self._plans[persona.id].children[1].title
             display_tags = [persona.name, "인도"]
+            anim = "walk" if running else "idle"
+            directive = self._directives.get(persona.id)
+            if directive is not None and tick <= directive.hold_until_tick:
+                x, z, yaw, directive_moving = _directive_pose(directive, tick)
+                action = directive.label
+                display_tags = [persona.name, "AI계획", directive.label]
+                anim = "walk" if running and directive_moving else "idle"
+            elif directive is not None:
+                expired_directives.append(persona.id)
             if self._active_meeting is not None and persona.id in self._active_meeting:
                 other_id = (
                     self._active_meeting[0]
@@ -296,6 +340,7 @@ class CitizenAgentService:
                 talking_to = other.id
                 action = f"{other.name}와 만나는 중"
                 display_tags = [persona.name, "만남", f"{other.name}"]
+                anim = "idle"
             pos = [
                 round(x + lane_offset, 3),
                 0.0,
@@ -307,12 +352,14 @@ class CitizenAgentService:
                     name=persona.name,
                     pos=pos,
                     rot=[0.0, round(yaw, 3), 0.0],
-                    anim="walk" if running else "idle",
+                    anim=anim,
                     current_action=action,
                     talking_to=talking_to,
                     display_tags=display_tags,
                 )
             )
+        for citizen_id in expired_directives:
+            self._directives.pop(citizen_id, None)
         return states
 
     def _get_persona(self, citizen_id: str) -> CitizenPersona:
@@ -366,3 +413,18 @@ def _pose_on_route(route: CitizenRoute, progress: float) -> tuple[float, float, 
     start, end, _ = segments[-1]
     yaw = math.atan2(end[0] - start[0], end[1] - start[1])
     return end[0], end[1], yaw
+
+
+def _directive_pose(
+    directive: CitizenDirective, tick: int
+) -> tuple[float, float, float, bool]:
+    elapsed = max(0, tick - directive.requested_tick)
+    distance = math.dist(directive.start_xz, directive.target_xz)
+    local = min(1.0, (elapsed * 0.08) / max(distance, 0.001))
+    x = directive.start_xz[0] + (directive.target_xz[0] - directive.start_xz[0]) * local
+    z = directive.start_xz[1] + (directive.target_xz[1] - directive.start_xz[1]) * local
+    yaw = math.atan2(
+        directive.target_xz[0] - directive.start_xz[0],
+        directive.target_xz[1] - directive.start_xz[1],
+    )
+    return x, z, yaw, local < 1.0

@@ -111,6 +111,16 @@
       "insights": [
         "fixture baseline"
       ]
+    },
+    "city_ai": {
+      "mode": "disabled",
+      "status": "idle",
+      "plan_id": null,
+      "last_planned_tick": 0,
+      "next_plan_tick": 0,
+      "summary": "city AI planner disabled",
+      "actions": [],
+      "reason": null
     }
   }
 }

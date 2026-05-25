@@ -64,3 +64,12 @@
 - [ ] `AI 학습 루프` panel is visible, and presenter says it is persistent
       deterministic adaptation rather than real neural-weight training.
 - [ ] No Docker or Docker Compose command is part of the demo path.
+
+## Autonomous City AI addendum — 2026-05-25
+
+- [ ] RunPod orchestrator started with `AETHERVILLE_CITY_AI_MODE=vllm`.
+- [ ] `python3 scripts/city_ai_smoke.py --orchestrator-url http://127.0.0.1:18080 --expect-mode vllm --wait-seconds 20 --post-plan-seconds 2` passes.
+- [ ] Browser shows `CITY AI PLAN` and `도시 AI vllm/applied`.
+- [ ] At least one actor shows `AI계획` or the taxi dispatch marker after the City AI plan.
+- [ ] Presenter says “vLLM chooses bounded city plans; Python simulation executes them,” not “the model animates every frame.”
+- [ ] Presenter does not claim new model-weight self-training unless a separate training job has been verified.

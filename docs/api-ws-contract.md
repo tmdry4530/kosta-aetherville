@@ -29,6 +29,8 @@ Required payload sections:
 - `traffic_forecast`: next_15min list
 - `traffic_ai`: active signal policy mode, checkpoint/GPU evidence, queue metrics, and last action
 - `traffic_forecast_ai`: forecast model mode, LSTM checkpoint/GPU evidence, sequence metadata, and MAPE
+- `learning`: deterministic online adaptation snapshot and accumulated experience counters
+- `city_ai`: autonomous city planner snapshot with `mode`, `status`, plan id, tick window, summary, and bounded actions
 
 ### `event`
 
@@ -48,6 +50,7 @@ Supported kinds:
 - `person_updated`
 - `infrastructure_changed`
 - `relationship_changed`
+- `city_ai_plan`
 
 ## Client to server
 
@@ -141,6 +144,35 @@ The orchestrator exposes:
 | POST | `/citizens/{id}/reflect` | trigger cached reflection event envelope |
 
 LLM policy remains event-driven: plans/reflections are cached and must not run once per simulation tick.
+
+## Autonomous City AI payloads
+
+The optional City AI loop is controlled by runtime env, not by the browser:
+
+- `AETHERVILLE_CITY_AI_MODE=disabled | rules | vllm`
+- `AETHERVILLE_CITY_AI_INTERVAL_TICKS=120` by default
+
+`WorldStatePayload.city_ai` exposes:
+
+- `mode`: `disabled | rules | vllm`
+- `status`: `idle | planning | applied | fallback | error`
+- `plan_id`, `last_planned_tick`, `next_plan_tick`
+- `summary`
+- `actions[]`
+
+Allowed `CityAiAction.type` values:
+
+- `move_citizen`
+- `call_taxi`
+- `meet`
+- `remember`
+- `traffic_surge`
+- `set_weather`
+- `no_op`
+
+The model may only select this bounded vocabulary. The Python simulation engine
+executes movement, taxi dispatch, weather lock, memory writes, meeting state, and
+traffic pressure. Raw LLM text never directly mutates state.
 
 ## Vehicle and vision payloads
 

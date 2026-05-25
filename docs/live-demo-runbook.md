@@ -49,6 +49,8 @@ AETHERVILLE_BOOTSTRAP_UV=1 \
 AETHERVILLE_VLLM_MODE=real \
 AETHERVILLE_LLM_MODE=vllm \
 AETHERVILLE_GOD_MODE_LLM=vllm \
+AETHERVILLE_CITY_AI_MODE=vllm \
+AETHERVILLE_CITY_AI_INTERVAL_TICKS=80 \
 AETHERVILLE_STT_MODE=faster_whisper \
 AETHERVILLE_BOOTSTRAP_STT=1 \
 AETHERVILLE_STT_MODEL=base \
@@ -81,6 +83,8 @@ AETHERVILLE_BOOTSTRAP_UV=1 \
 AETHERVILLE_VLLM_MODE=real \
 AETHERVILLE_LLM_MODE=vllm \
 AETHERVILLE_GOD_MODE_LLM=vllm \
+AETHERVILLE_CITY_AI_MODE=vllm \
+AETHERVILLE_CITY_AI_INTERVAL_TICKS=80 \
 AETHERVILLE_VISION_MODE=real \
 AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT=/workspace/aetherville-model-cache/traffic/traffic_policy_v1.json \
 AETHERVILLE_REDIS_MODE=memory \
@@ -108,6 +112,8 @@ AETHERVILLE_BOOTSTRAP_UV=1 \
 AETHERVILLE_VLLM_MODE=real \
 AETHERVILLE_LLM_MODE=vllm \
 AETHERVILLE_GOD_MODE_LLM=vllm \
+AETHERVILLE_CITY_AI_MODE=vllm \
+AETHERVILLE_CITY_AI_INTERVAL_TICKS=80 \
 AETHERVILLE_VISION_MODE=real \
 AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT=/workspace/aetherville-model-cache/traffic/traffic_policy_v1.json \
 AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT=/workspace/aetherville-model-cache/traffic/traffic_lstm_v1.json \
@@ -131,6 +137,17 @@ curl -fsS -H 'content-type: application/json' \
 ```
 
 Expected marker when enabled: `ai_mode="vllm"`, `ai_actions` containing several safe actions, and a `god_command_executed` summary event. If vLLM is unavailable, the command remains demo-safe and falls back to `ai_mode="rules"`.
+
+Autonomous City AI smoke after real-mode restart:
+
+```bash
+python3 scripts/city_ai_smoke.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --expect-mode vllm \
+  --wait-seconds 24
+```
+
+Expected marker when enabled: `city_ai.mode="vllm"`, `city_ai.status="applied"`, a non-empty `city_ai.actions[]` list, `city_ai_plan` in `/api/v1/timeline`, and either observed actor movement or a visible execution marker such as `AI계획`, taxi dispatch, traffic surge, or weather change.
 
 
 ### Voice/STT smokes

@@ -234,6 +234,76 @@ class LearningStatusResponse(StrictModel):
     upgrade_path: list[str] = Field(default_factory=list)
 
 
+class CityActorContext(StrictModel):
+    id: str
+    kind: Literal["citizen", "vehicle", "drone", "traffic_light"]
+    name: str | None = None
+    pos: Vec3
+    status: str
+    tags: list[str] = Field(default_factory=list)
+
+
+class CityTrafficContext(StrictModel):
+    total_queue: int = Field(default=0, ge=0)
+    congestion_active: bool = False
+    policy_mode: str = "fixed_cycle"
+    forecast_pressure: float = Field(default=0.0, ge=0, le=1)
+
+
+class CityWorldContext(StrictModel):
+    tick: int = Field(ge=0)
+    time_of_day: str = Field(pattern=r"^\d{2}:\d{2}$")
+    weather: str
+    active_event: str | None = None
+    infrastructure_status: str | None = None
+    citizens: list[CityActorContext] = Field(default_factory=list)
+    vehicles: list[CityActorContext] = Field(default_factory=list)
+    traffic: CityTrafficContext = Field(default_factory=CityTrafficContext)
+    recent_events: list[str] = Field(default_factory=list)
+    learning: LearningSnapshot = Field(default_factory=LearningSnapshot)
+
+
+class CityAiAction(StrictModel):
+    type: Literal[
+        "move_citizen",
+        "call_taxi",
+        "meet",
+        "remember",
+        "traffic_surge",
+        "set_weather",
+        "no_op",
+    ]
+    actor_id: str | None = None
+    target_id: str | None = None
+    vehicle_id: str | None = None
+    destination_actor_id: str | None = None
+    destination: Vec3 | None = None
+    weather: Literal["clear", "rain", "snow"] | None = None
+    memory: str | None = None
+    label: str | None = None
+    after: Literal["taxi_arrival"] | None = None
+    reason: str = "city AI selected this action"
+
+
+class CityAiPlan(StrictModel):
+    plan_id: str
+    source: Literal["rules", "vllm"] = "rules"
+    confidence: float = Field(default=0.5, ge=0, le=1)
+    summary: str
+    actions: list[CityAiAction] = Field(default_factory=list)
+
+
+class CityAiSnapshot(StrictModel):
+    mode: Literal["disabled", "rules", "vllm"] = "disabled"
+    status: Literal["idle", "planning", "applied", "fallback", "error"] = "idle"
+    plan_id: str | None = None
+    last_planned_tick: int = Field(default=0, ge=0)
+    next_plan_tick: int = Field(default=0, ge=0)
+    summary: str = "city AI planner disabled"
+    actions: list[CityAiAction] = Field(default_factory=list)
+    reason: str | None = None
+
+
 class WorldStatePayload(StrictModel):
     world: WorldClock
     citizens: list[CitizenState] = Field(default_factory=list)
@@ -246,6 +316,7 @@ class WorldStatePayload(StrictModel):
         default_factory=TrafficForecastAiSnapshot
     )
     learning: LearningSnapshot = Field(default_factory=LearningSnapshot)
+    city_ai: CityAiSnapshot = Field(default_factory=CityAiSnapshot)
 
 
 class EventPayload(StrictModel):
@@ -261,6 +332,7 @@ class EventPayload(StrictModel):
         "god_command_executed",
         "weather_changed",
         "event_injected",
+        "city_ai_plan",
         "person_updated",
         "infrastructure_changed",
         "relationship_changed",

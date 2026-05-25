@@ -219,6 +219,75 @@ export interface LearningStatusResponse {
   upgrade_path: string[];
 }
 
+export interface CityActorContext {
+  id: string;
+  kind: 'citizen' | 'vehicle' | 'drone' | 'traffic_light';
+  name?: string | null;
+  pos: Vec3;
+  status: string;
+  tags: string[];
+}
+
+export interface CityTrafficContext {
+  total_queue: number;
+  congestion_active: boolean;
+  policy_mode: string;
+  forecast_pressure: number;
+}
+
+export interface CityWorldContext {
+  tick: number;
+  time_of_day: string;
+  weather: string;
+  active_event?: string | null;
+  infrastructure_status?: string | null;
+  citizens: CityActorContext[];
+  vehicles: CityActorContext[];
+  traffic: CityTrafficContext;
+  recent_events: string[];
+  learning: LearningSnapshot;
+}
+
+export interface CityAiAction {
+  type:
+    | 'move_citizen'
+    | 'call_taxi'
+    | 'meet'
+    | 'remember'
+    | 'traffic_surge'
+    | 'set_weather'
+    | 'no_op';
+  actor_id?: string | null;
+  target_id?: string | null;
+  vehicle_id?: string | null;
+  destination_actor_id?: string | null;
+  destination?: Vec3 | null;
+  weather?: 'clear' | 'rain' | 'snow' | null;
+  memory?: string | null;
+  label?: string | null;
+  after?: 'taxi_arrival' | null;
+  reason: string;
+}
+
+export interface CityAiPlan {
+  plan_id: string;
+  source: 'rules' | 'vllm';
+  confidence: number;
+  summary: string;
+  actions: CityAiAction[];
+}
+
+export interface CityAiSnapshot {
+  mode: 'disabled' | 'rules' | 'vllm';
+  status: 'idle' | 'planning' | 'applied' | 'fallback' | 'error';
+  plan_id?: string | null;
+  last_planned_tick: number;
+  next_plan_tick: number;
+  summary: string;
+  actions: CityAiAction[];
+  reason?: string | null;
+}
+
 export interface WorldStatePayload {
   world: WorldClock;
   citizens: CitizenState[];
@@ -229,6 +298,7 @@ export interface WorldStatePayload {
   traffic_ai: TrafficAiSnapshot;
   traffic_forecast_ai: TrafficForecastAiSnapshot;
   learning: LearningSnapshot;
+  city_ai: CityAiSnapshot;
 }
 
 export interface GodCommand {
@@ -266,6 +336,7 @@ export interface EventPayload {
     | 'god_command_executed'
     | 'weather_changed'
     | 'event_injected'
+    | 'city_ai_plan'
     | 'person_updated'
     | 'infrastructure_changed'
     | 'relationship_changed';

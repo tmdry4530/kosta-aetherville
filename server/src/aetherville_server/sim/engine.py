@@ -4,13 +4,22 @@ from __future__ import annotations
 
 import asyncio
 import math
+import os
 import random
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from typing import Literal
 from uuid import uuid4
 
 from aetherville_schemas import (
+    CitizenState,
+    CityActorContext,
+    CityAiAction,
+    CityAiPlan,
+    CityAiSnapshot,
+    CityTrafficContext,
+    CityWorldContext,
     DroneState,
     Envelope,
     EnvelopeType,
@@ -26,6 +35,7 @@ from aetherville_schemas import (
     make_state_update,
 )
 from aetherville_server.agents import CitizenAgentService
+from aetherville_server.city_ai import CityPlanner, city_planner_from_env
 from aetherville_server.learning import LearningStore
 from aetherville_server.llm import planner_from_env
 from aetherville_server.orchestrator import GodCommandDispatcher
@@ -61,6 +71,7 @@ class SimulationEngine:
         config: SimulationConfig | None = None,
         citizen_service: CitizenAgentService | None = None,
         learning_store: LearningStore | None = None,
+        city_planner: CityPlanner | None = None,
     ) -> None:
         self.config = config or SimulationConfig()
         self.tick = 0
@@ -75,6 +86,21 @@ class SimulationEngine:
         self._infrastructure_status: str | None = None
         self._timeline: list[EventPayload] = []
         self._pending_taxi_meeting: PendingTaxiMeeting | None = None
+        self._city_planner = city_planner if city_planner is not None else city_planner_from_env()
+        self._city_ai_mode = self._resolve_city_ai_mode()
+        self._city_ai_interval_ticks = int(os.getenv("AETHERVILLE_CITY_AI_INTERVAL_TICKS", "120"))
+        self._city_ai_next_plan_tick = self._city_ai_interval_ticks
+        self._city_ai_task: asyncio.Task[None] | None = None
+        self._city_ai_snapshot = CityAiSnapshot(
+            mode=self._city_ai_mode,
+            status="idle",
+            next_plan_tick=self._city_ai_next_plan_tick,
+            summary=(
+                "city AI planner disabled"
+                if self._city_planner is None
+                else "city AI planner waiting for first planning window"
+            ),
+        )
         self.citizens = citizen_service or CitizenAgentService(
             count=self.config.visible_citizen_count,
             seed=self.config.seed,
@@ -112,6 +138,17 @@ class SimulationEngine:
         self._active_event = None
         self._infrastructure_status = None
         self._pending_taxi_meeting = None
+        self._city_ai_next_plan_tick = self._city_ai_interval_ticks
+        self._city_ai_snapshot = CityAiSnapshot(
+            mode=self._city_ai_mode,
+            status="idle",
+            next_plan_tick=self._city_ai_next_plan_tick,
+            summary=(
+                "city AI planner disabled"
+                if self._city_planner is None
+                else "city AI planner waiting for first planning window"
+            ),
+        )
         self.citizens = CitizenAgentService(
             count=self.config.visible_citizen_count,
             seed=self._seed,
@@ -242,6 +279,7 @@ class SimulationEngine:
             traffic_ai=traffic_ai,
             traffic_forecast_ai=self.traffic_forecaster.snapshot(),
             learning=learning,
+            city_ai=self._city_ai_snapshot,
         )
 
     def state_update(self) -> Envelope:
@@ -264,6 +302,307 @@ class SimulationEngine:
 
     def learning_status(self) -> LearningStatusResponse:
         return self.learning.status_response()
+
+    def _resolve_city_ai_mode(self) -> Literal["disabled", "rules", "vllm"]:
+        if self._city_planner is None:
+            return "disabled"
+        source = getattr(self._city_planner, "source", "rules")
+        return "vllm" if source == "vllm" else "rules"
+
+    def build_city_context(self) -> CityWorldContext:
+        state = self.snapshot()
+        total_queue = (
+            state.traffic_forecast[0].expected_vehicle_count
+            if state.traffic_forecast
+            else len(state.vehicles)
+        )
+        forecast_pressure = (
+            state.traffic_forecast[0].congestion_index if state.traffic_forecast else 0.0
+        )
+        return CityWorldContext(
+            tick=self.tick,
+            time_of_day=state.world.time_of_day,
+            weather=state.world.weather,
+            active_event=state.world.active_event,
+            infrastructure_status=state.world.infrastructure_status,
+            citizens=[
+                CityActorContext(
+                    id=citizen.id,
+                    kind="citizen",
+                    name=citizen.name,
+                    pos=citizen.pos,
+                    status=citizen.current_action,
+                    tags=citizen.display_tags,
+                )
+                for citizen in state.citizens
+            ],
+            vehicles=[
+                CityActorContext(
+                    id=vehicle.id,
+                    kind="vehicle",
+                    name=vehicle.type,
+                    pos=vehicle.pos,
+                    status=f"speed={vehicle.speed:.2f} passenger={vehicle.passenger_id}",
+                    tags=vehicle.display_tags,
+                )
+                for vehicle in state.vehicles
+            ],
+            traffic=CityTrafficContext(
+                total_queue=total_queue,
+                congestion_active=self.vehicles.congestion_active(self.tick),
+                policy_mode=state.traffic_ai.mode,
+                forecast_pressure=forecast_pressure,
+            ),
+            recent_events=[event.message for event in self._timeline[-8:]],
+            learning=state.learning,
+        )
+
+    def run_city_planner_once(self) -> CityAiPlan | None:
+        if self._city_planner is None:
+            return None
+        self._city_ai_snapshot = self._city_ai_snapshot.model_copy(update={"status": "planning"})
+        context = self.build_city_context()
+        try:
+            plan = self._city_planner.plan(context)
+            events = self._apply_city_ai_plan(plan)
+            self._city_ai_next_plan_tick = self.tick + self._city_ai_interval_ticks
+            self._city_ai_snapshot = CityAiSnapshot(
+                mode="vllm" if plan.source == "vllm" else "rules",
+                status="applied",
+                plan_id=plan.plan_id,
+                last_planned_tick=self.tick,
+                next_plan_tick=self._city_ai_next_plan_tick,
+                summary=plan.summary,
+                actions=plan.actions,
+                reason="; ".join(action.reason for action in plan.actions[:3]),
+            )
+            for event in events:
+                self._record_event(event)
+            return plan
+        except (OSError, ValueError, KeyError) as exc:
+            self._city_ai_next_plan_tick = self.tick + self._city_ai_interval_ticks
+            self._city_ai_snapshot = self._city_ai_snapshot.model_copy(
+                update={
+                    "status": "error",
+                    "last_planned_tick": self.tick,
+                    "next_plan_tick": self._city_ai_next_plan_tick,
+                    "summary": "city AI planner failed safely",
+                    "reason": exc.__class__.__name__,
+                }
+            )
+            return None
+
+    async def _maybe_run_city_ai(self, broadcast: BroadcastCallback) -> None:
+        if self._city_planner is None or self.tick < self._city_ai_next_plan_tick:
+            return
+        if self._city_ai_task is not None and not self._city_ai_task.done():
+            return
+        self._city_ai_task = asyncio.create_task(self._run_city_ai_task(broadcast))
+
+    async def _run_city_ai_task(self, broadcast: BroadcastCallback) -> None:
+        before_timeline_len = len(self._timeline)
+        if self._city_planner is None:
+            return
+        self._city_ai_snapshot = self._city_ai_snapshot.model_copy(update={"status": "planning"})
+        context = self.build_city_context()
+        try:
+            plan = await asyncio.to_thread(self._city_planner.plan, context)
+            events = self._apply_city_ai_plan(plan)
+            self._city_ai_next_plan_tick = self.tick + self._city_ai_interval_ticks
+            self._city_ai_snapshot = CityAiSnapshot(
+                mode="vllm" if plan.source == "vllm" else "rules",
+                status="applied",
+                plan_id=plan.plan_id,
+                last_planned_tick=self.tick,
+                next_plan_tick=self._city_ai_next_plan_tick,
+                summary=plan.summary,
+                actions=plan.actions,
+                reason="; ".join(action.reason for action in plan.actions[:3]),
+            )
+            for event in events:
+                self._record_event(event)
+        except (OSError, ValueError, KeyError) as exc:
+            self._city_ai_next_plan_tick = self.tick + self._city_ai_interval_ticks
+            self._city_ai_snapshot = self._city_ai_snapshot.model_copy(
+                update={
+                    "status": "error",
+                    "last_planned_tick": self.tick,
+                    "next_plan_tick": self._city_ai_next_plan_tick,
+                    "summary": "city AI planner failed safely",
+                    "reason": exc.__class__.__name__,
+                }
+            )
+        for event in self._timeline[before_timeline_len:]:
+            await broadcast(self._event_envelope(event))
+        await broadcast(self.state_update())
+
+    def _apply_city_ai_plan(self, plan: CityAiPlan) -> list[EventPayload]:
+        events = [
+            EventPayload(
+                kind="city_ai_plan",
+                message=f"City AI plan applied: {plan.summary}",
+                metadata={
+                    "action": "city_ai_plan",
+                    "plan_id": plan.plan_id,
+                    "source": plan.source,
+                    "confidence": plan.confidence,
+                    "actions": [action.type for action in plan.actions],
+                },
+            )
+        ]
+        taxi_destinations: dict[str, str] = {}
+        for action in plan.actions:
+            event = self._apply_city_ai_action(plan, action, taxi_destinations)
+            if event is not None:
+                events.append(event)
+        return events
+
+    def _apply_city_ai_action(
+        self,
+        plan: CityAiPlan,
+        action: CityAiAction,
+        taxi_destinations: dict[str, str],
+    ) -> EventPayload | None:
+        metadata = {
+            "source": "city_ai",
+            "plan_id": plan.plan_id,
+            "planner": plan.source,
+            "action": action.type,
+            "reason": action.reason,
+        }
+        if action.type == "no_op":
+            return None
+        if action.type == "set_weather" and action.weather is not None:
+            self._weather = action.weather
+            self._weather_lock_until_tick = self.tick + 900
+            self._active_event = f"weather:{action.weather}"
+            return EventPayload(
+                kind="weather_changed",
+                message=f"City AI changed weather to {action.weather}",
+                metadata=metadata | {"weather": action.weather},
+            )
+        if action.type == "traffic_surge":
+            self.vehicles.activate_congestion(self.tick)
+            self._active_event = "traffic congestion"
+            self._infrastructure_status = "traffic congestion active"
+            return EventPayload(
+                kind="infrastructure_changed",
+                message="City AI increased traffic pressure",
+                metadata=metadata | {"status": "traffic congestion active"},
+            )
+        if action.type == "move_citizen" and action.actor_id is not None:
+            citizen_states = self.citizens.world_states(self.tick, self.running)
+            actor = next(
+                (citizen for citizen in citizen_states if citizen.id == action.actor_id),
+                None,
+            )
+            target_xz = self._target_xz(action, citizen_states)
+            if actor is None or target_xz is None:
+                return None
+            label = action.label or "AI 자율 이동"
+            self.citizens.move_citizen(
+                action.actor_id,
+                start_xz=(actor.pos[0], actor.pos[2]),
+                target_xz=target_xz,
+                label=label,
+                requested_tick=self.tick,
+            )
+            return EventPayload(
+                kind="person_updated",
+                message=f"City AI moved {actor.name}: {label}",
+                entity_id=actor.id,
+                metadata=metadata | {"citizen_id": actor.id, "label": label},
+            )
+        if action.type == "remember" and action.actor_id is not None:
+            return self.citizens.append_memory(
+                action.actor_id,
+                action.memory or f"City AI plan remembered: {plan.summary}",
+                tick=self.tick,
+                importance=0.66,
+                tags=["city-ai", plan.source],
+            )
+        if action.type == "call_taxi" and action.actor_id is not None:
+            citizen_states = self.citizens.world_states(self.tick, self.running)
+            passenger = next(
+                (citizen for citizen in citizen_states if citizen.id == action.actor_id),
+                None,
+            )
+            destination_id = action.destination_actor_id or action.target_id
+            destination = next(
+                (
+                    citizen
+                    for citizen in citizen_states
+                    if destination_id is not None and citizen.id == destination_id
+                ),
+                None,
+            )
+            target_xz = self._target_xz(action, citizen_states)
+            if passenger is None:
+                return None
+            self.vehicles.request_taxi(
+                passenger.id,
+                vehicle_id=action.vehicle_id or "v01",
+                passenger_name=passenger.name,
+                pickup_xz=(passenger.pos[0], passenger.pos[2]),
+                dropoff_xz=target_xz,
+                dropoff_label=destination.name if destination else action.label,
+                requested_tick=self.tick,
+            )
+            if destination_id is not None:
+                taxi_destinations[passenger.id] = destination_id
+            return EventPayload(
+                kind="trip_requested",
+                message=f"City AI dispatched taxi for {passenger.name}",
+                entity_id=action.vehicle_id or "v01",
+                metadata=metadata
+                | {
+                    "vehicle_id": action.vehicle_id or "v01",
+                    "passenger_id": passenger.id,
+                    "destination_citizen_id": destination_id,
+                },
+            )
+        if action.type == "meet" and action.actor_id is not None and action.target_id is not None:
+            waits_for_taxi = (
+                action.after == "taxi_arrival"
+                or taxi_destinations.get(action.actor_id) == action.target_id
+            )
+            if waits_for_taxi:
+                self._pending_taxi_meeting = PendingTaxiMeeting(action.actor_id, action.target_id)
+                return EventPayload(
+                    kind="relationship_changed",
+                    message="City AI scheduled a meeting after taxi arrival",
+                    entity_id=action.actor_id,
+                    metadata=metadata
+                    | {
+                        "source": action.actor_id,
+                        "target": action.target_id,
+                        "deferred_until": "taxi_arrival",
+                    },
+                )
+            self.citizens.activate_meeting(action.actor_id, action.target_id)
+            self._active_event = "citizen meeting"
+            return EventPayload(
+                kind="relationship_changed",
+                message="City AI activated a citizen meeting",
+                entity_id=action.actor_id,
+                metadata=metadata | {"source": action.actor_id, "target": action.target_id},
+            )
+        return None
+
+    @staticmethod
+    def _target_xz(
+        action: CityAiAction, citizens: list[CitizenState]
+    ) -> tuple[float, float] | None:
+        if action.destination is not None:
+            return (action.destination[0], action.destination[2])
+        target_id = action.destination_actor_id or action.target_id
+        target = next(
+            (citizen for citizen in citizens if target_id is not None and citizen.id == target_id),
+            None,
+        )
+        if target is None:
+            return None
+        return (target.pos[0], target.pos[2])
 
     def _maybe_complete_pending_taxi_meeting(self) -> None:
         pending = self._pending_taxi_meeting
@@ -426,4 +765,5 @@ class SimulationEngine:
         while self.running:
             envelope = self.step()
             await broadcast(envelope)
+            await self._maybe_run_city_ai(broadcast)
             await asyncio.sleep(interval)

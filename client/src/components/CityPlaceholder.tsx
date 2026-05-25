@@ -164,10 +164,36 @@ function isRainActive(worldState: WorldStatePayload) {
   return worldState.world.weather === 'rain' || worldState.world.active_event === 'weather:rain';
 }
 
+function cityAiFocus(worldState: WorldStatePayload): Vec3 | null {
+  if (worldState.city_ai.mode === 'disabled' || worldState.city_ai.status !== 'applied') {
+    return null;
+  }
+
+  const action = worldState.city_ai.actions.find(
+    (candidate) => candidate.actor_id || candidate.vehicle_id || candidate.target_id
+  );
+  if (!action) {
+    return null;
+  }
+
+  const citizen = worldState.citizens.find(
+    (candidate) => candidate.id === action.actor_id || candidate.id === action.target_id
+  );
+  if (citizen) {
+    return [citizen.pos[0], 0, citizen.pos[2]];
+  }
+
+  const vehicle = worldState.vehicles.find(
+    (candidate) => candidate.id === action.vehicle_id || candidate.id === action.actor_id
+  );
+  return vehicle ? [vehicle.pos[0], 0, vehicle.pos[2]] : null;
+}
+
 function sceneFocusForWorld(worldState: WorldStatePayload): Vec3 {
   const taxi = worldState.vehicles.find((vehicle) => vehicle.id === 'v01');
   const minji = worldState.citizens.find((citizen) => citizen.name === '민지' || citizen.id === 'c01');
   const minsu = worldState.citizens.find((citizen) => citizen.name === '민수' || citizen.id === 'c02');
+  const aiFocus = cityAiFocus(worldState);
 
   if (taxi && tagIncludes(taxi.display_tags, '택시 호출')) {
     if (minji && tagIncludes(taxi.display_tags, '민지에게')) {
@@ -182,6 +208,10 @@ function sceneFocusForWorld(worldState: WorldStatePayload): Vec3 {
 
   if (isTrafficSurgeActive(worldState)) {
     return [1.6, 0, -1.6];
+  }
+
+  if (aiFocus) {
+    return aiFocus;
   }
 
   return [0, 0, 0];
@@ -766,6 +796,7 @@ function impactLabelsForWorld(worldState: WorldStatePayload) {
     isTrafficSurgeActive(worldState) || tags.includes('정체') || tags.includes('저속') ? 'TRAFFIC SURGE' : null,
     taxi?.passenger_id || tags.includes('택시 호출') ? 'TAXI DISPATCH' : null,
     minji?.talking_to === minsu?.id || minsu?.talking_to === minji?.id || tags.includes('대화') ? 'MEETING' : null,
+    worldState.city_ai.mode !== 'disabled' && worldState.city_ai.status === 'applied' ? 'CITY AI PLAN' : null,
     worldState.traffic_ai.mode === 'checkpoint' ? 'GPU POLICY' : null,
     worldState.traffic_forecast_ai.mode === 'lstm_checkpoint' ? 'LSTM FORECAST' : null
   ].filter((label): label is string => Boolean(label));
@@ -849,7 +880,7 @@ export function CityPlaceholder({ initialWorldState = null }: { initialWorldStat
 
   return (
     <section className={`cityPanel${isTrafficSurge ? ' cityPanel-trafficSurge' : ''}`} aria-label="Aetherville city scene">
-      <div className="statusPill">{connectionState} · tick {lastTick} · {worldState.world.weather}</div>
+      <div className="statusPill">{connectionState} · tick {lastTick} · {worldState.world.weather} · city AI {worldState.city_ai.mode}</div>
       <EventOverlays worldState={worldState} />
       <SceneDirectorHud worldState={worldState} />
       <SceneLegend />

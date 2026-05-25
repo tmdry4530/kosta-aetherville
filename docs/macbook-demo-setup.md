@@ -433,3 +433,25 @@ chmod 600 "$RUNPOD_SSH_KEY"
 - [ ] `/replay` fallback 화면이 열림.
 - [ ] `scripts/browser_demo_smoke.py` live/replay 통과.
 - [ ] 발표 전 `scripts/demo_rehearsal.py` 통과.
+
+## Autonomous City AI verification
+
+After the RunPod operator starts the direct-process backend with
+`AETHERVILLE_CITY_AI_MODE=vllm`, the MacBook agent can verify that vLLM is
+actually planning city actions through the orchestrator tunnel:
+
+```bash
+python3 scripts/city_ai_smoke.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --expect-mode vllm \
+  --wait-seconds 20 \
+  --post-plan-seconds 2
+```
+
+Expected result: JSON with `ok: true`, `mode: "vllm"`, `status: "applied"`, a
+non-empty action list, `timeline_has_city_ai_plan: true`, and either moved actor
+ids or visible markers such as `citizen_ai_directive` / `taxi_dispatch`.
+
+In the browser, look for `CITY AI PLAN`, `도시 AI vllm/applied`, and actor labels
+such as `AI계획`. This proves vLLM selected bounded high-level plans; it does not
+mean the model is training itself in the background.

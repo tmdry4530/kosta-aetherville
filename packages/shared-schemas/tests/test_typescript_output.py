@@ -25,7 +25,12 @@ def test_generated_typescript_contract_exists() -> None:
     assert "export interface TrafficForecastAiSnapshot" in text
     assert "export interface LearningSnapshot" in text
     assert "export interface LearningStatusResponse" in text
+    assert "export interface CityWorldContext" in text
+    assert "export interface CityAiAction" in text
+    assert "export interface CityAiPlan" in text
+    assert "export interface CityAiSnapshot" in text
     assert "traffic_ai: TrafficAiSnapshot" in text
     assert "traffic_forecast_ai: TrafficForecastAiSnapshot" in text
     assert "learning: LearningSnapshot" in text
+    assert "city_ai: CityAiSnapshot" in text
     assert "display_tags: string[]" in text

@@ -8,6 +8,10 @@ from pydantic import ValidationError
 
 from aetherville_schemas import (
     CitizenDetailResponse,
+    CityAiAction,
+    CityAiPlan,
+    CityAiSnapshot,
+    CityWorldContext,
     Envelope,
     EnvelopeType,
     GodCommand,
@@ -46,6 +50,7 @@ def test_state_update_fixture_parses() -> None:
     assert payload.traffic_lights[0].display_tags == ["신호등", "green"]
     assert payload.learning.mode == "deterministic_online_adaptation"
     assert payload.learning.experience_count == 0
+    assert payload.city_ai.mode == "disabled"
 
 
 def test_invalid_envelope_type_is_rejected() -> None:
@@ -281,6 +286,61 @@ def test_learning_status_contract_validates() -> None:
 
     assert status.learning.policy_version == "adaptive-demo-v1"
     assert status.learning.traffic_bias == 0.24
+
+
+def test_city_ai_contracts_validate() -> None:
+    action = CityAiAction.model_validate(
+        {
+            "type": "call_taxi",
+            "actor_id": "c06",
+            "vehicle_id": "v01",
+            "destination_actor_id": "c05",
+            "reason": "지호가 하린을 만나러 가야 함",
+        }
+    )
+    plan = CityAiPlan.model_validate(
+        {
+            "plan_id": "city_vllm_1",
+            "source": "vllm",
+            "confidence": 0.88,
+            "summary": "지호 택시 이동",
+            "actions": [action.model_dump(mode="json")],
+        }
+    )
+    snapshot = CityAiSnapshot.model_validate(
+        {
+            "mode": "vllm",
+            "status": "applied",
+            "plan_id": plan.plan_id,
+            "last_planned_tick": 120,
+            "next_plan_tick": 240,
+            "summary": plan.summary,
+            "actions": [action.model_dump(mode="json")],
+            "reason": "visible autonomous movement",
+        }
+    )
+    context = CityWorldContext.model_validate(
+        {
+            "tick": 120,
+            "time_of_day": "09:42",
+            "weather": "clear",
+            "citizens": [
+                {
+                    "id": "c06",
+                    "kind": "citizen",
+                    "name": "지호",
+                    "pos": [0.0, 0.0, 0.0],
+                    "status": "observing",
+                    "tags": ["지호"],
+                }
+            ],
+            "vehicles": [],
+            "recent_events": [],
+        }
+    )
+
+    assert snapshot.actions[0].type == "call_taxi"
+    assert context.citizens[0].name == "지호"
 
 
 def test_traffic_ai_snapshot_contract_validates() -> None:

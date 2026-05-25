@@ -71,6 +71,8 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(impactPanelSource, /buildImpactItems/);
   assert.match(impactPanelSource, /GPU POLICY/);
   assert.match(impactPanelSource, /LSTM FORECAST/);
+  assert.match(impactPanelSource, /CITY AI/);
+  assert.match(impactPanelSource, /worldState\.city_ai/);
   assert.match(impactPanelSource, /God Mode visible impact cards/);
   assert.match(learningPanelSource, /LearningSnapshot/);
   assert.match(learningPanelSource, /AI 학습 루프/);
@@ -89,6 +91,7 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(citySource, /TrafficLightActor/);
   assert.match(citySource, /DroneActor/);
   assert.match(citySource, /GameCamera/);
+  assert.match(citySource, /cityAiFocus/);
   assert.match(citySource, /PedestrianRig/);
   assert.match(citySource, /VehicleWheel/);
   assert.match(citySource, /RainStreaks/);
@@ -101,6 +104,7 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(citySource, /EventOverlays/);
   assert.match(citySource, /SceneDirectorHud/);
   assert.match(citySource, /SCENE DIRECTOR · LIVE IMPACT/);
+  assert.match(citySource, /CITY AI PLAN/);
   assert.match(citySource, /weatherOverlay-rain/);
   assert.match(citySource, /trafficSurgeOverlay/);
   assert.match(citySource, /ROAD_LINES/);
@@ -129,6 +133,7 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(mockWorldSource, /traffic_ai:/);
   assert.match(mockWorldSource, /traffic_forecast_ai:/);
   assert.match(mockWorldSource, /learning:/);
+  assert.match(mockWorldSource, /city_ai:/);
   assert.doesNotMatch(mockWorldSource, /Math\.sin\(angle/);
   assert.doesNotMatch(mockWorldSource, /Math\.cos\(angle/);
   assert.match(trafficPanelSource, /Traffic forecast/);
