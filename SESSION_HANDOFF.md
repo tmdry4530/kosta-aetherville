@@ -541,3 +541,14 @@ Verified local client state:
 - Replay mode passes `orchestratorUrl=null`, so it stays deterministic and does not accidentally call live camera/God Mode endpoints.
 
 Use this browser smoke before presenting because plain `curl /` cannot catch hydrated client-side errors or stale endpoint rendering.
+
+## Full presenter rehearsal handoff — 2026-05-25T16:22:00+09:00
+
+Verified end-to-end demo state:
+
+- `scripts/demo_rehearsal.py --orchestrator-url http://127.0.0.1:18080 --client-url http://127.0.0.1:3000 --expected-client-endpoint http://127.0.0.1:18080` passed.
+- The rehearsal verified orchestrator dependencies (`simulation`, `learning`, `stt`, `vision`, `vllm`), traffic policy checkpoint (`checkpoint/torch_cuda`), LSTM forecast (`lstm_checkpoint/torch_cuda`), real vehicle camera mode, learning status, vLLM God Mode multi-action response, and visible world-state effects.
+- The same rehearsal also ran live and replay browser smokes and found no client-side application error markers.
+- Use this as the fastest pre-demo gate after starting RunPod direct-process services, SSH tunnel, and the local client.
+
+Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.

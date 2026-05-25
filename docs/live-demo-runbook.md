@@ -353,6 +353,17 @@ python3 scripts/browser_demo_smoke.py \
 
 The live route is dynamically server-rendered, so `next start` reads the selected tunnel values at process start and passes the runtime orchestrator URL into browser panels.
 
+Full presenter rehearsal smoke after the client is running:
+
+```bash
+python3 scripts/demo_rehearsal.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --client-url http://127.0.0.1:3000 \
+  --expected-client-endpoint http://127.0.0.1:18080
+```
+
+This one command verifies orchestrator dependencies, 4090 traffic policy and LSTM evidence, real vehicle camera mode, learning status, vLLM multi-action God Mode effects, and live/replay browser smoke.
+
 Open:
 
 - Live city: `http://localhost:3000/`

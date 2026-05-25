@@ -10,6 +10,7 @@
 
 ## 2:00–5:00 — Normal city simulation
 
+- Before presenting, run `python3 scripts/demo_rehearsal.py --orchestrator-url http://127.0.0.1:18080 --client-url http://127.0.0.1:3000 --expected-client-endpoint http://127.0.0.1:18080` once against the selected Mode B tunnel or equivalent public endpoint.
 - Open the live city route.
 - Point out weather, tick count, citizens, vehicles, drones, traffic lights, and
   connection status.

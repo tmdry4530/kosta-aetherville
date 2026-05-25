@@ -51,6 +51,7 @@
 - [ ] If using `next build && next start` instead of `pnpm dev`, `next start` was
       launched with the selected `NEXT_PUBLIC_*` endpoint values; the live route is
       dynamic and reads them at process start.
+- [ ] `python3 scripts/demo_rehearsal.py --orchestrator-url http://127.0.0.1:18080 --client-url http://127.0.0.1:3000 --expected-client-endpoint http://127.0.0.1:18080` passes.
 - [ ] `python3 scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18080` passes with no client-side exception.
 - [ ] `python3 scripts/browser_demo_smoke.py --mode replay --url http://127.0.0.1:3000/replay` passes.
 - [ ] Live route `/` renders city state.

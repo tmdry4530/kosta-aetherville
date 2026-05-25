@@ -910,3 +910,13 @@
 - Added `scripts/browser_demo_smoke.py` to run headless Chromium against live and replay routes, check required demo panels, verify selected endpoint rendering, and fail on Next client-side error markers.
 - Verified production-style `next build && next start` with tunnel envs: live browser smoke saw `http://127.0.0.1:18080`, all core panels, no application error; replay smoke also passed.
 - Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## Full presenter rehearsal smoke — 2026-05-25T16:22:00+09:00
+
+- Status: complete and verified against the active direct-process RunPod runtime plus local browser client.
+- Added `scripts/demo_rehearsal.py`, a stdlib-only full demo rehearsal that verifies orchestrator health/dependencies, simulation start, CUDA-trained traffic policy, CUDA-trained LSTM forecast, real vehicle camera mode, deterministic learning status, vLLM multi-action God Mode, visible rain/taxi/congestion/meeting effects, and live/replay headless Chromium browser smokes.
+- Rehearsal command passed with `ok=true` for `http://127.0.0.1:18080` and `http://127.0.0.1:3000`.
+- Verified God Mode command returned `ai_mode=vllm` and `ai_actions=[rain, traffic_jam, taxi_call, meeting]`; subsequent world state showed `weather=rain`, taxi passenger/dispatch, congestion tags, and 민지/민수 talking state.
+- Verified vehicle camera endpoint returned `mode=real` with a traffic-light detection from the RunPod vision path.
+- Updated live demo runbook, 15-minute script, readiness checklist, TASKS, and SESSION_HANDOFF so this one-command rehearsal is part of the demo gate.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
