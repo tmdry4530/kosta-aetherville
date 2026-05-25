@@ -48,3 +48,15 @@
   - `POST /api/v1/citizens/c01/reflect` returned a real model-generated Korean reflection.
 - GPU memory after smoke: approximately 22.5 GiB VRAM used.
 - Remaining real ML gaps: YOLO, PPO/LSTM, and STT are still next GPU integration targets.
+
+## Real 4090 YOLO smoke — 2026-05-25
+
+- Vision mode: real Ultralytics YOLO.
+- Model: `yolo11n.pt`.
+- Package: `ultralytics 8.4.53`.
+- Smoke evidence:
+  - `/health` returned `yolo:ok`.
+  - `/detect` returned `mode=real` on a deterministic synthetic road frame.
+  - Real vLLM and real YOLO were active at the same time.
+- GPU memory after combined real vLLM + YOLO smoke: approximately 23.1 GiB VRAM used.
+- Remaining gap: browser vehicle camera still displays state-embedded detections; next step is feeding real `/detect` results into vehicle camera/state or a live frame stream.

@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "real_4090_vllm_reflection_active",
+  "status": "real_4090_vllm_and_yolo_active",
   "source_prd": "source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -608,6 +608,27 @@
         "llm_integration": "OpenAICompatiblePlanner_uses_vLLM_for_citizen_reflection_with_cached_fallback",
         "smoke": "v1_models_chat_completions_orchestrator_health_and_citizen_reflect_passed",
         "gpu": "real_vllm_loaded_about_22_5GiB_VRAM_after_smoke",
+        "docker_policy": "no_docker_no_compose_no_dind"
+      }
+    },
+    {
+      "id": "M8-003",
+      "title": "Activate real 4090-backed YOLO vision inference",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "server/src/aetherville_server/vision.py",
+      "depends_on": [
+        "M8-002"
+      ],
+      "unblocked_by": "user_approved_all_gpu_workloads",
+      "last_checked_at": "2026-05-25T13:14:53+09:00",
+      "completed_at": "2026-05-25T13:14:53+09:00",
+      "diagnostics": {
+        "vision": "AETHERVILLE_VISION_MODE_real_uses_optional_Ultralytics_YOLO_boundary_with_mock_fallback",
+        "runpod": "ultralytics_8_4_53_installed_yolo11n_pt_started_on_RTX_4090_device_0",
+        "smoke": "vision_health_yolo_ok_and_detect_mode_real_passed_on_synthetic_road_frame",
+        "gpu": "combined_real_vllm_plus_yolo_smoke_used_about_23_1GiB_VRAM",
+        "filter": "traffic_relevant_COCO_labels_kept_by_default",
         "docker_policy": "no_docker_no_compose_no_dind"
       }
     }

@@ -281,3 +281,22 @@ Operational notes:
   `AETHERVILLE_VLLM_MODE=real AETHERVILLE_LLM_MODE=vllm AETHERVILLE_SKIP_UV_SYNC=1 AETHERVILLE_BOOTSTRAP_VLLM=1 AETHERVILLE_VLLM_INSTALL_PACKAGE="vllm==0.10.2" AETHERVILLE_VLLM_COMPAT_PACKAGE="transformers==4.55.4" MODEL_NAME=Qwen/Qwen2.5-14B-Instruct-AWQ VLLM_EXTRA_ARGS="--gpu-memory-utilization 0.88 --max-model-len 4096" bash infra/runpod/deploy_over_ssh.sh --mode direct`
 - If CUDA/driver errors return, keep the vLLM and transformers pins; do not upgrade to latest vLLM blindly.
 - Docker remains excluded from the current pod path.
+
+## Real YOLO vision handoff — 2026-05-25T13:14:53+09:00
+
+Current vision state:
+
+- Vision service supports real YOLO when started with `AETHERVILLE_VISION_MODE=real`.
+- Current model: `yolo11n.pt` loaded through Ultralytics.
+- Current package: `ultralytics 8.4.53` in the RunPod uv environment.
+- Current device: `AETHERVILLE_YOLO_DEVICE=0`.
+- Local tunnel smoke:
+  - `curl http://127.0.0.1:18001/health` reports `yolo:ok`.
+  - `POST http://127.0.0.1:18001/detect` with no frame returns `mode=real`; the service creates a deterministic synthetic road frame for smoke.
+- Real vLLM remains active simultaneously on `:8000`; keep VRAM pressure in mind before adding PPO/STT jobs.
+
+Restart command pattern:
+
+`AETHERVILLE_VLLM_MODE=real AETHERVILLE_LLM_MODE=vllm AETHERVILLE_VISION_MODE=real AETHERVILLE_BOOTSTRAP_YOLO=1 AETHERVILLE_YOLO_MODEL=yolo11n.pt AETHERVILLE_YOLO_DEVICE=0 AETHERVILLE_SKIP_UV_SYNC=1 bash infra/runpod/deploy_over_ssh.sh --mode direct`
+
+Do not run Docker on this pod.

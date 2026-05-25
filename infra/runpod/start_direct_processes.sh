@@ -33,6 +33,8 @@ MODEL_CACHE_DIR="${AETHERVILLE_MODEL_CACHE_DIR:-/workspace/aetherville-model-cac
 VLLM_INSTALL_PACKAGE="${AETHERVILLE_VLLM_INSTALL_PACKAGE:-vllm==0.10.2}"
 VLLM_COMPAT_PACKAGE="${AETHERVILLE_VLLM_COMPAT_PACKAGE:-transformers==4.55.4}"
 LLM_MODE="${AETHERVILLE_LLM_MODE:-cache}"
+VISION_MODE="${AETHERVILLE_VISION_MODE:-mock}"
+YOLO_INSTALL_PACKAGE="${AETHERVILLE_YOLO_INSTALL_PACKAGE:-ultralytics>=8.3.0}"
 RESTART_PROCESSES="${AETHERVILLE_RESTART_PROCESSES:-0}"
 
 redacted_cmd() {
@@ -147,6 +149,29 @@ ensure_real_vllm() {
 
 ensure_real_vllm
 
+ensure_real_yolo() {
+  if [[ "$VISION_MODE" != "real" ]]; then
+    return 0
+  fi
+  if [[ "$DRY_RUN" == "1" ]]; then
+    echo "DRY-RUN: verify or install real YOLO package '$YOLO_INSTALL_PACKAGE'"
+    return 0
+  fi
+  if uv run python -c "import ultralytics" >/dev/null 2>&1; then
+    echo "real YOLO package already available"
+    return 0
+  fi
+  if [[ "${AETHERVILLE_BOOTSTRAP_YOLO:-0}" != "1" ]]; then
+    echo "Blocker: AETHERVILLE_VISION_MODE=real requires ultralytics, but it is not installed." >&2
+    echo "Set AETHERVILLE_BOOTSTRAP_YOLO=1 to install '$YOLO_INSTALL_PACKAGE' into the uv environment." >&2
+    exit 22
+  fi
+  echo "Installing real YOLO runtime package into uv environment: $YOLO_INSTALL_PACKAGE"
+  run_or_print uv pip install "$YOLO_INSTALL_PACKAGE"
+}
+
+ensure_real_yolo
+
 if [[ "$REDIS_MODE" == "memory" ]]; then
   echo "redis mode: in-memory fallback selected; redis-server will not be started."
 elif command -v redis-server >/dev/null 2>&1; then
@@ -156,7 +181,7 @@ else
   echo "Set AETHERVILLE_REDIS_MODE=memory to make this explicit."
 fi
 
-start_process vision "uv run uvicorn aetherville_server.vision:app --host '$HOST' --port '$VISION_PORT'"
+start_process vision "AETHERVILLE_VISION_MODE='$VISION_MODE' AETHERVILLE_YOLO_MODEL='${AETHERVILLE_YOLO_MODEL:-yolo11n.pt}' AETHERVILLE_YOLO_DEVICE='${AETHERVILLE_YOLO_DEVICE:-0}' uv run uvicorn aetherville_server.vision:app --host '$HOST' --port '$VISION_PORT'"
 
 if [[ "$VLLM_MODE" == "real" ]]; then
   stop_process_if_running vllm-fallback

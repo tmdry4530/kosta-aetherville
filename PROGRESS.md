@@ -763,3 +763,14 @@
 - Verified orchestrator health reports `vllm:ok` and `POST /api/v1/citizens/c01/reflect` returns a real model-generated Korean reflection.
 - GPU evidence after smoke: about 22.5 GiB VRAM used by the real vLLM workload.
 - Docker daemon setup, Docker Compose, and Docker-in-Docker were not used.
+
+## Real 4090 YOLO vision activation — 2026-05-25T13:14:53+09:00
+
+- Status: complete for first real vision inference path; broader “extreme” completion remains active.
+- Added optional real YOLO mode to the vision service behind `AETHERVILLE_VISION_MODE=real` while preserving deterministic mock fallback.
+- Added RunPod direct-process support for `AETHERVILLE_BOOTSTRAP_YOLO=1`, `AETHERVILLE_YOLO_INSTALL_PACKAGE`, `AETHERVILLE_YOLO_MODEL`, and `AETHERVILLE_YOLO_DEVICE`.
+- Installed `ultralytics 8.4.53` on the RunPod uv environment and started vision with `yolo11n.pt` on device `0` while real vLLM remained active.
+- Verified vision `/health` reports `yolo:ok` and `/detect` returns `mode=real` with YOLO detections on the synthetic road frame.
+- GPU evidence after real YOLO smoke with real vLLM still loaded: about 23.1 GiB VRAM used.
+- Detection filter now defaults to traffic-relevant COCO labels so non-demo classes from synthetic shapes are suppressed.
+- Docker daemon setup, Docker Compose, and Docker-in-Docker were not used.
