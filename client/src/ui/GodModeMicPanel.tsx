@@ -15,6 +15,15 @@ interface GodModeMicPanelProps {
   orchestratorUrl: string | null;
 }
 
+interface CommandHistoryItem {
+  id: string;
+  source: 'text' | 'voice' | 'fallback';
+  command: string;
+  result: string;
+  actions: string[];
+  status: 'ok' | 'fallback' | 'error';
+}
+
 const MACROS = [
   { label: '비 내리기', text: '도시에 비를 내려줘' },
   { label: '민지·민수 만남', text: '민지랑 민수가 만난다' },
@@ -25,8 +34,14 @@ const MACROS = [
 export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMicPanelProps) {
   const [text, setText] = useState('민지랑 민수가 만난다');
   const [lastResult, setLastResult] = useState<string>('text fallback ready');
+  const [history, setHistory] = useState<CommandHistoryItem[]>([]);
   const [recorder, setRecorder] = useState<MediaRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+
+  function pushHistory(item: Omit<CommandHistoryItem, 'id'>) {
+    const id = `${Date.now()}-${item.source}-${item.status}`;
+    setHistory((current) => [{ id, ...item }, ...current].slice(0, 4));
+  }
 
   async function submitCommand(rawText = text) {
     setText(rawText);
@@ -34,6 +49,13 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
     try {
       if (!orchestratorUrl) {
         setLastResult('live orchestrator unavailable; use replay fallback');
+        pushHistory({
+          source: 'fallback',
+          command: rawText,
+          result: 'live orchestrator unavailable; replay fallback',
+          actions: [],
+          status: 'fallback'
+        });
         return;
       }
       const baseUrl = orchestratorUrl;
@@ -51,6 +73,13 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
       });
       if (!response.ok) {
         setLastResult(`command rejected: HTTP ${response.status}`);
+        pushHistory({
+          source: 'text',
+          command: rawText,
+          result: `command rejected: HTTP ${response.status}`,
+          actions: [],
+          status: 'error'
+        });
         return;
       }
       const responsePayload = (await response.json()) as GodCommandResponse;
@@ -61,20 +90,39 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
       const aiReason = responsePayload.ai_reason ? ` · ${responsePayload.ai_reason}` : '';
       const aiActions = responsePayload.ai_actions ?? [];
       const actionBadge = aiActions.length ? ` · actions: ${aiActions.join(' + ')}` : '';
-      setLastResult(
-        `${aiBadge}${actionBadge} · ${responsePayload.category}: ${responsePayload.event.message}${aiReason}`
-      );
+      const resultText = `${aiBadge}${actionBadge} · ${responsePayload.category}: ${responsePayload.event.message}${aiReason}`;
+      setLastResult(resultText);
+      pushHistory({
+        source: 'text',
+        command: rawText,
+        result: resultText,
+        actions: aiActions,
+        status: responsePayload.ai_mode === 'vllm' ? 'ok' : 'fallback'
+      });
     } catch {
       setLastResult('offline fallback: command queued for replay/demo');
+      pushHistory({
+        source: 'fallback',
+        command: rawText,
+        result: 'offline fallback: command queued for replay/demo',
+        actions: [],
+        status: 'fallback'
+      });
     }
   }
-
 
   async function submitVoiceCommand(audioBlobB64: string, mimeType: string) {
     setLastResult('transcribing voice command...');
     try {
       if (!orchestratorUrl) {
         setLastResult('live orchestrator unavailable; use replay fallback');
+        pushHistory({
+          source: 'fallback',
+          command: text,
+          result: 'live orchestrator unavailable; replay fallback',
+          actions: [],
+          status: 'fallback'
+        });
         return;
       }
       const baseUrl = orchestratorUrl;
@@ -93,17 +141,37 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
       });
       if (!response.ok) {
         setLastResult(`voice command rejected: HTTP ${response.status}`);
+        pushHistory({
+          source: 'voice',
+          command: text,
+          result: `voice command rejected: HTTP ${response.status}`,
+          actions: [],
+          status: 'error'
+        });
         return;
       }
       const responsePayload = (await response.json()) as VoiceCommandResponse;
       setText(responsePayload.transcript);
       const aiActions = responsePayload.command.ai_actions ?? [];
       const actionBadge = aiActions.length ? ` · actions: ${aiActions.join(' + ')}` : '';
-      setLastResult(
-        `voice ${responsePayload.stt_status}/${responsePayload.stt_mode}${actionBadge} · ${responsePayload.transcript}`
-      );
+      const resultText = `voice ${responsePayload.stt_status}/${responsePayload.stt_mode}${actionBadge} · ${responsePayload.transcript}`;
+      setLastResult(resultText);
+      pushHistory({
+        source: 'voice',
+        command: responsePayload.transcript,
+        result: resultText,
+        actions: aiActions,
+        status: responsePayload.stt_status === 'ok' ? 'ok' : 'fallback'
+      });
     } catch {
       setLastResult('voice offline fallback: use text command');
+      pushHistory({
+        source: 'fallback',
+        command: text,
+        result: 'voice offline fallback: use text command',
+        actions: [],
+        status: 'fallback'
+      });
     }
   }
 
@@ -170,6 +238,27 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
       <small className="godResult" aria-live="polite">
         {lastResult}
       </small>
+      <div className="godHistory" aria-label="God Mode command history">
+        <strong>Command history</strong>
+        <ol>
+          {(history.length ? history : [
+            {
+              id: 'empty-history',
+              source: 'fallback' as const,
+              command: '대기 중',
+              result: '명령 실행 후 vLLM actions와 visible effect가 여기에 고정됩니다.',
+              actions: [],
+              status: 'fallback' as const
+            }
+          ]).map((item) => (
+            <li className={`godHistoryItem godHistoryItem-${item.status}`} key={item.id}>
+              <span>{item.source}</span>
+              <b>{item.command}</b>
+              <small>{item.actions.length ? item.actions.join(' + ') : item.result}</small>
+            </li>
+          ))}
+        </ol>
+      </div>
     </article>
   );
 }

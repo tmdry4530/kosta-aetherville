@@ -7,12 +7,19 @@ import { fetchInitialWorldState } from '@/lib/serverWorldState';
 
 export const dynamic = 'force-dynamic';
 
-export default async function HomePage() {
+interface HomePageProps {
+  searchParams?: {
+    presenter?: string;
+  };
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
   const config = getClientConfig();
   const initialWorldState = await fetchInitialWorldState(config.orchestratorUrl);
+  const presenterMode = searchParams?.presenter === '1' || searchParams?.presenter === 'true';
 
   return (
-    <main className="shell">
+    <main className={`shell${presenterMode ? ' presenterShell' : ''}`}>
       <section className="hero">
         <p className="eyebrow">Project Aetherville · Live City Shell</p>
         <h1>RunPod 월드 상태를 렌더링하는 네온 도시 관제실</h1>
@@ -22,6 +29,7 @@ export default async function HomePage() {
         </p>
         <nav className="demoNav" aria-label="Demo fallback routes">
           <Link href="/replay">Replay fallback 열기</Link>
+          <Link href="/?presenter=1">Presenter mode</Link>
           <a href="#god-mode-panel">God Mode로 이동</a>
         </nav>
         <dl className="endpointGrid" aria-label="Configured endpoints">

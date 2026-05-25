@@ -48,6 +48,25 @@ body::before {
   padding: clamp(0.75rem, 2vw, 1.6rem);
 }
 
+.presenterShell {
+  padding: clamp(0.55rem, 1.2vw, 1rem);
+}
+
+.presenterShell .hero {
+  grid-template-columns: minmax(0, 1.2fr) minmax(18rem, 0.8fr);
+  padding: clamp(0.65rem, 1vw, 0.9rem);
+}
+
+.presenterShell h1 {
+  max-width: 34ch;
+  font-size: clamp(1.35rem, 2vw, 1.95rem);
+}
+
+.presenterShell .cityPanel,
+.presenterShell .cityCanvas {
+  min-height: clamp(620px, 82vh, 980px);
+}
+
 .hero,
 .cityPanel,
 .sidePanel {
@@ -682,6 +701,90 @@ h1 {
   display: block;
   margin-top: 0.65rem;
   color: var(--muted);
+}
+
+.godHistory {
+  display: grid;
+  gap: 0.45rem;
+  margin-top: 0.75rem;
+  border: 1px solid rgba(101, 244, 216, 0.2);
+  border-radius: 16px;
+  padding: 0.65rem;
+  background: rgba(3, 7, 18, 0.44);
+}
+
+.godHistory strong {
+  color: var(--accent);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.godHistory ol {
+  display: grid;
+  gap: 0.42rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.godHistoryItem {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.2rem 0.45rem;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 12px;
+  padding: 0.48rem 0.52rem;
+  background: rgba(15, 23, 42, 0.56);
+}
+
+.godHistoryItem span {
+  align-self: start;
+  border-radius: 999px;
+  padding: 0.16rem 0.36rem;
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.godHistoryItem b,
+.godHistoryItem small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.godHistoryItem b {
+  color: var(--text);
+  font-size: 0.72rem;
+}
+
+.godHistoryItem small {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 0.64rem;
+}
+
+.godHistoryItem-ok {
+  border-color: rgba(101, 244, 216, 0.42);
+}
+
+.godHistoryItem-ok span {
+  background: rgba(101, 244, 216, 0.14);
+  color: var(--accent);
+}
+
+.godHistoryItem-error {
+  border-color: rgba(255, 92, 168, 0.42);
+}
+
+.godHistoryItem-error span {
+  background: rgba(255, 92, 168, 0.14);
+  color: var(--hot);
 }
 
 .replayShell {
