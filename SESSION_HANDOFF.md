@@ -552,3 +552,14 @@ Verified end-to-end demo state:
 - Use this as the fastest pre-demo gate after starting RunPod direct-process services, SSH tunnel, and the local client.
 
 Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.
+
+## Scene Director impact polish handoff — 2026-05-25T16:35:00+09:00
+
+Current demo UI state:
+
+- The live city scene now includes a `SCENE DIRECTOR · LIVE IMPACT` HUD over the 3D view.
+- The panel deck now starts with a `Scene director` / `Live impact board` panel that shows RAIN, TAXI, TRAFFIC, MEETING, GPU POLICY, and LSTM FORECAST cards.
+- The cards derive from shared world state only; no separate fake demo state was added.
+- Browser smoke now requires those markers, so a future regression that hides the presentation impact UI will fail before the demo.
+
+Presenter cue: after the combined God Mode command, point to the HUD/cards first, then explain the specific rain/taxi/congestion/meeting state changes.

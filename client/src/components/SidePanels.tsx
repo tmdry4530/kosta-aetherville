@@ -7,6 +7,7 @@ import { useConnectionStore } from '@/store/connection';
 import { GodModeMicPanel } from '@/ui/GodModeMicPanel';
 import { LearningPanel } from '@/ui/LearningPanel';
 import { MemoryPanel } from '@/ui/MemoryPanel';
+import { SceneImpactPanel } from '@/ui/SceneImpactPanel';
 import { TrafficChartPanel } from '@/ui/TrafficChartPanel';
 import { VehicleCamPanel } from '@/ui/VehicleCamPanel';
 
@@ -32,6 +33,7 @@ export function SidePanels({ orchestratorUrl }: { orchestratorUrl: string | null
 
   return (
     <section className="panelDeck" aria-label="Aetherville side panels">
+      <SceneImpactPanel worldState={worldState} />
       <MemoryPanel citizen={primaryCitizen} tick={tick} worldState={worldState} />
       <VehicleCamPanel vehicle={primaryVehicle} orchestratorUrl={orchestratorUrl} />
       <TrafficChartPanel

@@ -362,7 +362,7 @@ python3 scripts/demo_rehearsal.py \
   --expected-client-endpoint http://127.0.0.1:18080
 ```
 
-This one command verifies orchestrator dependencies, 4090 traffic policy and LSTM evidence, real vehicle camera mode, learning status, vLLM multi-action God Mode effects, and live/replay browser smoke.
+This one command verifies orchestrator dependencies, 4090 traffic policy and LSTM evidence, real vehicle camera mode, learning status, vLLM multi-action God Mode effects, live/replay browser smoke, and the `SCENE DIRECTOR · LIVE IMPACT` / `Live impact board` markers.
 
 Open:
 

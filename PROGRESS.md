@@ -920,3 +920,12 @@
 - Verified vehicle camera endpoint returned `mode=real` with a traffic-light detection from the RunPod vision path.
 - Updated live demo runbook, 15-minute script, readiness checklist, TASKS, and SESSION_HANDOFF so this one-command rehearsal is part of the demo gate.
 - Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## Scene Director live impact polish — 2026-05-25T16:35:00+09:00
+
+- Status: complete locally; production browser rebuild/rehearsal follows in this turn.
+- Added a city `SCENE DIRECTOR · LIVE IMPACT` HUD so rain, traffic surge, taxi dispatch, citizen meeting, GPU policy, and LSTM forecast state are visible at a glance on the 3D scene.
+- Added `SceneImpactPanel` / `Live impact board` to the panel deck with active/inactive situation cards and current learning loop evidence.
+- Updated browser smoke expectations so live/replay Chromium checks fail if the Scene Director and impact board disappear.
+- Updated the 15-minute script, runbook, readiness checklist, TASKS, and SESSION_HANDOFF to make the impact board part of the presentation gate.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.

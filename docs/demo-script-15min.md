@@ -12,7 +12,7 @@
 
 - Before presenting, run `python3 scripts/demo_rehearsal.py --orchestrator-url http://127.0.0.1:18080 --client-url http://127.0.0.1:3000 --expected-client-endpoint http://127.0.0.1:18080` once against the selected Mode B tunnel or equivalent public endpoint.
 - Open the live city route.
-- Point out weather, tick count, citizens, vehicles, drones, traffic lights, and
+- Point out the `SCENE DIRECTOR · LIVE IMPACT` HUD first, then weather, tick count, citizens, vehicles, drones, traffic lights, and
   connection status.
 - Explain that state arrives from the orchestrator REST/Socket.IO contract.
 
@@ -51,7 +51,7 @@
 
 - Enter a multi-action text command such as “도시에 비를 내리고 민지가 택시를 부르게 하고 출근길을 혼잡하게 만들고 민수와 만나게 해줘” or use a macro button.
 - Point out `vLLM NN%` and the `actions: rain + traffic_jam + taxi_call + meeting` sequence when `AETHERVILLE_GOD_MODE_LLM=vllm` is enabled; if it says `rules fallback`, explain the safety fallback.
-- Confirm the visible world-state effect and event timeline update.
+- Confirm the visible world-state effect in the `SCENE DIRECTOR` HUD and `Live impact board`: RAIN, TAXI, TRAFFIC, MEETING, GPU POLICY, and LSTM FORECAST cards should light up after the combined command.
 - Show the `AI 학습 루프` panel and point out experience count, epoch, policy
   version, traffic bias, and taxi success signal changing after commands.
 - State clearly that this is persistent deterministic adaptation for demo

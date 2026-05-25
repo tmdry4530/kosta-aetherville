@@ -751,6 +751,43 @@ function WorldActors({ worldState }: { worldState: WorldStatePayload }) {
   );
 }
 
+
+function impactLabelsForWorld(worldState: WorldStatePayload) {
+  const tags = [
+    ...worldState.citizens.flatMap((citizen) => citizen.display_tags),
+    ...worldState.vehicles.flatMap((vehicle) => vehicle.display_tags),
+    ...worldState.traffic_lights.flatMap((light) => light.display_tags)
+  ].join(' ');
+  const minji = worldState.citizens.find((citizen) => citizen.id === 'c01' || citizen.name === '민지');
+  const minsu = worldState.citizens.find((citizen) => citizen.id === 'c02' || citizen.name === '민수');
+  const taxi = worldState.vehicles.find((vehicle) => vehicle.id === 'v01');
+  const labels = [
+    isRainActive(worldState) ? 'RAIN' : null,
+    isTrafficSurgeActive(worldState) || tags.includes('정체') || tags.includes('저속') ? 'TRAFFIC SURGE' : null,
+    taxi?.passenger_id || tags.includes('택시 호출') ? 'TAXI DISPATCH' : null,
+    minji?.talking_to === minsu?.id || minsu?.talking_to === minji?.id || tags.includes('대화') ? 'MEETING' : null,
+    worldState.traffic_ai.mode === 'checkpoint' ? 'GPU POLICY' : null,
+    worldState.traffic_forecast_ai.mode === 'lstm_checkpoint' ? 'LSTM FORECAST' : null
+  ].filter((label): label is string => Boolean(label));
+
+  return labels.length > 0 ? labels : ['BASELINE CITY'];
+}
+
+function SceneDirectorHud({ worldState }: { worldState: WorldStatePayload }) {
+  const labels = impactLabelsForWorld(worldState);
+
+  return (
+    <div className="directorHud" aria-label="Scene director live impact HUD">
+      <span className="directorHudTitle">SCENE DIRECTOR · LIVE IMPACT</span>
+      <div>
+        {labels.map((label) => (
+          <strong key={label}>{label}</strong>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function EventOverlays({ worldState }: { worldState: WorldStatePayload }) {
   const isRaining = isRainActive(worldState);
   const isTrafficSurge = isTrafficSurgeActive(worldState);
@@ -808,6 +845,7 @@ export function CityPlaceholder() {
     <section className={`cityPanel${isTrafficSurge ? ' cityPanel-trafficSurge' : ''}`} aria-label="Aetherville city scene">
       <div className="statusPill">{connectionState} · tick {lastTick} · {worldState.world.weather}</div>
       <EventOverlays worldState={worldState} />
+      <SceneDirectorHud worldState={worldState} />
       <SceneLegend />
       <div className="cityCanvas">
         <Canvas camera={{ position: CITY_CAMERA_POSITION, fov: CITY_CAMERA_FOV }} shadows>

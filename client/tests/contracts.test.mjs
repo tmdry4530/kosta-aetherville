@@ -12,6 +12,7 @@ test('client socket bridge listens for generated state_update envelope', () => {
     'utf8'
   );
   const sidePanelSource = readFileSync(new URL('../src/components/SidePanels.tsx', import.meta.url), 'utf8');
+  const impactPanelSource = readFileSync(new URL('../src/ui/SceneImpactPanel.tsx', import.meta.url), 'utf8');
   const memoryPanelSource = readFileSync(new URL('../src/ui/MemoryPanel.tsx', import.meta.url), 'utf8');
   const godModeSource = readFileSync(new URL('../src/ui/GodModeMicPanel.tsx', import.meta.url), 'utf8');
   const trafficPanelSource = readFileSync(new URL('../src/ui/TrafficChartPanel.tsx', import.meta.url), 'utf8');
@@ -39,6 +40,7 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(replaySource, /ReplayDriver/);
   assert.match(replaySource, /orchestratorUrl=\{null\}/);
   assert.match(replaySource, /Live city로 돌아가기/);
+  assert.match(sidePanelSource, /SceneImpactPanel/);
   assert.match(sidePanelSource, /MemoryPanel/);
   assert.match(sidePanelSource, /VehicleCamPanel/);
   assert.match(sidePanelSource, /TrafficChartPanel/);
@@ -64,6 +66,11 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(trafficPanelSource, /trafficPanel-surge/);
   assert.match(trafficPanelSource, /GPU POLICY/);
   assert.match(trafficPanelSource, /LSTM FORECAST/);
+  assert.match(impactPanelSource, /Live impact board/);
+  assert.match(impactPanelSource, /buildImpactItems/);
+  assert.match(impactPanelSource, /GPU POLICY/);
+  assert.match(impactPanelSource, /LSTM FORECAST/);
+  assert.match(impactPanelSource, /God Mode visible impact cards/);
   assert.match(learningPanelSource, /LearningSnapshot/);
   assert.match(learningPanelSource, /AI 학습 루프/);
   assert.match(learningPanelSource, /learningMetrics/);
@@ -91,6 +98,8 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(citySource, /AnimatedActorGroup/);
   assert.match(citySource, /BillboardTag/);
   assert.match(citySource, /EventOverlays/);
+  assert.match(citySource, /SceneDirectorHud/);
+  assert.match(citySource, /SCENE DIRECTOR · LIVE IMPACT/);
   assert.match(citySource, /weatherOverlay-rain/);
   assert.match(citySource, /trafficSurgeOverlay/);
   assert.match(citySource, /ROAD_LINES/);
@@ -107,6 +116,8 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(cssSource, /learningMetrics/);
   assert.match(cssSource, /learningMeter/);
   assert.match(cssSource, /cameraModeBadge-real/);
+  assert.match(cssSource, /directorHud/);
+  assert.match(cssSource, /impactChip-active/);
   assert.match(cssSource, /MINI MAP/);
   assert.match(cssSource, /LIVE ACTORS/);
   assert.match(mockWorldSource, /poseOnRoute/);

@@ -13,6 +13,8 @@ import subprocess
 import sys
 
 COMMON_PANEL_MARKERS = (
+    "SCENE DIRECTOR · LIVE IMPACT",
+    "Live impact board",
     "Memory stream",
     "Vehicle cam",
     "Traffic forecast",

@@ -56,6 +56,7 @@
 - [ ] `python3 scripts/browser_demo_smoke.py --mode replay --url http://127.0.0.1:3000/replay` passes.
 - [ ] Live route `/` renders city state.
 - [ ] Replay route `/replay` works before the live demo begins.
+- [ ] `SCENE DIRECTOR · LIVE IMPACT` HUD and `Live impact board` are visible before God Mode, then active cards light up after the combined command.
 - [ ] God Mode text command has been tested once.
 - [ ] `AI 학습 루프` panel is visible, and presenter says it is persistent
       deterministic adaptation rather than real neural-weight training.
