@@ -4,9 +4,11 @@ import json
 from pathlib import Path
 
 from aetherville_server.traffic_ai.env import TrafficSignalEnv
+from aetherville_server.traffic_ai.forecast import LstmForecastWrapper
 from aetherville_server.traffic_ai.metrics import compare_policies
 from aetherville_server.traffic_ai.policy import TrafficPolicyWrapper
 from aetherville_server.traffic_ai.train_gpu_policy import train_policy_checkpoint
+from aetherville_server.traffic_ai.train_lstm_forecast import train_lstm_forecast_checkpoint
 
 
 def test_traffic_env_reset_step_contract() -> None:
@@ -64,3 +66,25 @@ def test_policy_metrics_compare_against_fixed_cycle(tmp_path: Path) -> None:
     assert metrics["fixed_cycle"]["mode"] == "fixed_cycle"
     assert metrics["candidate"]["mode"] == "checkpoint"
     assert metrics["improvement_pct_vs_fixed"] >= 0
+
+
+def test_lstm_forecast_checkpoint_loads_and_predicts(tmp_path: Path) -> None:
+    checkpoint = tmp_path / "traffic_lstm.json"
+    payload = train_lstm_forecast_checkpoint(
+        samples=4,
+        epochs=0,
+        sequence_length=3,
+        hidden_size=2,
+    )
+    checkpoint.write_text(json.dumps(payload), encoding="utf-8")
+
+    forecaster = LstmForecastWrapper(checkpoint_path=checkpoint)
+    forecast = forecaster.predict(tick=30, vehicle_count=4, total_queue=18)
+    snapshot = forecaster.snapshot()
+
+    assert snapshot.mode == "lstm_checkpoint"
+    assert snapshot.checkpoint_loaded is True
+    assert snapshot.sequence_length == 3
+    assert len(forecast) == 3
+    assert forecast[0].expected_vehicle_count > 0
+    assert 0 <= forecast[0].congestion_index <= 1

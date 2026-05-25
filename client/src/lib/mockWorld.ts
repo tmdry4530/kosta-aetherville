@@ -232,6 +232,18 @@ export function createFallbackWorldState(tick = 0): WorldStatePayload {
       last_action: null,
       detail: 'replay fallback fixed-cycle baseline'
     },
+    traffic_forecast_ai: {
+      mode: 'deterministic_fallback',
+      forecast_version: 'deterministic-replay-v0',
+      checkpoint_loaded: false,
+      trained_on_gpu: false,
+      training_backend: 'none',
+      sequence_length: 0,
+      horizon_minutes: [5, 10, 15],
+      mape: null,
+      training_loss: null,
+      detail: 'replay fallback deterministic forecast'
+    },
     learning: {
       mode: 'deterministic_online_adaptation',
       storage: 'memory',

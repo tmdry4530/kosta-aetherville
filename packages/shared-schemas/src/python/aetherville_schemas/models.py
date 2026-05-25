@@ -201,6 +201,19 @@ class TrafficAiSnapshot(StrictModel):
     detail: str = "fixed cycle baseline"
 
 
+class TrafficForecastAiSnapshot(StrictModel):
+    mode: Literal["deterministic_fallback", "lstm_checkpoint"] = "deterministic_fallback"
+    forecast_version: str = "deterministic-forecast-v0"
+    checkpoint_loaded: bool = False
+    trained_on_gpu: bool = False
+    training_backend: Literal["none", "torch_cuda", "torch_cpu", "json"] = "none"
+    sequence_length: int = Field(default=0, ge=0)
+    horizon_minutes: list[int] = Field(default_factory=list)
+    mape: float | None = Field(default=None, ge=0)
+    training_loss: float | None = Field(default=None, ge=0)
+    detail: str = "deterministic forecast fallback"
+
+
 class LearningSnapshot(StrictModel):
     mode: Literal["deterministic_online_adaptation"] = "deterministic_online_adaptation"
     storage: Literal["json_persistence", "memory"] = "memory"
@@ -229,6 +242,9 @@ class WorldStatePayload(StrictModel):
     traffic_lights: list[TrafficLightState] = Field(default_factory=list)
     traffic_forecast: list[TrafficForecastPoint] = Field(default_factory=list)
     traffic_ai: TrafficAiSnapshot = Field(default_factory=TrafficAiSnapshot)
+    traffic_forecast_ai: TrafficForecastAiSnapshot = Field(
+        default_factory=TrafficForecastAiSnapshot
+    )
     learning: LearningSnapshot = Field(default_factory=LearningSnapshot)
 
 

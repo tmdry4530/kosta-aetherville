@@ -87,6 +87,34 @@ bash infra/runpod/deploy_over_ssh.sh --mode direct
 Expected state marker after restart: `traffic_ai.mode="checkpoint"` and
 `traffic_ai.training_backend="torch_cuda"`.
 
+To include the verified CUDA-trained LSTM traffic forecast, train/export the
+forecast checkpoint and restart the orchestrator with both traffic checkpoint
+paths:
+
+```bash
+ssh "$RUNPOD_USER@$RUNPOD_HOST" -p "$RUNPOD_SSH_PORT" -i "$RUNPOD_SSH_KEY" \
+  "cd \"$RUNPOD_REMOTE_DIR\" && mkdir -p /workspace/aetherville-model-cache/traffic && \
+   .venv/bin/python -m aetherville_server.traffic_ai.train_lstm_forecast \
+     --output /workspace/aetherville-model-cache/traffic/traffic_lstm_v1.json \
+     --samples 960 --epochs 180 --sequence-length 12 --hidden-size 10 --device cuda"
+
+AETHERVILLE_BOOTSTRAP_UV=1 \
+AETHERVILLE_VLLM_MODE=real \
+AETHERVILLE_LLM_MODE=vllm \
+AETHERVILLE_VISION_MODE=real \
+AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT=/workspace/aetherville-model-cache/traffic/traffic_policy_v1.json \
+AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT=/workspace/aetherville-model-cache/traffic/traffic_lstm_v1.json \
+AETHERVILLE_REDIS_MODE=memory \
+AETHERVILLE_VISION_PORT=18001 \
+AETHERVILLE_HEALTH_RETRIES=120 \
+AETHERVILLE_HEALTH_SLEEP=2 \
+bash infra/runpod/deploy_over_ssh.sh --mode direct
+```
+
+Expected state marker after restart:
+`traffic_forecast_ai.mode="lstm_checkpoint"` and
+`traffic_forecast_ai.training_backend="torch_cuda"`.
+
 ## 2. Verify RunPod health
 
 ```bash

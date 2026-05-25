@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "real_4090_vllm_yolo_and_traffic_policy_active",
+  "status": "real_4090_vllm_yolo_traffic_policy_and_lstm_forecast_active",
   "source_prd": "source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -674,6 +674,28 @@
         "metrics": "checkpoint avg_queue 32.913 vs fixed_cycle 48.138 = 31.628 percent queue reduction",
         "runtime": "orchestrator restarted with checkpoint path; sim state reports mode_checkpoint trained_on_gpu_true training_backend_torch_cuda",
         "client": "Traffic panel displays GPU POLICY badge and queue cut percentage from shared traffic_ai state",
+        "docker_policy": "no_docker_no_compose_no_dind"
+      }
+    },
+    {
+      "id": "M8-006",
+      "title": "Train and load real 4090-backed LSTM traffic forecast checkpoint",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/08-traffic-ai.md",
+      "depends_on": [
+        "M8-005"
+      ],
+      "unblocked_by": "user_approved_all_gpu_workloads",
+      "last_checked_at": "2026-05-25T14:09:29+09:00",
+      "completed_at": "2026-05-25T14:09:29+09:00",
+      "diagnostics": {
+        "schema": "WorldStatePayload now includes TrafficForecastAiSnapshot with lstm checkpoint gpu and metric fields",
+        "backend": "LstmForecastWrapper loads AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT and runs pure_python exported LSTM inference without torch in orchestrator",
+        "training": "RunPod .venv python trained LSTM forecast with torch_cuda on RTX_4090 samples_960 epochs_180 sequence_12 hidden_10",
+        "metrics": "checkpoint reported MAPE 11.84 percent and training_loss 2.911555",
+        "runtime": "orchestrator restarted with forecast checkpoint; sim state reports traffic_forecast_ai mode_lstm_checkpoint trained_on_gpu_true backend_torch_cuda",
+        "client": "Traffic panel displays LSTM FORECAST badge and MAPE from shared traffic_forecast_ai state",
         "docker_policy": "no_docker_no_compose_no_dind"
       }
     }

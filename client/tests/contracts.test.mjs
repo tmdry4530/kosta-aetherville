@@ -52,8 +52,10 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(godModeSource, /택시 호출/);
   assert.match(trafficPanelSource, /TrafficForecastPoint/);
   assert.match(trafficPanelSource, /TrafficAiSnapshot/);
+  assert.match(trafficPanelSource, /TrafficForecastAiSnapshot/);
   assert.match(trafficPanelSource, /trafficPanel-surge/);
   assert.match(trafficPanelSource, /GPU POLICY/);
+  assert.match(trafficPanelSource, /LSTM FORECAST/);
   assert.match(learningPanelSource, /LearningSnapshot/);
   assert.match(learningPanelSource, /AI 학습 루프/);
   assert.match(learningPanelSource, /learningMetrics/);
@@ -103,6 +105,7 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(mockWorldSource, /민수/);
   assert.match(mockWorldSource, /display_tags/);
   assert.match(mockWorldSource, /traffic_ai:/);
+  assert.match(mockWorldSource, /traffic_forecast_ai:/);
   assert.match(mockWorldSource, /learning:/);
   assert.doesNotMatch(mockWorldSource, /Math\.sin\(angle/);
   assert.doesNotMatch(mockWorldSource, /Math\.cos\(angle/);
@@ -111,8 +114,10 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(typesSource, /export interface SimStatusResponse/);
   assert.match(typesSource, /export interface GodCommandResponse/);
   assert.match(typesSource, /export interface TrafficAiSnapshot/);
+  assert.match(typesSource, /export interface TrafficForecastAiSnapshot/);
   assert.match(typesSource, /export interface LearningSnapshot/);
   assert.match(typesSource, /mode: 'mock' \\| 'real'/);
   assert.match(typesSource, /traffic_ai: TrafficAiSnapshot/);
+  assert.match(typesSource, /traffic_forecast_ai: TrafficForecastAiSnapshot/);
   assert.match(typesSource, /learning: LearningSnapshot/);
 });

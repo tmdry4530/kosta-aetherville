@@ -32,12 +32,30 @@ Runtime inference is intentionally JSON/linear so the orchestrator can load the
 checkpoint without importing torch or increasing tick-loop latency. Full PPO can
 replace the trainer later while preserving the same checkpoint boundary.
 
+## Real 4090 LSTM forecast path
+
+The approved direct-process RunPod path also includes a real CUDA-trained LSTM
+forecast checkpoint:
+
+- Trainer: `python -m aetherville_server.traffic_ai.train_lstm_forecast`
+- Output: `/workspace/aetherville-model-cache/traffic/traffic_lstm_v1.json`
+- Runtime env: `AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT=<checkpoint-json>`
+- Verified backend: `torch_cuda` on NVIDIA GeForce RTX 4090.
+- Verified training run: 960 samples, 180 epochs, sequence length 12, hidden size 10.
+- Verified metric: `MAPE 11.84%`, satisfying the demo target of ≤15% on the
+  deterministic forecast training distribution.
+
+Runtime inference is pure Python LSTM math using exported weights. The
+orchestrator does not import torch for forecast inference, but the browser sees
+`WorldStatePayload.traffic_forecast_ai.mode="lstm_checkpoint"` and can badge
+the panel as `LSTM FORECAST`.
+
 ## Upgrade path
 
 1. Keep the environment `reset()` / `step(action)` API stable.
 2. Replace the lightweight CUDA policy-distillation trainer with full PPO when a longer training window is approved.
 3. Export checkpoint metadata that `TrafficPolicyWrapper` can load.
-4. Replace deterministic forecast internals with an LSTM model behind `LstmForecastWrapper`.
+4. Broaden the LSTM training distribution with live traffic telemetry once available.
 5. Preserve deterministic fallback when checkpoint/model files are missing.
 
 ## Cost/safety gates

@@ -28,6 +28,7 @@ Required payload sections:
 - `traffic_lights`: id, pos, state, remaining_sec
 - `traffic_forecast`: next_15min list
 - `traffic_ai`: active signal policy mode, checkpoint/GPU evidence, queue metrics, and last action
+- `traffic_forecast_ai`: forecast model mode, LSTM checkpoint/GPU evidence, sequence metadata, and MAPE
 
 ### `event`
 

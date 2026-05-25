@@ -50,3 +50,4 @@ Real vLLM/YOLO/PPO/LSTM/STT remain opt-in upgrade paths, not current demo blocke
 | Full PPO/LSTM training takes longer than demo window | medium | medium | Use the verified short CUDA-trained JSON checkpoint for demo; keep full PPO/LSTM as post-demo upgrade. |
 | Checkpoint underperforms fixed cycle on a broader scenario | medium | low | Runtime fallback remains fixed-cycle/pressure-safe; metric is stated only for the deterministic `TrafficSignalEnv` benchmark. |
 | vLLM + YOLO + traffic training VRAM pressure | medium | medium | Traffic checkpoint trainer is lightweight and was verified with real vLLM/YOLO still active; stage heavier jobs separately. |
+| LSTM forecast overfits deterministic synthetic distribution | medium | low | State MAPE scope honestly; next production-hardening step is live telemetry validation. |

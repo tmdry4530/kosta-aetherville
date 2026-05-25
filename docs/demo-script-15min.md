@@ -38,9 +38,12 @@
 - Explain the measured traffic policy result: the current CUDA-trained
   checkpoint reduced average queue by `31.628%` versus fixed cycle in the
   deterministic traffic environment.
+- Point out the `LSTM FORECAST` badge when the RunPod forecast checkpoint is
+  active. The current CUDA-trained LSTM reports `MAPE 11.84%` on the demo
+  forecast distribution.
 - Explain that full PPO/LSTM training remains the upgrade path, but the demo is
-  no longer just a fixed-cycle animation: the signal action is loaded from a
-  GPU-trained checkpoint when `traffic_ai.mode` is `checkpoint`.
+  no longer just deterministic traffic bars: the signal action and the forecast
+  can both be loaded from 4090-trained checkpoints.
 - Mention that training jobs are intentionally not started during the live demo.
 
 ## 11:00–13:30 — God Mode command demo + AI learning panel

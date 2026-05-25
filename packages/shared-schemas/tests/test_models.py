@@ -17,6 +17,7 @@ from aetherville_schemas import (
     MemoryRecord,
     PlanNode,
     TrafficAiSnapshot,
+    TrafficForecastAiSnapshot,
     TripState,
     VehicleCameraFrame,
     VisionDetectResponse,
@@ -214,3 +215,24 @@ def test_traffic_ai_snapshot_contract_validates() -> None:
     assert snapshot.mode == "checkpoint"
     assert snapshot.trained_on_gpu is True
     assert snapshot.last_action == 1
+
+
+def test_traffic_forecast_ai_snapshot_contract_validates() -> None:
+    snapshot = TrafficForecastAiSnapshot.model_validate(
+        {
+            "mode": "lstm_checkpoint",
+            "forecast_version": "traffic-lstm-v1",
+            "checkpoint_loaded": True,
+            "trained_on_gpu": True,
+            "training_backend": "torch_cuda",
+            "sequence_length": 12,
+            "horizon_minutes": [5, 10, 15],
+            "mape": 7.4,
+            "training_loss": 0.01,
+            "detail": "RunPod CUDA-trained LSTM traffic forecast",
+        }
+    )
+
+    assert snapshot.mode == "lstm_checkpoint"
+    assert snapshot.trained_on_gpu is True
+    assert snapshot.horizon_minutes == [5, 10, 15]

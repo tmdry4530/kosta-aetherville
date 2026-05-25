@@ -813,3 +813,21 @@
 - Status: complete locally.
 - Restarted the local Next dev server on port `3000` with tunnel `NEXT_PUBLIC_*` values.
 - HTTP smoke passed for `/` and `/replay` after Next compiled the updated traffic panel.
+
+## Real 4090 LSTM traffic forecast checkpoint — 2026-05-25T14:09:29+09:00
+
+- Status: complete and deployed to the verified direct-process RunPod runtime.
+- Added `TrafficForecastAiSnapshot` to the shared world-state contract and regenerated TypeScript contracts.
+- Added `aetherville_server.traffic_ai.train_lstm_forecast`, a short PyTorch LSTM trainer that exports JSON weights for torch-free orchestrator inference.
+- Trained the LSTM forecast checkpoint on the RTX 4090 with PyTorch CUDA: 960 samples, 180 epochs, sequence length 12, hidden size 10.
+- Training output reported `trained_on_gpu: true`, `training_backend: torch_cuda`, `MAPE: 11.84`, and `training_loss: 2.911555`.
+- Orchestrator was restarted with both `AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT` and `AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT` pointing to RunPod model-cache checkpoints.
+- Runtime smoke via local tunnel confirmed `traffic_forecast_ai.mode=lstm_checkpoint`, `trained_on_gpu=true`, `training_backend=torch_cuda`, and forecast points were emitted from the LSTM checkpoint path.
+- Browser traffic panel now displays an `LSTM FORECAST` badge and MAPE from shared state.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## Local client LSTM panel restart — 2026-05-25T14:18:40+09:00
+
+- Status: complete locally.
+- After the LSTM panel/schema update, the old Next dev cache produced a transient missing chunk error.
+- Cleared `client/.next`, restarted Next dev on port `3000` with tunnel `NEXT_PUBLIC_*` values, and re-smoked `/` plus `/replay` successfully.

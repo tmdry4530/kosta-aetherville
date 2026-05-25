@@ -25,6 +25,7 @@ def test_tick_scheduler_step_advances_full_world_state() -> None:
     assert len(payload.traffic_lights) == 4
     assert payload.traffic_forecast
     assert payload.traffic_ai.mode == "fixed_cycle"
+    assert payload.traffic_forecast_ai.mode == "deterministic_fallback"
     assert payload.learning.mode == "deterministic_online_adaptation"
     assert payload.citizens[0].name == "민지"
     assert payload.citizens[0].display_tags[:2] == ["민지", "인도"]

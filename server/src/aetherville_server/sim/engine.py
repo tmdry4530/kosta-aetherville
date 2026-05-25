@@ -230,6 +230,7 @@ class SimulationEngine:
                 total_queue=total_queue,
             ),
             traffic_ai=traffic_ai,
+            traffic_forecast_ai=self.traffic_forecaster.snapshot(),
             learning=learning,
         )
 

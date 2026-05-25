@@ -37,6 +37,9 @@
 - [ ] Vision health returns `ok` on port `18001`.
 - [ ] If using the 4090 traffic checkpoint, `/api/v1/sim/state` reports
       `traffic_ai.mode="checkpoint"` and `training_backend="torch_cuda"`.
+- [ ] If using the 4090 LSTM forecast checkpoint, `/api/v1/sim/state` reports
+      `traffic_forecast_ai.mode="lstm_checkpoint"` and
+      `training_backend="torch_cuda"`.
 - [ ] Socket.IO polling smoke receives `aetherville:state_update`.
 - [ ] Local client starts with `NEXT_PUBLIC_ORCHESTRATOR_URL`,
       `NEXT_PUBLIC_SOCKET_URL`, and `NEXT_PUBLIC_SOCKET_TRANSPORTS=polling`

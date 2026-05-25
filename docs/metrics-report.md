@@ -29,14 +29,14 @@
 | Replay fallback | `/replay` route and e2e test | switch when RunPod fails |
 | God Mode effect | REST/RunPod smoke updated state | ≤ 3 sec target not benchmarked |
 | Vision boxes | Vehicle camera endpoint can enrich from real RunPod YOLO; browser panel polls it and badges `REAL YOLO · RunPod 4090` | fallback keeps mock detections when YOLO is unavailable |
-| Traffic forecast | 5/10/15 minute payload rendered | real LSTM deferred |
+| Traffic forecast | RunPod CUDA-trained LSTM checkpoint loaded in world state | 11.84% MAPE on deterministic training distribution |
 | Traffic policy | RunPod CUDA-trained checkpoint loaded in world state | 31.628% avg queue reduction vs fixed cycle |
 
 ## Caveats
 
 - Public RunPod URL exposure is not configured in tracked files.
 - Vision default architecture port `8001` is still occupied by pod nginx; direct-process vision uses `18001`.
-- PPO, LSTM, and STT model workloads remain deferred behind explicit cost/model approval.
+- Full PPO, live-telemetry LSTM hardening, and STT model workloads remain deferred behind explicit cost/model approval.
 
 ## Real 4090 vLLM smoke — 2026-05-25
 
@@ -48,7 +48,7 @@
   - Orchestrator `/api/v1/health` reported `vllm:ok`.
   - `POST /api/v1/citizens/c01/reflect` returned a real model-generated Korean reflection.
 - GPU memory after smoke: approximately 22.5 GiB VRAM used.
-- Remaining real ML gaps: PPO/LSTM and STT are still next GPU integration targets.
+- Remaining real ML gaps: full PPO and STT are still next GPU integration targets.
 
 ## Real 4090 YOLO smoke — 2026-05-25
 
@@ -78,3 +78,16 @@
 - Metric: average queue `32.913` vs fixed-cycle `48.138`, `31.628%` reduction.
 - UI: traffic panel displays a `GPU POLICY` badge and queue-cut percentage from
   the shared `traffic_ai` state.
+
+## Real 4090 LSTM traffic forecast checkpoint — 2026-05-25
+
+- Trainer: `aetherville_server.traffic_ai.train_lstm_forecast`.
+- Backend: `torch_cuda` on NVIDIA GeForce RTX 4090.
+- Samples/epochs: 960 samples, 180 epochs.
+- Sequence: length 12, hidden size 10.
+- Checkpoint: JSON LSTM weights under the RunPod model cache.
+- Runtime: orchestrator loaded `AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT` and
+  `WorldStatePayload.traffic_forecast_ai` reported `mode=lstm_checkpoint`,
+  `trained_on_gpu=true`, and `training_backend=torch_cuda`.
+- Metric: `MAPE 11.84%`, training loss `2.911555`.
+- UI: traffic panel displays an `LSTM FORECAST` badge and MAPE from shared state.

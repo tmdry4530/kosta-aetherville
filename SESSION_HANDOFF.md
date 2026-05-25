@@ -360,3 +360,28 @@ Demo talking point:
 - Local client dev server is running on `http://127.0.0.1:3000/` with tunnel endpoint environment values.
 - `/` and `/replay` HTTP smokes passed after recompilation.
 - The traffic panel source now reads shared `traffic_ai` state and should show `GPU POLICY` when connected to the current RunPod orchestrator.
+
+## Real LSTM forecast checkpoint handoff — 2026-05-25T14:09:29+09:00
+
+Current runtime state:
+
+- RunPod direct-process services are running without Docker.
+- Real vLLM, real YOLO, traffic policy checkpoint, and LSTM forecast checkpoint are active together.
+- LSTM forecast checkpoint path is under the RunPod model cache and was trained with `torch_cuda` on the RTX 4090.
+- Orchestrator is running with both traffic checkpoint env vars set.
+- Local tunnel smoke showed:
+  - `traffic_forecast_ai.mode`: `lstm_checkpoint`
+  - `traffic_forecast_ai.trained_on_gpu`: `true`
+  - `traffic_forecast_ai.training_backend`: `torch_cuda`
+  - `traffic_forecast_ai.mape`: `11.84`
+
+Demo talking point:
+
+- The traffic panel now has two real AI markers: `GPU POLICY` for signal control and `LSTM FORECAST` for congestion prediction. Runtime inference is exported-weight/pure-Python, so the demo remains stable even while vLLM and YOLO are active.
+
+## Local client after LSTM forecast update — 2026-05-25T14:18:40+09:00
+
+- Local client dev server is running on `http://127.0.0.1:3000/` with tunnel endpoint environment values.
+- `client/.next` was cleared before restart to resolve a stale missing chunk error.
+- `/` and `/replay` HTTP smokes passed after recompilation.
+- The traffic panel source now reads both `traffic_ai` and `traffic_forecast_ai`; when connected to the current RunPod state it should show `GPU POLICY` and `LSTM FORECAST` badges.

@@ -201,6 +201,19 @@ export interface TrafficAiSnapshot {
   detail: string;
 }
 
+export interface TrafficForecastAiSnapshot {
+  mode: 'deterministic_fallback' | 'lstm_checkpoint';
+  forecast_version: string;
+  checkpoint_loaded: boolean;
+  trained_on_gpu: boolean;
+  training_backend: 'none' | 'torch_cuda' | 'torch_cpu' | 'json';
+  sequence_length: number;
+  horizon_minutes: number[];
+  mape?: number | null;
+  training_loss?: number | null;
+  detail: string;
+}
+
 export interface LearningSnapshot {
   mode: 'deterministic_online_adaptation';
   storage: 'json_persistence' | 'memory';
@@ -229,6 +242,7 @@ export interface WorldStatePayload {
   traffic_lights: TrafficLightState[];
   traffic_forecast: TrafficForecastPoint[];
   traffic_ai: TrafficAiSnapshot;
+  traffic_forecast_ai: TrafficForecastAiSnapshot;
   learning: LearningSnapshot;
 }
 

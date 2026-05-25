@@ -172,3 +172,16 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - Full PPO and LSTM training remain upgrade paths for longer, broader traffic scenarios.
   - Docker remains excluded from the current RunPod execution strategy.
 - Revisit when: a longer training window is approved, multiple intersections require a richer observation/action space, or traffic forecasting moves from deterministic facade to a trained sequence model.
+
+## ADR-015: Export CUDA-trained LSTM forecast weights for torch-free runtime inference
+
+- Status: accepted
+- Context: The traffic forecast panel previously used deterministic bars, which was too weak for the approved 4090-backed AI demo. Importing torch into the orchestrator tick loop would increase runtime risk and GPU memory pressure while real vLLM and YOLO are active.
+- Decision: Train a compact LSTM forecast model on the RunPod 4090 with PyTorch/CUDA, export the LSTM and head weights to JSON, and run pure-Python LSTM inference in `LstmForecastWrapper` when `AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT` is present.
+- Consequences:
+  - The demo can truthfully show a `torch_cuda`-trained LSTM forecast checkpoint in world state and UI.
+  - Runtime forecast inference remains torch-free and deterministic from exported weights.
+  - The verified checkpoint reports `MAPE 11.84%` on the deterministic training distribution; live telemetry validation remains future work.
+  - Missing or invalid forecast checkpoints fall back to deterministic forecast bars.
+  - Docker remains excluded from the current RunPod execution strategy.
+- Revisit when: live traffic telemetry is collected, a richer multi-intersection forecast target exists, or forecast inference moves to a dedicated model-serving process.
