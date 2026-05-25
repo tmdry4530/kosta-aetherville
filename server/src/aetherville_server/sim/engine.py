@@ -26,6 +26,7 @@ from aetherville_schemas import (
 )
 from aetherville_server.agents import CitizenAgentService
 from aetherville_server.learning import LearningStore
+from aetherville_server.llm import planner_from_env
 from aetherville_server.orchestrator import GodCommandDispatcher
 from aetherville_server.traffic_ai import FixedCycleController, LstmForecastWrapper
 from aetherville_server.vehicles import VehicleController
@@ -65,6 +66,7 @@ class SimulationEngine:
         self.citizens = citizen_service or CitizenAgentService(
             count=self.config.visible_citizen_count,
             seed=self.config.seed,
+            planner=planner_from_env(),
         )
         self.vehicles = VehicleController()
         self.traffic_controller = FixedCycleController()
@@ -99,6 +101,7 @@ class SimulationEngine:
         self.citizens = CitizenAgentService(
             count=self.config.visible_citizen_count,
             seed=self._seed,
+            planner=planner_from_env(),
         )
         self.vehicles = VehicleController()
         self.traffic_controller = FixedCycleController()

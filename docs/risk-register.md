@@ -34,3 +34,11 @@ As of 2026-05-25T01:24:00+09:00, the report-only QA findings for the approved de
 - Mobile first viewport no longer overlays the city scene with the connection card.
 
 Real vLLM/YOLO/PPO/LSTM/STT remain opt-in upgrade paths, not current demo blockers.
+
+## Real vLLM activation risk update — 2026-05-25
+
+| Risk | Likelihood | Impact | Mitigation |
+|---|---:|---:|---|
+| Latest vLLM pulls CUDA 13 packages incompatible with current driver | proven | high | Pin `vllm==0.10.2` and `transformers==4.55.4` for this pod. |
+| 14B AWQ model occupies most of 4090 VRAM | high | medium | Keep one-model serving, limit model len to 4096, and avoid simultaneous heavy YOLO/PPO jobs until staged. |
+| Health checks time out during cold model load | medium | medium | Use longer real-mode health retries and persistent `/workspace` model cache. |

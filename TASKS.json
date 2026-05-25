@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "demo_persistent_learning_loop_active",
+  "status": "real_4090_vllm_reflection_active",
   "source_prd": "source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -587,6 +587,28 @@
         "runpod": "direct_process_redeployed_health_learning_status_godmode_learning_smoke_passed_no_docker",
         "client": "production_client_rebuilt_with_tunnel_envs_restarted_on_3000_AI_learning_panel_rendered",
         "verification": "json_bash_gitdiff_pytest_ruff_mypy_pnpm_lint_typecheck_test_e2e_build_runpod_smoke_passed"
+      }
+    },
+    {
+      "id": "M8-002",
+      "title": "Activate real 4090-backed vLLM and connect citizen reflection",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "infra/runpod/start_direct_processes.sh",
+      "depends_on": [
+        "M8-001"
+      ],
+      "unblocked_by": "user_approved_all_gpu_workloads",
+      "last_checked_at": "2026-05-25T13:02:41+09:00",
+      "completed_at": "2026-05-25T13:02:41+09:00",
+      "diagnostics": {
+        "push": "previous_demo_adaptation_commit_pushed_to_origin_master_ea506b1",
+        "vllm": "Qwen_Qwen2_5_14B_Instruct_AWQ_served_by_vllm_0_10_2_on_RTX_4090_direct_process_port_8000",
+        "compat": "transformers_4_55_4_and_CUDA_12_8_compatible_torch_2_8_selected_after_latest_vllm_CUDA_13_failure",
+        "llm_integration": "OpenAICompatiblePlanner_uses_vLLM_for_citizen_reflection_with_cached_fallback",
+        "smoke": "v1_models_chat_completions_orchestrator_health_and_citizen_reflect_passed",
+        "gpu": "real_vllm_loaded_about_22_5GiB_VRAM_after_smoke",
+        "docker_policy": "no_docker_no_compose_no_dind"
       }
     }
   ]

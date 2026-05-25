@@ -749,3 +749,17 @@
 - God Mode learning smoke passed: traffic, taxi, and rain commands raised experience count to 6, policy version to `adaptive-demo-v2`, traffic bias to `0.12`, taxi success rate to `0.59`, weather to `rain`, taxi tags to `택시 호출/민지에게 이동`, traffic light tags to `학습제어/v2`, and forecast indices to `[1.0, 1.0, 1.0]`.
 - Local production client was rebuilt with tunnel `NEXT_PUBLIC_*` values, restarted on port `3000`, and the rendered HTML contains `AI 학습 루프`.
 - Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## Real 4090 vLLM activation — 2026-05-25T13:02:41+09:00
+
+- Status: complete for first real GPU workload; broader “extreme” completion remains active.
+- Pushed prior completed work to `origin/master` at commit `ea506b1`.
+- Added direct-process support for real vLLM bootstrap with CUDA-12.8-compatible pins: `vllm==0.10.2` and `transformers==4.55.4`.
+- Added process-mode switching so real vLLM stops the mock vLLM fallback before binding `:8000`, and mock mode stops real vLLM when reverting.
+- Added model-cache guidance and sync exclusions for large local video artifacts.
+- Started real vLLM on the RTX 4090 with `Qwen/Qwen2.5-14B-Instruct-AWQ`, `--gpu-memory-utilization 0.88`, and `--max-model-len 4096`.
+- Verified `/v1/models` returns `Qwen/Qwen2.5-14B-Instruct-AWQ` and `/v1/chat/completions` generated a Korean citizen line.
+- Added `OpenAICompatiblePlanner` and connected citizen reflection to real vLLM when `AETHERVILLE_LLM_MODE=vllm`.
+- Verified orchestrator health reports `vllm:ok` and `POST /api/v1/citizens/c01/reflect` returns a real model-generated Korean reflection.
+- GPU evidence after smoke: about 22.5 GiB VRAM used by the real vLLM workload.
+- Docker daemon setup, Docker Compose, and Docker-in-Docker were not used.

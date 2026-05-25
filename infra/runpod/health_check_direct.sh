@@ -6,6 +6,7 @@ VISION_URL="${VISION_URL:-http://127.0.0.1:${AETHERVILLE_VISION_PORT:-18001}}"
 VLLM_URL="${VLLM_URL:-http://127.0.0.1:${AETHERVILLE_VLLM_PORT:-8000}/v1}"
 REDIS_PORT="${AETHERVILLE_REDIS_PORT:-6379}"
 REDIS_MODE="${AETHERVILLE_REDIS_MODE:-auto}"
+VLLM_MODE="${AETHERVILLE_VLLM_MODE:-mock}"
 HEALTH_RETRIES="${AETHERVILLE_HEALTH_RETRIES:-1}"
 HEALTH_SLEEP="${AETHERVILLE_HEALTH_SLEEP:-0.5}"
 
@@ -35,7 +36,11 @@ check_http() {
 
 check_http orchestrator "$ORCHESTRATOR_URL/api/v1/health" '"service":"orchestrator"'
 check_http vision "$VISION_URL/health" '"service":"vision"'
-check_http vllm "$VLLM_URL/models" 'aetherville-mock-llm'
+if [[ "$VLLM_MODE" == "real" ]]; then
+  check_http vllm "$VLLM_URL/models" '"object":"list"'
+else
+  check_http vllm "$VLLM_URL/models" 'aetherville-mock-llm'
+fi
 
 echo "== redis =="
 if [[ "$REDIS_MODE" == "memory" ]]; then

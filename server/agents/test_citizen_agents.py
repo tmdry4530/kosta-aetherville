@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+import json
+from typing import Any
+
+import pytest
+
 from aetherville_schemas import DialogueResponse, MemoryStreamResponse
 from aetherville_server.agents import CitizenAgentService, generate_citizen_personas
+from aetherville_server.llm import OpenAICompatiblePlanner
 
 
 def test_twenty_citizens_are_fixture_generated() -> None:
@@ -53,3 +59,40 @@ def test_meeting_state_tags_specific_people() -> None:
     assert minji.talking_to == minsu.id
     assert minsu.talking_to == minji.id
     assert "만남" in minji.display_tags
+
+
+def test_openai_compatible_planner_reflects_with_vllm_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeResponse:
+        def __enter__(self) -> FakeResponse:
+            return self
+
+        def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+            del exc_type, exc, tb
+            return None
+
+        @staticmethod
+        def read() -> bytes:
+            return json.dumps(
+                {"choices": [{"message": {"content": "민지는 비와 정체를 함께 기억한다."}}]}
+            ).encode()
+
+    def fake_urlopen(request: Any, timeout: float) -> FakeResponse:
+        captured["url"] = request.full_url
+        captured["timeout"] = timeout
+        captured["body"] = json.loads(request.data.decode())
+        return FakeResponse()
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    planner = OpenAICompatiblePlanner(base_url="http://vllm.local/v1", model="demo-model")
+    service = CitizenAgentService(count=1, planner=planner)
+    service.append_memory("c01", "rain and traffic surge changed the city", tick=7)
+
+    reflection = service.reflect("c01", tick=8)
+
+    assert reflection.reflection == "민지는 비와 정체를 함께 기억한다."
+    assert captured["url"] == "http://vllm.local/v1/chat/completions"
+    assert captured["body"]["model"] == "demo-model"  # type: ignore[index]

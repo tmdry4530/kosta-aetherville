@@ -260,3 +260,24 @@ If restarting:
 2. Rebuild/start client with the same `NEXT_PUBLIC_*` values if using production mode.
 3. Verify `curl http://127.0.0.1:18080/api/v1/learning/status` before presenting the AI learning panel.
 4. Do not run Docker, Docker Compose, Docker-in-Docker, or real model training without a separate explicit request.
+
+## Real 4090 vLLM handoff — 2026-05-25T13:02:41+09:00
+
+Current GPU state:
+
+- Real vLLM is active on the RunPod RTX 4090 through direct-process runtime.
+- Served model: `Qwen/Qwen2.5-14B-Instruct-AWQ`.
+- Runtime pins for this pod: `vllm==0.10.2`, `transformers==4.55.4`, Torch CUDA 12.8.
+- Model cache: `/workspace/aetherville-model-cache`.
+- Local tunnel checks:
+  - `http://127.0.0.1:18000/v1/models` returns the Qwen 14B AWQ model.
+  - `http://127.0.0.1:18080/api/v1/health` reports `vllm:ok`.
+  - `POST http://127.0.0.1:18080/api/v1/citizens/c01/reflect` uses real vLLM when orchestrator is started with `AETHERVILLE_LLM_MODE=vllm`.
+
+Operational notes:
+
+- Do not run `uv run` manually on the remote workspace for inspection unless needed; it may sync the project environment. Prefer `.venv/bin/python` for package version checks.
+- If restarting real vLLM, use:
+  `AETHERVILLE_VLLM_MODE=real AETHERVILLE_LLM_MODE=vllm AETHERVILLE_SKIP_UV_SYNC=1 AETHERVILLE_BOOTSTRAP_VLLM=1 AETHERVILLE_VLLM_INSTALL_PACKAGE="vllm==0.10.2" AETHERVILLE_VLLM_COMPAT_PACKAGE="transformers==4.55.4" MODEL_NAME=Qwen/Qwen2.5-14B-Instruct-AWQ VLLM_EXTRA_ARGS="--gpu-memory-utilization 0.88 --max-model-len 4096" bash infra/runpod/deploy_over_ssh.sh --mode direct`
+- If CUDA/driver errors return, keep the vLLM and transformers pins; do not upgrade to latest vLLM blindly.
+- Docker remains excluded from the current pod path.

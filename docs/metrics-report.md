@@ -36,3 +36,15 @@
 - Public RunPod URL exposure is not configured in tracked files.
 - Vision default architecture port `8001` is still occupied by pod nginx; direct-process vision uses `18001`.
 - Real vLLM, YOLO, PPO, LSTM, and STT model workloads are intentionally deferred behind explicit cost/model approval.
+
+## Real 4090 vLLM smoke — 2026-05-25
+
+- Model: `Qwen/Qwen2.5-14B-Instruct-AWQ` served by real vLLM on the RunPod RTX 4090.
+- Runtime pins: `vllm==0.10.2`, `transformers==4.55.4`, Torch CUDA 12.8-compatible stack.
+- Smoke evidence:
+  - `/v1/models` returned the Qwen 14B AWQ model.
+  - `/v1/chat/completions` generated a Korean citizen line.
+  - Orchestrator `/api/v1/health` reported `vllm:ok`.
+  - `POST /api/v1/citizens/c01/reflect` returned a real model-generated Korean reflection.
+- GPU memory after smoke: approximately 22.5 GiB VRAM used.
+- Remaining real ML gaps: YOLO, PPO/LSTM, and STT are still next GPU integration targets.

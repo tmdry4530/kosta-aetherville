@@ -135,3 +135,15 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - Real autonomous learning remains an explicit upgrade path requiring approved storage, training jobs, checkpoints, model names, cost limits, and rollback.
   - Docker remains excluded from the current RunPod execution path.
 - Revisit when: real training/inference workloads are explicitly approved with model/runtime parameters, or a production persistence backend replaces JSON state.
+
+## ADR-012: Approved 4090 workload runs real vLLM 14B AWQ before broader GPU training
+
+- Status: accepted
+- Context: The user approved active use of the RTX 4090 RunPod. The current pod driver exposes CUDA 12.8 capability and has enough disk for a quantized 14B model, but the newest vLLM release pulled CUDA 13-era Torch packages that failed against the pod driver.
+- Decision: Run real vLLM through the existing direct-process port `8000` using `Qwen/Qwen2.5-14B-Instruct-AWQ`, `vllm==0.10.2`, `transformers==4.55.4`, model cache under `/workspace/aetherville-model-cache`, and OpenAI-compatible `/v1` APIs. Keep Docker out of the runtime. Connect citizen reflection to the real vLLM endpoint through a fallback-safe OpenAI-compatible planner.
+- Consequences:
+  - The demo now has a real 4090-backed LLM path for citizen reflection instead of only a mock fallback.
+  - vLLM startup requires model-cache persistence and longer health waits than the mock fallback.
+  - The CUDA/version pins are part of the current pod contract until the driver or image changes.
+  - If real vLLM fails, deterministic cached planner fallback remains available without breaking the demo.
+- Revisit when: the RunPod image/driver changes, a larger model is selected, or model serving moves to a managed endpoint.

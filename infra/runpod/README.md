@@ -30,6 +30,10 @@ bash infra/runpod/stop_direct_processes.sh
 
 Current verified RunPod state uses direct-process runtime because Docker daemon
 is unavailable and not required. These scripts are conservative: they do not
-install Docker, run Docker Compose, delete remote data, or start real vLLM model
-downloads unless explicitly configured with `AETHERVILLE_VLLM_MODE=real` and an
-approved `MODEL_NAME`.
+install Docker, run Docker Compose, or delete remote data. Real vLLM model
+downloads start only when explicitly configured with
+`AETHERVILLE_VLLM_MODE=real`, `AETHERVILLE_BOOTSTRAP_VLLM=1`, and a selected
+`MODEL_NAME`; the current 4090 pod uses a CUDA-12.8-compatible vLLM pin such as
+`AETHERVILLE_VLLM_INSTALL_PACKAGE="vllm==0.10.2"` plus
+`AETHERVILLE_VLLM_COMPAT_PACKAGE="transformers==4.55.4"`, and model cache
+should live under `/workspace`.
