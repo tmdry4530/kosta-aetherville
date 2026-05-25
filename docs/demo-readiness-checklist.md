@@ -40,6 +40,10 @@
 - [ ] If using the 4090 LSTM forecast checkpoint, `/api/v1/sim/state` reports
       `traffic_forecast_ai.mode="lstm_checkpoint"` and
       `training_backend="torch_cuda"`.
+- [ ] If using live microphone voice, `/api/v1/god/voice` reports
+      `stt_status="ok"`; if it reports `fallback`, present it as the typed
+      fallback transcript path. Server-side real-audio STT was verified with a
+      temporary Korean WAV smoke on 2026-05-25.
 - [ ] Socket.IO polling smoke receives `aetherville:state_update`.
 - [ ] Local client starts with `NEXT_PUBLIC_ORCHESTRATOR_URL`,
       `NEXT_PUBLIC_SOCKET_URL`, and `NEXT_PUBLIC_SOCKET_TRANSPORTS=polling`

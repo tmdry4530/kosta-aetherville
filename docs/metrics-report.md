@@ -48,7 +48,7 @@
   - Orchestrator `/api/v1/health` reported `vllm:ok`.
   - `POST /api/v1/citizens/c01/reflect` returned a real model-generated Korean reflection.
 - GPU memory after smoke: approximately 22.5 GiB VRAM used.
-- Remaining real ML gaps: full PPO and verified real-audio STT smoke are still next GPU integration targets.
+- Remaining real ML gaps: full PPO and human microphone/browser-permission STT QA are still next GPU/demo integration targets; server-side real-audio STT smoke is verified.
 
 ## Real 4090 YOLO smoke — 2026-05-25
 
@@ -116,4 +116,4 @@
 - Browser: `GodModeMicPanel` records microphone audio with `MediaRecorder`.
 - Runtime: default fallback/stub mode, optional `AETHERVILLE_STT_MODE=faster_whisper` for real STT.
 - Truthfulness: `stt_status` distinguishes real transcription from typed fallback.
-- Verification: local schema/API/voice tests passed; RunPod fallback smoke should be run after redeploy.
+- Verification: local schema/API/voice tests passed; RunPod fallback smoke passed; real-audio smoke using a temporary Korean WAV returned `stt_status=ok`, `stt_mode=faster_whisper`, transcript match, and `ai_actions=[rain, taxi_call]`.

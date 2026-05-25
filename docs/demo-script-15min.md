@@ -55,7 +55,7 @@
   version, traffic bias, and taxi success signal changing after commands.
 - State clearly that this is persistent deterministic adaptation for demo
   safety, not live training of new vLLM/YOLO/PPO/LSTM weights.
-- Optionally click `Voice STT`, speak the same command, then stop recording. If the result says `fallback`, explain that the demo safely used the typed fallback transcript; only `stt_status=ok` means real STT transcribed the audio.
+- Optionally click `Voice STT`, speak the same command, then stop recording. If the result says `fallback`, explain that the demo safely used the typed fallback transcript. If it says `stt_status=ok`, it is the real faster-whisper path; the server-side real-audio smoke has already been verified with a temporary Korean WAV, but the live microphone path still depends on browser permission and codec capture.
 
 ## 13:30–15:00 — Fallback and wrap-up
 

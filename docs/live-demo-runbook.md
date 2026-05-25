@@ -133,7 +133,9 @@ curl -fsS -H 'content-type: application/json' \
 Expected marker when enabled: `ai_mode="vllm"`, `ai_actions` containing several safe actions, and a `god_command_executed` summary event. If vLLM is unavailable, the command remains demo-safe and falls back to `ai_mode="rules"`.
 
 
-### Voice/STT fallback smoke
+### Voice/STT smokes
+
+Fallback smoke, no real audio:
 
 ```bash
 curl -fsS -H 'content-type: application/json' \
@@ -141,7 +143,19 @@ curl -fsS -H 'content-type: application/json' \
   http://127.0.0.1:18080/api/v1/god/voice | python3 -m json.tool
 ```
 
-Fallback smoke should return `stt_status="fallback"` and nested `command.accepted=true`. Only claim real STT when an audio blob returns `stt_status="ok"`.
+Fallback smoke should return `stt_status="fallback"` and nested `command.accepted=true`.
+
+Real-audio STT smoke, using any temporary Korean WAV/WEBM/MP3 outside the repo:
+
+```bash
+python3 scripts/voice_stt_smoke.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --audio-file /tmp/aetherville_voice_ko.wav \
+  --mime-type audio/wav \
+  --expect-status ok
+```
+
+Verified 2026-05-25: a temporary Korean TTS WAV saying “도시에 비를 내리고 민지가 택시를 부르게 해줘” returned `stt_status="ok"`, `stt_mode="faster_whisper"`, transcript match, nested `command.accepted=true`, `ai_mode="vllm"`, and `ai_actions=[rain, taxi_call]`. Human microphone permission still needs live browser QA; only claim real microphone STT after the browser response also reports `stt_status="ok"`.
 
 ## 2. Verify RunPod health
 

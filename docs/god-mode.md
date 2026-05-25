@@ -40,4 +40,4 @@ fresh `aetherville:state_update` so the browser can show visible effects.
 2. The server uses the configured STT provider. Default mode is fallback/stub; real mode is `AETHERVILLE_STT_MODE=faster_whisper`.
 3. The endpoint reports `stt_status=ok|fallback|unavailable` and never hides fallback use.
 4. The transcript is converted to the same `GodCommand` dispatcher path as text commands.
-5. If browser microphone/STT fails, the current text input is sent as `fallback_transcript` so the demo remains reliable.
+5. If browser microphone/STT fails, the current text input is sent as `fallback_transcript` so the demo remains reliable. Server-side real-audio STT has been verified with `scripts/voice_stt_smoke.py`; human microphone success should still be confirmed in the browser by checking `stt_status="ok"`.

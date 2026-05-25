@@ -891,3 +891,12 @@
 - Local Next production server was rebuilt/restarted on port `3000` with tunnel `NEXT_PUBLIC_*` values; `/` and `/replay` HTTP smokes passed.
 - Truthfulness note: faster-whisper is installed/configured, but real audio transcription is not claimed until a microphone/audio-blob smoke returns `stt_status=ok`.
 - Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## Real audio STT smoke on RunPod faster-whisper — 2026-05-25T15:49:00+09:00
+
+- Status: complete and verified against the active direct-process RunPod runtime.
+- Added `scripts/voice_stt_smoke.py`, a dependency-free helper that base64-encodes an existing WAV/WEBM/MP3 file and posts it to `/api/v1/god/voice` with `--expect-status ok` for real STT proof.
+- Generated a temporary Korean TTS WAV outside the repository and sent it through the local tunnel to the RunPod orchestrator.
+- Real-audio smoke passed: transcript `도시에 비를 내리고 민지가 택시를 부르게 해줘`, `stt_status=ok`, `stt_mode=faster_whisper`, detail `model=base device=cuda compute=int8_float16`, nested `command.accepted=true`, `ai_mode=vllm`, and `ai_actions=[rain, taxi_call]`.
+- Updated demo runbook, metrics, God Mode docs, demo script, readiness checklist, TASKS, and SESSION_HANDOFF to distinguish server-side real-audio STT proof from live browser microphone QA.
+- Temporary audio/TTS artifacts were not committed. Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.

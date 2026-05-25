@@ -222,3 +222,15 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - Real STT can be installed and enabled on RunPod without changing the command contract.
   - Docker remains excluded from the current RunPod execution strategy.
 - Revisit when: a verified real Korean audio smoke is available, microphone QA is complete, or STT moves to a dedicated service/process.
+
+## ADR-019: Real STT proof requires audio-blob status, not microphone assumption
+
+- Status: accepted
+- Context: The server can run optional faster-whisper on the RunPod 4090, but browser microphone permission and codec capture are environment-dependent during a live demo.
+- Decision: Treat `scripts/voice_stt_smoke.py` with a real audio file as the server-side proof for STT, and treat browser microphone QA as a separate presentation check. Demo claims must follow `VoiceCommandResponse.stt_status`: `ok` means real STT, `fallback` means typed fallback transcript.
+- Consequences:
+  - The project now has reproducible evidence that `/api/v1/god/voice` can transcribe a real audio blob through faster-whisper on the 4090 runtime.
+  - The presenter can still use voice UI safely; fallback mode remains truthful and visible.
+  - No generated audio artifact is committed; temporary TTS/audio files stay outside the repository.
+  - Docker remains excluded from the current RunPod execution strategy.
+- Revisit when: a human browser microphone smoke is recorded, or STT is split into a dedicated service with its own health and benchmark report.

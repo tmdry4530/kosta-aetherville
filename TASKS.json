@@ -770,6 +770,26 @@
         "truthfulness": "real_faster_whisper_package_configured_but_real_audio_transcription_not_claimed_until_stt_status_ok_from_audio_blob",
         "simulation": "POST_api_v1_sim_start_set_running_true_and_status_advanced_tick_0_to_16"
       }
+    },
+    {
+      "id": "M8-010",
+      "title": "Verify real audio STT through RunPod faster-whisper",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/09-god-mode.md",
+      "depends_on": [
+        "M8-009"
+      ],
+      "unblocked_by": "optional_faster_whisper_stt_configured_on_direct_process_runpod",
+      "last_checked_at": "2026-05-25T15:49:00+09:00",
+      "completed_at": "2026-05-25T15:49:00+09:00",
+      "diagnostics": {
+        "script": "scripts/voice_stt_smoke.py posts existing audio files to /api/v1/god/voice and asserts expected stt_status",
+        "runpod": "orchestrator_health_stt_ok_faster_whisper_model_base_device_cuda_real_vllm_yolo_policy_lstm_preserved",
+        "real_audio_smoke": "temporary_korean_tts_wav_outside_repo_returned_stt_status_ok_stt_mode_faster_whisper_transcript_match_command_accepted_ai_mode_vllm_actions_rain_taxi_call",
+        "truthfulness": "server_side_real_audio_stt_verified; human_browser_microphone_still_requires_ui_response_stt_status_ok",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+      }
     }
   ]
 }

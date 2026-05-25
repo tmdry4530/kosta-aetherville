@@ -505,3 +505,27 @@ Presenter guidance:
 - Use the typed God Mode command for the most reliable live effect: `도시에 비를 내리고 민지가 택시를 부르게 하고 출근길을 혼잡하게 만들고 민수와 만나게 해줘`.
 - The `Voice STT` button now records and calls `/api/v1/god/voice`; if the result shows `fallback`, say the demo used the typed fallback transcript. Only claim real STT when a real audio submission returns `stt_status=ok`.
 - Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.
+
+## Real audio STT smoke handoff — 2026-05-25T15:49:00+09:00
+
+Verified runtime state:
+
+- RunPod direct-process orchestrator is still healthy with STT dependency `ok` and faster-whisper configured on CUDA.
+- Server-side real-audio STT is now verified, not only fallback: `scripts/voice_stt_smoke.py` posted a temporary Korean WAV through `/api/v1/god/voice` and received `stt_status=ok`, `stt_mode=faster_whisper`, transcript match, `command.accepted=true`, `ai_mode=vllm`, and `ai_actions=[rain, taxi_call]`.
+- The temporary audio file was outside the repository and was not committed.
+
+Operator command shape for repeat smoke:
+
+```bash
+python3 scripts/voice_stt_smoke.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --audio-file /tmp/aetherville_voice_ko.wav \
+  --mime-type audio/wav \
+  --expect-status ok
+```
+
+Presentation truthfulness:
+
+- Server-side faster-whisper STT is verified with a real audio blob.
+- Live browser microphone still depends on browser permission/codecs; claim it as real microphone STT only when the UI/API response shows `stt_status=ok`.
+- Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.
