@@ -964,7 +964,7 @@ Verification update — 2026-05-25T18:04:10+09:00:
 
 ## M11 — vLLM Autonomous City AI Loop — 2026-05-25T21:37:47+09:00
 
-- Status: complete on branch `feat/llm-driven-city-loop` pending commit/push at the time of this update.
+- Status: complete on branch `feat/llm-driven-city-loop` committed and pushed to `feat/llm-driven-city-loop`.
 - Added interval-scoped City AI planning so the city is no longer only deterministic loop motion:
   - `CityWorldContext` summarizes citizens, vehicles, weather, traffic, learning, and recent events.
   - `OpenAICompatibleCityPlanner` calls the RunPod vLLM OpenAI-compatible endpoint only on an interval/event window, never per tick.
