@@ -32,6 +32,7 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(configSource, /NEXT_PUBLIC_SOCKET_TRANSPORTS/);
   assert.match(configSource, /'polling'/);
   assert.match(connectionBridgeSource, /transport:/);
+  assert.ok(connectionBridgeSource.includes('/api/v1/sim/start'));
   assert.match(pageSource, /SidePanels/);
   assert.match(pageSource, /force-dynamic/);
   assert.match(pageSource, /orchestratorUrl=\{config\.orchestratorUrl\}/);

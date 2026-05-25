@@ -39,6 +39,18 @@ def test_person_and_relationship_commands_inject_memories() -> None:
     assert {memory.citizen_id for memory in relationship.memories} == {"c01", "c02"}
 
 
+def test_taxi_command_uses_text_order_for_passenger_and_destination() -> None:
+    dispatcher = GodCommandDispatcher()
+
+    effect = dispatcher.dispatch(command("지호가 택시를 부르고, 하린에게 간다"))
+
+    assert effect.event.kind == "trip_requested"
+    assert effect.event.metadata["passenger_id"] == "c06"
+    assert effect.event.metadata["passenger_name"] == "지호"
+    assert effect.event.metadata["destination_citizen_id"] == "c05"
+    assert effect.event.metadata["destination_citizen_name"] == "하린"
+
+
 class FakeInterpreter:
     def __init__(self, interpretation: GodCommandInterpretation | None) -> None:
         self.interpretation = interpretation

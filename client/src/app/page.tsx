@@ -43,7 +43,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         </dl>
       </section>
-      <ConnectionBridge socketUrl={config.socketUrl} transports={config.socketTransports} />
+      <ConnectionBridge
+        orchestratorUrl={config.orchestratorUrl}
+        socketUrl={config.socketUrl}
+        transports={config.socketTransports}
+      />
       <section className="sceneColumn" aria-label="Live city state">
         <CityPlaceholder initialWorldState={initialWorldState} />
         <SidePanels orchestratorUrl={config.orchestratorUrl} initialWorldState={initialWorldState} />

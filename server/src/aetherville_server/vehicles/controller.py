@@ -23,8 +23,11 @@ VEHICLE_ROUTES: tuple[VehicleRoute, ...] = (
 class TaxiDispatch:
     vehicle_id: str
     passenger_id: str
+    passenger_name: str
     start_xz: tuple[float, float]
     pickup_xz: tuple[float, float]
+    dropoff_xz: tuple[float, float]
+    dropoff_label: str
     requested_tick: int
 
 
@@ -48,17 +51,23 @@ class VehicleController:
         passenger_id: str,
         vehicle_id: str = "v01",
         *,
+        passenger_name: str | None = None,
         pickup_xz: tuple[float, float] | None = None,
+        dropoff_xz: tuple[float, float] | None = None,
+        dropoff_label: str | None = None,
         requested_tick: int = 0,
     ) -> None:
-        """Dispatch the taxi toward the requested passenger, not just relabel it."""
+        """Dispatch the taxi toward the requested passenger and optional dropoff."""
 
         start_pos, _ = _pose_on_route(VEHICLE_ROUTES[0], requested_tick * 0.13)
         self._taxi_request = TaxiDispatch(
             vehicle_id=vehicle_id,
             passenger_id=passenger_id,
+            passenger_name=passenger_name or passenger_id,
             start_xz=(start_pos[0], start_pos[2]),
             pickup_xz=pickup_xz or (-0.72, -0.72),
+            dropoff_xz=dropoff_xz or (6.0, -3.0),
+            dropoff_label=dropoff_label or "목적지",
             requested_tick=requested_tick,
         )
 
@@ -69,6 +78,22 @@ class VehicleController:
 
     def congestion_active(self, tick: int) -> bool:
         return self._congestion_until_tick is not None and tick < self._congestion_until_tick
+
+    def taxi_trip_complete(
+        self,
+        tick: int,
+        *,
+        learned_speed_factor: float = 1.0,
+        congested: bool = False,
+    ) -> bool:
+        if self._taxi_request is None:
+            return False
+        return _taxi_dispatch_complete(
+            self._taxi_request,
+            tick,
+            learned_speed_factor=learned_speed_factor,
+            congested=congested,
+        )
 
     def vehicle_states(
         self,
@@ -128,7 +153,16 @@ class VehicleController:
                     rot=rot,
                     speed=speed,
                     passenger_id=passenger_id,
-                    destination=[route[-1][0], 0.0, route[-1][1]],
+                    destination=(
+                        [
+                            self._taxi_request.dropoff_xz[0],
+                            0.0,
+                            self._taxi_request.dropoff_xz[1],
+                        ]
+                        if self._taxi_request is not None
+                        and self._taxi_request.vehicle_id == vehicle_id
+                        else [route[-1][0], 0.0, route[-1][1]]
+                    ),
                     yolo_detections=detections,
                     display_tags=display_tags,
                 )
@@ -230,26 +264,56 @@ def _taxi_dispatch_pose(
     dispatch_speed = 0.025 if congested else 0.09 * learned_speed_factor
     start = dispatch.start_xz
     pickup = dispatch.pickup_xz
-    dropoff = (6.0, -3.0)
+    dropoff = dispatch.dropoff_xz
     pickup_distance = math.dist(start, pickup)
     distance = elapsed * dispatch_speed
 
     if distance < pickup_distance:
         pos, rot = _interpolate_xz(start, pickup, distance / max(pickup_distance, 0.001))
-        return pos, rot, 0.45 if congested else 2.8 * learned_speed_factor, "민지에게 이동"
+        speed = 0.45 if congested else 2.8 * learned_speed_factor
+        return pos, rot, speed, f"{dispatch.passenger_name} 픽업 중"
 
-    wait_ticks = 70
+    wait_ticks = 15
     arrival_tick = int(math.ceil(pickup_distance / dispatch_speed))
     if elapsed <= arrival_tick + wait_ticks:
         yaw = math.atan2(pickup[0] - start[0], pickup[1] - start[1])
-        return [pickup[0], 0.0, pickup[1]], [0.0, round(yaw, 3), 0.0], 0.0, "픽업 대기"
+        return (
+            [pickup[0], 0.0, pickup[1]],
+            [0.0, round(yaw, 3), 0.0],
+            0.0,
+            f"{dispatch.passenger_name} 탑승 대기",
+        )
 
     dropoff_progress = (elapsed - arrival_tick - wait_ticks) * dispatch_speed
     dropoff_distance = math.dist(pickup, dropoff)
     local = min(1.0, dropoff_progress / max(dropoff_distance, 0.001))
     pos, rot = _interpolate_xz(pickup, dropoff, local)
-    phase = "민지 탑승" if local < 1.0 else "운행 완료"
-    return pos, rot, 0.45 if congested else 3.2 * learned_speed_factor, phase
+    phase = (
+        f"{dispatch.dropoff_label}에게 이동"
+        if local < 1.0
+        else f"{dispatch.dropoff_label} 도착"
+    )
+    speed = (
+        (0.45 if congested else 3.2 * learned_speed_factor) if local < 1.0 else 0.0
+    )
+    return pos, rot, speed, phase
+
+
+def _taxi_dispatch_complete(
+    dispatch: TaxiDispatch,
+    tick: int,
+    *,
+    learned_speed_factor: float = 1.0,
+    congested: bool,
+) -> bool:
+    elapsed = max(0, tick - dispatch.requested_tick)
+    dispatch_speed = max(0.001, 0.025 if congested else 0.09 * learned_speed_factor)
+    pickup_distance = math.dist(dispatch.start_xz, dispatch.pickup_xz)
+    dropoff_distance = math.dist(dispatch.pickup_xz, dispatch.dropoff_xz)
+    pickup_ticks = int(math.ceil(pickup_distance / dispatch_speed))
+    wait_ticks = 15
+    dropoff_ticks = int(math.ceil(dropoff_distance / dispatch_speed))
+    return elapsed >= pickup_ticks + wait_ticks + dropoff_ticks
 
 
 def _interpolate_xz(

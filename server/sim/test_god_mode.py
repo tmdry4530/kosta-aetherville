@@ -66,7 +66,7 @@ def test_taxi_command_adds_visible_taxi_tag() -> None:
     assert response.event.metadata["action"] == "taxi_call"
     assert state.vehicles[0].passenger_id == "c01"
     assert state.vehicles[0].display_tags[0] == "택시 호출"
-    assert "민지에게 이동" in state.vehicles[0].display_tags
+    assert "민지 픽업 중" in state.vehicles[0].display_tags
     assert state.learning.taxi_success_rate > 0.5
 
 
@@ -127,5 +127,80 @@ def test_multi_action_god_command_applies_all_visible_effects() -> None:
     assert state.world.infrastructure_status == "traffic congestion active"
     assert state.vehicles[0].passenger_id == "c01"
     assert state.vehicles[1].display_tags[:2] == ["정체", "저속"]
+    meeting_event = next(
+        event
+        for event in response.events
+        if event.kind == "relationship_changed"
+        and event.metadata.get("action") == "meeting"
+    )
+    assert meeting_event.metadata["deferred_until"] == "taxi_arrival"
+    assert minji.talking_to is None
+    assert minsu.talking_to is None
+
+    engine.running = True
+    for _ in range(900):
+        engine.step()
+    arrived_state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+    minji = next(citizen for citizen in arrived_state.citizens if citizen.name == "민지")
+    minsu = next(citizen for citizen in arrived_state.citizens if citizen.name == "민수")
+
     assert minji.talking_to == minsu.id
     assert minsu.talking_to == minji.id
+
+
+class NamedTaxiMeetingInterpreter:
+    def interpret(self, command: GodCommand) -> GodCommandInterpretation:
+        del command
+        return GodCommandInterpretation(
+            category="infrastructure",
+            action="taxi_call",
+            secondary_actions=("meeting",),
+            target="['지호','하린']",
+            confidence=0.97,
+            reason="지호가 택시를 타고 하린에게 이동해야 한다",
+        )
+
+
+def test_named_taxi_meeting_moves_before_relationship_activation() -> None:
+    engine = SimulationEngine()
+    engine.command_dispatcher = GodCommandDispatcher(
+        interpreter=NamedTaxiMeetingInterpreter()
+    )
+
+    response = engine.execute_god_command(make_command("지호가 택시를 부르고, 하린에게 간다"))
+    state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+    taxi = state.vehicles[0]
+    jiho = next(citizen for citizen in state.citizens if citizen.name == "지호")
+    harin = next(citizen for citizen in state.citizens if citizen.name == "하린")
+    taxi_event = next(event for event in response.events if event.kind == "trip_requested")
+    meeting_event = next(
+        event
+        for event in response.events
+        if event.kind == "relationship_changed"
+        and event.metadata.get("action") == "meeting"
+    )
+
+    assert response.ai_actions == ["taxi_call", "meeting"]
+    assert taxi_event.metadata["passenger_id"] == "c06"
+    assert taxi_event.metadata["destination_citizen_id"] == "c05"
+    assert meeting_event.metadata["deferred_until"] == "taxi_arrival"
+    assert taxi.passenger_id == "c06"
+    assert taxi.destination == [harin.pos[0], 0.0, harin.pos[2]]
+    assert "민지에게 이동" not in taxi.display_tags
+    assert any(tag in taxi.display_tags for tag in ("지호 픽업 중", "지호 탑승 대기"))
+    assert jiho.talking_to is None
+    assert harin.talking_to is None
+
+    engine.running = True
+    positions = []
+    for _ in range(260):
+        positions.append(tuple(engine.snapshot().vehicles[0].pos))
+        engine.step()
+    arrived_state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+    jiho = next(citizen for citizen in arrived_state.citizens if citizen.name == "지호")
+    harin = next(citizen for citizen in arrived_state.citizens if citizen.name == "하린")
+
+    assert len(set(positions[:80])) > 8
+    assert jiho.talking_to == harin.id
+    assert harin.talking_to == jiho.id
+    assert any(event.metadata.get("via") == "taxi_arrival" for event in engine.timeline)

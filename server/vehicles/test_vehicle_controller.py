@@ -30,15 +30,36 @@ def test_vehicle_slows_for_mock_hazard() -> None:
 
 def test_taxi_request_adds_visible_vehicle_tag() -> None:
     controller = VehicleController()
-    controller.request_taxi("c01", pickup_xz=(0.0, 0.0), requested_tick=0)
+    controller.request_taxi("c01", passenger_name="민지", pickup_xz=(0.0, 0.0), requested_tick=0)
 
     taxi = controller.vehicle_states(tick=3, running=True)[0]
     later = controller.vehicle_states(tick=20, running=True)[0]
 
     assert taxi.passenger_id == "c01"
     assert taxi.display_tags[0] == "택시 호출"
-    assert "민지에게 이동" in taxi.display_tags
+    assert "민지 픽업 중" in taxi.display_tags
     assert taxi.pos != later.pos
+
+
+def test_taxi_request_moves_to_named_dropoff_after_pickup() -> None:
+    controller = VehicleController()
+    controller.request_taxi(
+        "c06",
+        passenger_name="지호",
+        pickup_xz=(0.0, 0.0),
+        dropoff_xz=(2.0, 0.0),
+        dropoff_label="하린",
+        requested_tick=0,
+    )
+
+    pickup = controller.vehicle_states(tick=3, running=True)[0]
+    en_route = controller.vehicle_states(tick=105, running=True)[0]
+
+    assert pickup.passenger_id == "c06"
+    assert pickup.destination == [2.0, 0.0, 0.0]
+    assert "지호 픽업 중" in pickup.display_tags
+    assert "하린에게 이동" in en_route.display_tags
+    assert controller.taxi_trip_complete(tick=130)
 
 
 def test_congestion_event_slows_and_tags_vehicles() -> None:

@@ -47,6 +47,12 @@ class SimulationConfig:
     visible_citizen_count: int = 7
 
 
+@dataclass(frozen=True)
+class PendingTaxiMeeting:
+    passenger_id: str
+    target_id: str
+
+
 class SimulationEngine:
     """Small deterministic world model with a configurable async tick loop."""
 
@@ -68,6 +74,7 @@ class SimulationEngine:
         self._active_event: str | None = None
         self._infrastructure_status: str | None = None
         self._timeline: list[EventPayload] = []
+        self._pending_taxi_meeting: PendingTaxiMeeting | None = None
         self.citizens = citizen_service or CitizenAgentService(
             count=self.config.visible_citizen_count,
             seed=self.config.seed,
@@ -104,6 +111,7 @@ class SimulationEngine:
         self._temperature = 21.5
         self._active_event = None
         self._infrastructure_status = None
+        self._pending_taxi_meeting = None
         self.citizens = CitizenAgentService(
             count=self.config.visible_citizen_count,
             seed=self._seed,
@@ -124,6 +132,7 @@ class SimulationEngine:
 
     def step(self) -> Envelope:
         self.tick += 1
+        self._maybe_complete_pending_taxi_meeting()
         # Keep the first slice deterministic while still visibly changing state.
         weather_locked = (
             self._weather_lock_until_tick is not None
@@ -150,6 +159,7 @@ class SimulationEngine:
         return self.state_update()
 
     def snapshot(self) -> WorldStatePayload:
+        self._maybe_complete_pending_taxi_meeting()
         angle = self.tick * 0.08
         minute = self.config.start_minute + int(self.tick * self.speed_multiplier / 10)
         time_of_day = f"{(minute // 60) % 24:02d}:{minute % 60:02d}"
@@ -255,6 +265,35 @@ class SimulationEngine:
     def learning_status(self) -> LearningStatusResponse:
         return self.learning.status_response()
 
+    def _maybe_complete_pending_taxi_meeting(self) -> None:
+        pending = self._pending_taxi_meeting
+        if pending is None:
+            return
+        if not self.vehicles.taxi_trip_complete(
+            self.tick,
+            learned_speed_factor=self.learning.traffic_speed_factor(),
+            congested=self.vehicles.congestion_active(self.tick),
+        ):
+            return
+
+        self.citizens.activate_meeting(pending.passenger_id, pending.target_id)
+        self._active_event = "citizen meeting"
+        self._pending_taxi_meeting = None
+        self._record_event(
+            EventPayload(
+                kind="relationship_changed",
+                message="Taxi arrival completed the requested citizen meeting",
+                entity_id=pending.passenger_id,
+                metadata={
+                    "category": "relationship",
+                    "action": "meeting",
+                    "source": pending.passenger_id,
+                    "target": pending.target_id,
+                    "via": "taxi_arrival",
+                },
+            )
+        )
+
     def _traffic_policy_observation(self, total_queue: int) -> dict[str, int]:
         wave = int(8 * math.sin(self.tick * 0.08))
         ns_queue = max(0, total_queue // 2 + wave)
@@ -274,34 +313,66 @@ class SimulationEngine:
 
         events: list[EventPayload] = []
         application_effects = effect.sub_effects or (effect,)
+        taxi_destinations: dict[str, str] = {}
         for applied_effect in application_effects:
+            if applied_effect.event.metadata.get("action") == "taxi_call":
+                passenger_id = str(applied_effect.event.metadata.get("passenger_id", "c01"))
+                destination_id = applied_effect.event.metadata.get("destination_citizen_id")
+                if destination_id is not None:
+                    taxi_destinations[passenger_id] = str(destination_id)
+
+        for applied_effect in application_effects:
+            action = applied_effect.event.metadata.get("action")
+            defer_meeting_until_taxi_arrival = False
+            if action == "meeting":
+                source = str(applied_effect.event.metadata.get("source", "c01"))
+                target = str(applied_effect.event.metadata.get("target", "c02"))
+                if taxi_destinations.get(source) == target:
+                    self._pending_taxi_meeting = PendingTaxiMeeting(source, target)
+                    applied_effect.event.metadata["deferred_until"] = "taxi_arrival"
+                    defer_meeting_until_taxi_arrival = True
+
             if applied_effect.weather is not None:
                 self._weather = applied_effect.weather
                 self._weather_lock_until_tick = self.tick + 900
-            if applied_effect.active_event is not None:
+            if applied_effect.active_event is not None and not defer_meeting_until_taxi_arrival:
                 self._active_event = applied_effect.active_event
             if applied_effect.infrastructure_status is not None:
                 self._infrastructure_status = applied_effect.infrastructure_status
-            if applied_effect.event.metadata.get("action") == "meeting":
+            if action == "meeting" and not defer_meeting_until_taxi_arrival:
                 source = str(applied_effect.event.metadata.get("source", "c01"))
                 target = str(applied_effect.event.metadata.get("target", "c02"))
                 self.citizens.activate_meeting(source, target)
-            if applied_effect.event.metadata.get("action") == "taxi_call":
+            if action == "taxi_call":
                 passenger_id = str(applied_effect.event.metadata.get("passenger_id", "c01"))
                 vehicle_id = str(applied_effect.event.metadata.get("vehicle_id", "v01"))
+                passenger_name = str(
+                    applied_effect.event.metadata.get("passenger_name", passenger_id)
+                )
+                destination_id = applied_effect.event.metadata.get("destination_citizen_id")
+                destination_name = applied_effect.event.metadata.get("destination_citizen_name")
+                citizens = self.citizens.world_states(self.tick, self.running)
                 passenger = next(
+                    (citizen for citizen in citizens if citizen.id == passenger_id),
+                    None,
+                )
+                destination = next(
                     (
                         citizen
-                        for citizen in self.citizens.world_states(self.tick, self.running)
-                        if citizen.id == passenger_id
+                        for citizen in citizens
+                        if destination_id is not None and citizen.id == str(destination_id)
                     ),
                     None,
                 )
                 pickup_xz = (passenger.pos[0], passenger.pos[2]) if passenger else None
+                dropoff_xz = (destination.pos[0], destination.pos[2]) if destination else None
                 self.vehicles.request_taxi(
                     passenger_id,
                     vehicle_id=vehicle_id,
+                    passenger_name=passenger_name,
                     pickup_xz=pickup_xz,
+                    dropoff_xz=dropoff_xz,
+                    dropoff_label=str(destination_name) if destination_name else None,
                     requested_tick=self.tick,
                 )
             if applied_effect.event.metadata.get("action") == "traffic_jam":

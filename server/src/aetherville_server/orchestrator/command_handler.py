@@ -474,21 +474,36 @@ class GodCommandDispatcher:
     @staticmethod
     def _taxi_effect(text: str) -> GodCommandEffect:
         citizen_id, citizen_name = _first_named_citizen(text, default=("c01", "민지"))
+        destination_id, destination_name = _second_named_citizen(
+            text,
+            source_id=citizen_id,
+            default=("", ""),
+        )
+        metadata = {
+            "category": "infrastructure",
+            "action": "taxi_call",
+            "vehicle_id": "v01",
+            "passenger_id": citizen_id,
+            "passenger_name": citizen_name,
+            "command": text,
+        }
+        destination_suffix = ""
+        if destination_id:
+            metadata.update(
+                {
+                    "destination_citizen_id": destination_id,
+                    "destination_citizen_name": destination_name,
+                }
+            )
+            destination_suffix = f" toward {destination_name}"
         return GodCommandEffect(
             category="infrastructure",
             active_event="taxi dispatch",
             event=EventPayload(
                 kind="trip_requested",
-                message=f"Taxi v01 dispatched for {citizen_name}",
+                message=f"Taxi v01 dispatched for {citizen_name}{destination_suffix}",
                 entity_id="v01",
-                metadata={
-                    "category": "infrastructure",
-                    "action": "taxi_call",
-                    "vehicle_id": "v01",
-                    "passenger_id": citizen_id,
-                    "passenger_name": citizen_name,
-                    "command": text,
-                },
+                metadata=metadata,
             ),
             memories=[
                 MemoryInjection(
@@ -500,17 +515,27 @@ class GodCommandDispatcher:
         )
 
 
-def _first_named_citizen(text: str, default: tuple[str, str]) -> tuple[str, str]:
+def _named_citizens_in_text(text: str) -> list[tuple[str, str]]:
+    """Return mentioned citizens in the order they appear in presenter text."""
+
+    mentions: list[tuple[int, str, str]] = []
     for name, citizen_id in NAME_TO_CITIZEN_ID.items():
-        if name in text:
-            return citizen_id, name
-    return default
+        position = text.find(name)
+        if position >= 0:
+            mentions.append((position, citizen_id, name))
+    mentions.sort(key=lambda item: item[0])
+    return [(citizen_id, name) for _, citizen_id, name in mentions]
+
+
+def _first_named_citizen(text: str, default: tuple[str, str]) -> tuple[str, str]:
+    mentions = _named_citizens_in_text(text)
+    return mentions[0] if mentions else default
 
 
 def _second_named_citizen(
     text: str, *, source_id: str, default: tuple[str, str]
 ) -> tuple[str, str]:
-    for name, citizen_id in NAME_TO_CITIZEN_ID.items():
-        if citizen_id != source_id and name in text:
+    for citizen_id, name in _named_citizens_in_text(text):
+        if citizen_id != source_id:
             return citizen_id, name
     return default
