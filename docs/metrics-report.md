@@ -36,7 +36,7 @@
 
 - Public RunPod URL exposure is not configured in tracked files.
 - Vision default architecture port `8001` is still occupied by pod nginx; direct-process vision uses `18001`.
-- Full PPO, live-telemetry LSTM hardening, and STT model workloads remain deferred behind explicit cost/model approval.
+- Full PPO and live-telemetry LSTM hardening remain deferred; STT has an implemented optional faster-whisper path with typed fallback safety.
 
 ## Real 4090 vLLM smoke — 2026-05-25
 
@@ -48,7 +48,7 @@
   - Orchestrator `/api/v1/health` reported `vllm:ok`.
   - `POST /api/v1/citizens/c01/reflect` returned a real model-generated Korean reflection.
 - GPU memory after smoke: approximately 22.5 GiB VRAM used.
-- Remaining real ML gaps: full PPO and STT are still next GPU integration targets.
+- Remaining real ML gaps: full PPO and verified real-audio STT smoke are still next GPU integration targets.
 
 ## Real 4090 YOLO smoke — 2026-05-25
 
@@ -108,3 +108,12 @@
 - Safety: every action still maps to deterministic dispatcher effects; arbitrary state mutation remains disallowed.
 - Contract/UI evidence: `GodCommandResponse.ai_actions` and event metadata expose the decomposed plan.
 - Verification: targeted orchestrator/simulation/schema tests passed locally; RunPod smoke should confirm multi-action `ai_mode=vllm` after redeploy.
+
+
+## God Mode voice/STT path — 2026-05-25
+
+- API: `/api/v1/god/voice` accepts `VoiceCommandRequest` and returns `VoiceCommandResponse`.
+- Browser: `GodModeMicPanel` records microphone audio with `MediaRecorder`.
+- Runtime: default fallback/stub mode, optional `AETHERVILLE_STT_MODE=faster_whisper` for real STT.
+- Truthfulness: `stt_status` distinguishes real transcription from typed fallback.
+- Verification: local schema/API/voice tests passed; RunPod fallback smoke should be run after redeploy.

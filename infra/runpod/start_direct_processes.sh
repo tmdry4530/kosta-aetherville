@@ -35,6 +35,11 @@ VLLM_COMPAT_PACKAGE="${AETHERVILLE_VLLM_COMPAT_PACKAGE:-transformers==4.55.4}"
 LLM_MODE="${AETHERVILLE_LLM_MODE:-cache}"
 VISION_MODE="${AETHERVILLE_VISION_MODE:-mock}"
 YOLO_INSTALL_PACKAGE="${AETHERVILLE_YOLO_INSTALL_PACKAGE:-ultralytics>=8.3.0}"
+STT_MODE="${AETHERVILLE_STT_MODE:-stub}"
+STT_INSTALL_PACKAGE="${AETHERVILLE_STT_INSTALL_PACKAGE:-faster-whisper==1.1.1}"
+STT_MODEL="${AETHERVILLE_STT_MODEL:-base}"
+STT_DEVICE="${AETHERVILLE_STT_DEVICE:-cuda}"
+STT_COMPUTE_TYPE="${AETHERVILLE_STT_COMPUTE_TYPE:-int8_float16}"
 TRAFFIC_POLICY_CHECKPOINT="${AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT:-}"
 TRAFFIC_FORECAST_CHECKPOINT="${AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT:-}"
 GOD_MODE_LLM="${AETHERVILLE_GOD_MODE_LLM:-rules}"
@@ -111,7 +116,7 @@ stop_process_if_running() {
 echo "== Aetherville direct-process start =="
 echo "workspace=$ROOT_DIR"
 echo "run_dir=$RUN_DIR"
-echo "vllm_mode=$VLLM_MODE redis_mode=$REDIS_MODE god_mode_llm=$GOD_MODE_LLM"
+echo "vllm_mode=$VLLM_MODE redis_mode=$REDIS_MODE god_mode_llm=$GOD_MODE_LLM stt_mode=$STT_MODE"
 
 run_or_print mkdir -p "$LOG_DIR" "$PID_DIR"
 ensure_uv
@@ -175,6 +180,29 @@ ensure_real_yolo() {
 
 ensure_real_yolo
 
+ensure_real_stt() {
+  if [[ "$STT_MODE" != "real" && "$STT_MODE" != "faster_whisper" && "$STT_MODE" != "whisper" ]]; then
+    return 0
+  fi
+  if [[ "$DRY_RUN" == "1" ]]; then
+    echo "DRY-RUN: verify or install real STT package '$STT_INSTALL_PACKAGE'"
+    return 0
+  fi
+  if uv run python -c "import faster_whisper" >/dev/null 2>&1; then
+    echo "real STT package already available"
+    return 0
+  fi
+  if [[ "${AETHERVILLE_BOOTSTRAP_STT:-0}" != "1" ]]; then
+    echo "Blocker: AETHERVILLE_STT_MODE=$STT_MODE requires faster-whisper, but it is not installed." >&2
+    echo "Set AETHERVILLE_BOOTSTRAP_STT=1 to install '$STT_INSTALL_PACKAGE' into the uv environment." >&2
+    exit 23
+  fi
+  echo "Installing real STT runtime package into uv environment: $STT_INSTALL_PACKAGE"
+  run_or_print uv pip install "$STT_INSTALL_PACKAGE"
+}
+
+ensure_real_stt
+
 if [[ "$REDIS_MODE" == "memory" ]]; then
   echo "redis mode: in-memory fallback selected; redis-server will not be started."
 elif command -v redis-server >/dev/null 2>&1; then
@@ -194,6 +222,6 @@ else
   start_process vllm-fallback "uv run uvicorn aetherville_server.vllm_fallback:app --host '$HOST' --port '$VLLM_PORT'"
 fi
 
-start_process orchestrator "AETHERVILLE_PROBE_DEPENDENCIES=1 AETHERVILLE_REDIS_MODE='$REDIS_MODE' AETHERVILLE_LLM_MODE='$LLM_MODE' AETHERVILLE_GOD_MODE_LLM='$GOD_MODE_LLM' AETHERVILLE_LLM_MODEL='$MODEL_NAME' AETHERVILLE_CAMERA_VISION_MODE='$VISION_MODE' AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT='$TRAFFIC_POLICY_CHECKPOINT' AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT='$TRAFFIC_FORECAST_CHECKPOINT' AETHERVILLE_VISION_URL='http://127.0.0.1:$VISION_PORT' AETHERVILLE_VLLM_URL='http://127.0.0.1:$VLLM_PORT/v1' uv run uvicorn aetherville_server.main:app --host '$HOST' --port '$ORCHESTRATOR_PORT'"
+start_process orchestrator "AETHERVILLE_PROBE_DEPENDENCIES=1 AETHERVILLE_REDIS_MODE='$REDIS_MODE' AETHERVILLE_LLM_MODE='$LLM_MODE' AETHERVILLE_GOD_MODE_LLM='$GOD_MODE_LLM' AETHERVILLE_STT_MODE='$STT_MODE' AETHERVILLE_STT_MODEL='$STT_MODEL' AETHERVILLE_STT_DEVICE='$STT_DEVICE' AETHERVILLE_STT_COMPUTE_TYPE='$STT_COMPUTE_TYPE' AETHERVILLE_LLM_MODEL='$MODEL_NAME' AETHERVILLE_CAMERA_VISION_MODE='$VISION_MODE' AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT='$TRAFFIC_POLICY_CHECKPOINT' AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT='$TRAFFIC_FORECAST_CHECKPOINT' AETHERVILLE_VISION_URL='http://127.0.0.1:$VISION_PORT' AETHERVILLE_VLLM_URL='http://127.0.0.1:$VLLM_PORT/v1' uv run uvicorn aetherville_server.main:app --host '$HOST' --port '$ORCHESTRATOR_PORT'"
 
 echo "Direct-process start complete. Run: bash infra/runpod/health_check_direct.sh"

@@ -4,8 +4,8 @@
 
 - Text command is the stable primary path.
 - Optional real 4090 vLLM interpretation is enabled with `AETHERVILLE_GOD_MODE_LLM=vllm`; rules remain the fallback.
-- Voice/STT is represented by `VoiceCommandStub` and disabled in the browser until the text path is stable.
-- `GodModeMicPanel` provides text input and macro buttons for demo reliability.
+- Voice/STT is available through `/api/v1/god/voice`; fallback/stub mode remains the default until real STT is enabled.
+- `GodModeMicPanel` provides text input, macro buttons, and a `MediaRecorder` voice capture button for demo reliability.
 
 ## Command categories
 
@@ -34,9 +34,10 @@ The model never executes arbitrary state changes. Timeout, invalid JSON, disable
 The orchestrator emits every resulting event envelope on `aetherville:event`, then emits a
 fresh `aetherville:state_update` so the browser can show visible effects.
 
-## Voice upgrade path
+## Voice path
 
-1. Keep the `GodCommand` schema unchanged.
-2. Add browser recording once text command latency/effects are stable.
-3. Run STT through a bounded service or faster-whisper worker only after model/cost approval.
-4. Convert the transcript to the same `GodCommand` dispatcher path.
+1. Browser `MediaRecorder` captures audio and posts `VoiceCommandRequest` to `/api/v1/god/voice`.
+2. The server uses the configured STT provider. Default mode is fallback/stub; real mode is `AETHERVILLE_STT_MODE=faster_whisper`.
+3. The endpoint reports `stt_status=ok|fallback|unavailable` and never hides fallback use.
+4. The transcript is converted to the same `GodCommand` dispatcher path as text commands.
+5. If browser microphone/STT fails, the current text input is sent as `fallback_transcript` so the demo remains reliable.

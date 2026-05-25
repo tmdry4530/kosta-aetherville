@@ -22,7 +22,7 @@
 ## Failure fallback
 
 - RunPod unreachable: switch to `/replay`.
-- Voice/STT unavailable: use text command or macro buttons.
+- Voice/STT unavailable or `stt_status=fallback`: use text command or macro buttons; only claim real STT when response reports `stt_status=ok`.
 - Real YOLO unavailable: continue with deterministic mock boxes and state that the panel is in fallback mode.
 - Traffic checkpoint unavailable: show baseline controller and deterministic forecast.
 - PPO/LSTM unavailable: explain that the current short CUDA-trained checkpoint is the demo-safe bridge before full PPO/LSTM training.

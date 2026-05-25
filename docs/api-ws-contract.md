@@ -110,6 +110,7 @@ All endpoints use `/api/v1` prefix.
 | GET | `/timeline` | event timeline |
 | GET | `/vehicles/{id}/camera` | latest PNG camera frame |
 | POST | `/god/command` | REST fallback command path |
+| POST | `/god/voice` | voice/STT command path with typed fallback |
 | GET | `/health` | service health |
 | GET | `/metrics` | Prometheus-compatible metrics |
 

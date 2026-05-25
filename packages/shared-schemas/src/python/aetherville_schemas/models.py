@@ -319,6 +319,15 @@ class SimResetRequest(StrictModel):
     seed: int | None = None
 
 
+class VoiceCommandRequest(StrictModel):
+    kind: Literal["voice_command"] = "voice_command"
+    audio_blob_b64: str | None = None
+    mime_type: str = "audio/webm"
+    user_id: str = "presenter"
+    fallback_transcript: str | None = None
+    language: str | None = "ko"
+
+
 class GodCommandResponse(StrictModel):
     accepted: bool
     command_id: str
@@ -331,6 +340,14 @@ class GodCommandResponse(StrictModel):
     ai_confidence: float | None = Field(default=None, ge=0, le=1)
     ai_reason: str | None = None
     ai_actions: list[str] = Field(default_factory=list)
+
+
+class VoiceCommandResponse(StrictModel):
+    transcript: str
+    stt_mode: Literal["stub", "faster_whisper", "fallback"]
+    stt_status: Literal["ok", "fallback", "unavailable"]
+    detail: str | None = None
+    command: GodCommandResponse
 
 
 class ServiceStatus(StrictModel):

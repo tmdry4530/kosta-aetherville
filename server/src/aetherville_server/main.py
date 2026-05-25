@@ -38,10 +38,13 @@ from aetherville_schemas import (
     VehicleCameraFrame,
     VisionDetectRequest,
     VisionDetectResponse,
+    VoiceCommandRequest,
+    VoiceCommandResponse,
     WorldStatePayload,
 )
 from aetherville_server import __version__
 from aetherville_server.sim import SimulationConfig, SimulationEngine
+from aetherville_server.voice import transcriber_from_env
 
 
 @asynccontextmanager
@@ -95,6 +98,7 @@ sio = socketio.AsyncServer(
 
 TICK_RATE_HZ = float(os.getenv("AETHERVILLE_TICK_RATE_HZ", "10"))
 simulation = SimulationEngine(SimulationConfig(tick_rate_hz=TICK_RATE_HZ))
+voice_transcriber = transcriber_from_env()
 _simulation_task: asyncio.Task[None] | None = None
 
 
@@ -230,6 +234,11 @@ def build_health_response() -> HealthResponse:
             name="learning",
             status="ok",
             detail="deterministic online adaptation JSON persistence active",
+        ),
+        ServiceStatus(
+            name="stt",
+            status=voice_transcriber.health_status(),
+            detail=voice_transcriber.health_detail(),
         ),
     ]
 
@@ -401,6 +410,32 @@ async def god_command(command: GodCommand) -> GodCommandResponse:
     response = simulation.execute_god_command(command)
     await emit_god_command_response(response)
     return response
+
+
+@fastapi_app.post("/api/v1/god/voice", response_model=VoiceCommandResponse)
+async def god_voice(request: VoiceCommandRequest) -> VoiceCommandResponse:
+    result = await asyncio.to_thread(
+        voice_transcriber.transcribe,
+        request.audio_blob_b64,
+        mime_type=request.mime_type,
+        language=request.language,
+        fallback_transcript=request.fallback_transcript,
+    )
+    if not result.transcript:
+        raise HTTPException(
+            status_code=422,
+            detail=result.detail or "voice transcript unavailable",
+        )
+    command = voice_transcriber.command_from_transcript(result.transcript, request.user_id)
+    response = simulation.execute_god_command(command)
+    await emit_god_command_response(response)
+    return VoiceCommandResponse(
+        transcript=result.transcript,
+        stt_mode=result.mode,
+        stt_status=result.status,
+        detail=result.detail,
+        command=response,
+    )
 
 
 async def on_connect(sid: str, environ: dict[str, Any], auth: dict[str, Any] | None) -> None:

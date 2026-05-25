@@ -47,7 +47,9 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(godModeSource, /commandPayload: GodCommand/);
   assert.match(godModeSource, /response\.ok/);
   assert.match(godModeSource, /aria-live="polite"/);
-  assert.match(godModeSource, /Voice STT optional/);
+  assert.match(godModeSource, /VoiceCommandResponse/);
+  assert.match(godModeSource, /MediaRecorder/);
+  assert.match(godModeSource, /Voice STT/);
   assert.match(godModeSource, /민지·민수 만남/);
   assert.match(godModeSource, /택시 호출/);
   assert.match(trafficPanelSource, /TrafficForecastPoint/);

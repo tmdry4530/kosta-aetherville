@@ -1,5 +1,15 @@
-"""Optional voice/STT placeholders for God Mode."""
+"""Optional voice/STT support for God Mode."""
 
-from .stt import VoiceCommandStub
+from .stt import (
+    FasterWhisperTranscriber,
+    TranscriptionResult,
+    VoiceCommandStub,
+    transcriber_from_env,
+)
 
-__all__ = ["VoiceCommandStub"]
+__all__ = [
+    "FasterWhisperTranscriber",
+    "TranscriptionResult",
+    "VoiceCommandStub",
+    "transcriber_from_env",
+]

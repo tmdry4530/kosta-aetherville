@@ -22,6 +22,8 @@ from aetherville_schemas import (
     TripState,
     VehicleCameraFrame,
     VisionDetectResponse,
+    VoiceCommandRequest,
+    VoiceCommandResponse,
     WorldStatePayload,
     make_state_update,
 )
@@ -101,6 +103,54 @@ def test_god_command_response_contract_exposes_ai_interpretation_metadata() -> N
         GodCommandResponse.model_validate(
             response.model_dump(mode="json") | {"ai_mode": "unbounded"}
         )
+
+
+
+def test_voice_command_contracts_validate() -> None:
+    request = VoiceCommandRequest.model_validate(
+        {
+            "kind": "voice_command",
+            "audio_blob_b64": "UklGRg==",
+            "mime_type": "audio/webm",
+            "user_id": "presenter",
+            "fallback_transcript": "도시에 비를 내려줘",
+            "language": "ko",
+        }
+    )
+    response = VoiceCommandResponse.model_validate(
+        {
+            "transcript": "도시에 비를 내려줘",
+            "stt_mode": "fallback",
+            "stt_status": "fallback",
+            "detail": "typed fallback",
+            "command": {
+                "accepted": True,
+                "command_id": "cmd_voice",
+                "category": "environment",
+                "event": {
+                    "kind": "weather_changed",
+                    "message": "Weather changed to rain",
+                    "metadata": {"weather": "rain"},
+                },
+                "envelope": {
+                    "v": 1,
+                    "type": "event",
+                    "ts": 1,
+                    "tick": 0,
+                    "payload": {"kind": "weather_changed"},
+                },
+                "events": [],
+                "envelopes": [],
+                "ai_mode": "rules",
+                "ai_confidence": None,
+                "ai_reason": None,
+                "ai_actions": [],
+            },
+        }
+    )
+
+    assert request.language == "ko"
+    assert response.command.event.kind == "weather_changed"
 
 def test_make_state_update_roundtrip() -> None:
     raw = json.loads((FIXTURES / "state_update.json").read_text(encoding="utf-8"))

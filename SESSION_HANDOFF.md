@@ -464,3 +464,44 @@ Presenter command to use:
 `도시에 비를 내리고 민지가 택시를 부르게 하고 출근길을 혼잡하게 만들고 민수와 만나게 해줘`
 
 Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.
+
+## God Mode voice/STT handoff — 2026-05-25T15:15:03+09:00
+
+Current implementation state:
+
+- The browser `Voice STT` button records microphone audio with `MediaRecorder` and sends it to `/api/v1/god/voice`.
+- The server turns the transcript into a voice `GodCommand`, so voice and text share the same real vLLM multi-action dispatcher and deterministic effect safety rails.
+- Default STT mode is fallback/stub. Real STT is opt-in with `AETHERVILLE_STT_MODE=faster_whisper`; startup can install the optional package with `AETHERVILLE_BOOTSTRAP_STT=1`.
+- The browser sends the current text input as `fallback_transcript` so the demo remains usable when microphone permission, browser codecs, or model runtime fail.
+- Do not claim verified real audio transcription until a real audio smoke returns `stt_status=ok`; fallback status is explicitly reported as fallback.
+
+Smoke command without real audio:
+
+```bash
+curl -fsS -H 'content-type: application/json' \
+  -d '{"kind":"voice_command","audio_blob_b64":null,"mime_type":"audio/webm","user_id":"presenter","fallback_transcript":"도시에 비를 내리고 민지가 택시를 부르게 해줘","language":"ko"}' \
+  http://127.0.0.1:18080/api/v1/god/voice | python3 -m json.tool
+```
+
+Expected marker in fallback mode: `stt_status="fallback"` and nested `command.accepted=true`. Do not run Docker on this pod.
+
+## God Mode voice/STT deployment handoff — 2026-05-25T15:38:00+09:00
+
+Verified runtime state:
+
+- RunPod direct-process services are running without Docker.
+- Real vLLM, real YOLO, traffic policy checkpoint, LSTM forecast checkpoint, and optional faster-whisper STT config are active together.
+- Orchestrator health reports STT dependency `ok` with `faster-whisper configured model=base device=cuda`.
+- Local tunnel endpoints verified:
+  - orchestrator: `http://127.0.0.1:18080/api/v1/health`
+  - vision: `http://127.0.0.1:18001/health`
+  - vLLM: `http://127.0.0.1:18000/v1/models`
+- Voice fallback smoke passed with `stt_status=fallback`, `stt_mode=fallback`, nested `command.accepted=true`, `ai_mode=vllm`, and `ai_actions=[rain, taxi_call]`.
+- Simulation is running after restart; `/api/v1/sim/status` advanced ticks with `running=true`.
+- Local browser server is running on `http://127.0.0.1:3000/` via `next start` with tunnel endpoint values; `/` and `/replay` HTTP smokes passed.
+
+Presenter guidance:
+
+- Use the typed God Mode command for the most reliable live effect: `도시에 비를 내리고 민지가 택시를 부르게 하고 출근길을 혼잡하게 만들고 민수와 만나게 해줘`.
+- The `Voice STT` button now records and calls `/api/v1/god/voice`; if the result shows `fallback`, say the demo used the typed fallback transcript. Only claim real STT when a real audio submission returns `stt_status=ok`.
+- Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.

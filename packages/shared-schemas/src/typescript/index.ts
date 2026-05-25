@@ -314,6 +314,23 @@ export interface GodCommandResponse {
   ai_actions: string[];
 }
 
+export interface VoiceCommandRequest {
+  kind: 'voice_command';
+  audio_blob_b64?: string | null;
+  mime_type: string;
+  user_id: string;
+  fallback_transcript?: string | null;
+  language?: string | null;
+}
+
+export interface VoiceCommandResponse {
+  transcript: string;
+  stt_mode: 'stub' | 'faster_whisper' | 'fallback';
+  stt_status: 'ok' | 'fallback' | 'unavailable';
+  detail?: string | null;
+  command: GodCommandResponse;
+}
+
 export interface ServiceStatus {
   name: string;
   status: 'ok' | 'degraded' | 'down' | 'missing' | 'stub';

@@ -55,7 +55,7 @@
   version, traffic bias, and taxi success signal changing after commands.
 - State clearly that this is persistent deterministic adaptation for demo
   safety, not live training of new vLLM/YOLO/PPO/LSTM weights.
-- If voice is unavailable, explain that text is the supported reliable path and STT remains optional/deferred.
+- Optionally click `Voice STT`, speak the same command, then stop recording. If the result says `fallback`, explain that the demo safely used the typed fallback transcript; only `stt_status=ok` means real STT transcribed the audio.
 
 ## 13:30–15:00 — Fallback and wrap-up
 

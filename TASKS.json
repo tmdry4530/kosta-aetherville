@@ -743,6 +743,33 @@
         "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
         "runpod": "sync_only_deploy_then_orchestrator_only_restart_preserved_real_vllm_yolo; multi_action_smoke_returned_ai_mode_vllm_ai_actions_rain_traffic_jam_taxi_call_meeting_event_count_9_and_world_state_rain_congestion_taxi_meeting"
       }
+    },
+    {
+      "id": "M8-009",
+      "title": "Add God Mode voice capture and optional faster-whisper STT path",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/09-god-mode.md",
+      "depends_on": [
+        "M8-008"
+      ],
+      "unblocked_by": "text_god_mode_is_stable_and_user_approved_4090_runtime",
+      "last_checked_at": "2026-05-25T15:38:00+09:00",
+      "completed_at": "2026-05-25T15:38:00+09:00",
+      "diagnostics": {
+        "schema": "VoiceCommandRequest and VoiceCommandResponse added to shared contracts and generated TypeScript",
+        "backend": "/api/v1/god/voice transcribes audio through env-selected provider then routes transcript through the same God Mode dispatcher",
+        "stt": "stub fallback is default; optional faster-whisper provider is lazy-loaded with AETHERVILLE_STT_MODE=faster_whisper",
+        "client": "GodModeMicPanel now records microphone audio with MediaRecorder and posts voice commands with typed transcript fallback",
+        "runpod_script": "direct-process startup can bootstrap faster-whisper and passes STT env into orchestrator",
+        "verification": "python3_json_tool_bash_n_git_diff_check_uv_pytest_ruff_mypy_pnpm_lint_typecheck_test_e2e_client_build_passed_2026-05-25T15:38KST",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
+        "runpod": "direct_process_synced_by_tar_over_ssh_orchestrator_restarted_only_real_vllm_real_yolo_traffic_policy_lstm_forecast_preserved_stt_health_ok_faster_whisper",
+        "voice_smoke": "local_tunnel_POST_api_v1_god_voice_without_audio_returned_stt_status_fallback_stt_mode_fallback_command_accepted_ai_mode_vllm_actions_rain_taxi_call",
+        "client_runtime": "local_next_start_rebuilt_and_restarted_on_3000_with_tunnel_NEXT_PUBLIC_values_home_and_replay_http_smokes_passed",
+        "truthfulness": "real_faster_whisper_package_configured_but_real_audio_transcription_not_claimed_until_stt_status_ok_from_audio_blob",
+        "simulation": "POST_api_v1_sim_start_set_running_true_and_status_advanced_tick_0_to_16"
+      }
     }
   ]
 }

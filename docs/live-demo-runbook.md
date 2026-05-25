@@ -49,6 +49,10 @@ AETHERVILLE_BOOTSTRAP_UV=1 \
 AETHERVILLE_VLLM_MODE=real \
 AETHERVILLE_LLM_MODE=vllm \
 AETHERVILLE_GOD_MODE_LLM=vllm \
+AETHERVILLE_STT_MODE=faster_whisper \
+AETHERVILLE_BOOTSTRAP_STT=1 \
+AETHERVILLE_STT_MODEL=base \
+AETHERVILLE_STT_DEVICE=cuda \
 AETHERVILLE_VISION_MODE=real \
 AETHERVILLE_BOOTSTRAP_YOLO=1 \
 AETHERVILLE_REDIS_MODE=memory \
@@ -127,6 +131,17 @@ curl -fsS -H 'content-type: application/json' \
 ```
 
 Expected marker when enabled: `ai_mode="vllm"`, `ai_actions` containing several safe actions, and a `god_command_executed` summary event. If vLLM is unavailable, the command remains demo-safe and falls back to `ai_mode="rules"`.
+
+
+### Voice/STT fallback smoke
+
+```bash
+curl -fsS -H 'content-type: application/json' \
+  -d '{"kind":"voice_command","audio_blob_b64":null,"mime_type":"audio/webm","user_id":"presenter","fallback_transcript":"도시에 비를 내리고 민지가 택시를 부르게 해줘","language":"ko"}' \
+  http://127.0.0.1:18080/api/v1/god/voice | python3 -m json.tool
+```
+
+Fallback smoke should return `stt_status="fallback"` and nested `command.accepted=true`. Only claim real STT when an audio blob returns `stt_status="ok"`.
 
 ## 2. Verify RunPod health
 

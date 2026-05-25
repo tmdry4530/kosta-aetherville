@@ -19,6 +19,7 @@ from aetherville_schemas import (
     VehicleCameraFrame,
     VisionDetectRequest,
     VisionDetectResponse,
+    VoiceCommandResponse,
     YoloDetection,
 )
 from aetherville_server import main
@@ -57,6 +58,29 @@ def test_god_command_uses_shared_request_and_response_models() -> None:
     assert body.ai_mode == "rules"
     assert Envelope.model_validate(body.envelope.model_dump()).type is EnvelopeType.EVENT
 
+
+
+
+def test_voice_god_command_uses_fallback_transcript_and_shared_response() -> None:
+    response = TestClient(fastapi_app).post(
+        "/api/v1/god/voice",
+        json={
+            "kind": "voice_command",
+            "audio_blob_b64": None,
+            "mime_type": "audio/webm",
+            "user_id": "presenter",
+            "fallback_transcript": "도시에 비를 내려줘",
+            "language": "ko",
+        },
+    )
+
+    assert response.status_code == 200
+    body = VoiceCommandResponse.model_validate(response.json())
+    assert body.transcript == "도시에 비를 내려줘"
+    assert body.stt_status == "fallback"
+    assert body.command.accepted is True
+    assert body.command.category == "environment"
+    assert body.command.event.kind == "weather_changed"
 
 def test_god_command_allows_local_browser_cors_preflight() -> None:
     client = TestClient(fastapi_app)

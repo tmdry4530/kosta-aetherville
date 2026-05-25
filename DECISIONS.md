@@ -210,3 +210,15 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - Each concrete sub-effect is still recorded as a normal event for learning/timeline behavior, followed by one summary event.
   - Docker remains excluded from the current RunPod execution strategy.
 - Revisit when: command planning needs branching, undo/rollback, or a richer multi-agent director model.
+
+## ADR-018: Voice God Mode uses optional faster-whisper with typed fallback safety
+
+- Status: accepted
+- Context: Text God Mode is stable and now supports real-vLLM multi-action city direction. The next presentation gap is voice input, but live microphones, browser codecs, STT model availability, and GPU VRAM pressure can fail during a demo.
+- Decision: Add `/api/v1/god/voice` and browser `MediaRecorder` capture now. The default provider uses typed fallback transcripts; real `faster-whisper` is opt-in through `AETHERVILLE_STT_MODE=faster_whisper` and lazy-loaded so the orchestrator still starts without the package. Voice transcripts route through the same bounded God Mode dispatcher.
+- Consequences:
+  - The UI now has an actual voice capture path instead of a disabled button.
+  - The API truthfully reports `stt_status=ok|fallback|unavailable`, preventing accidental claims of real STT when fallback was used.
+  - Real STT can be installed and enabled on RunPod without changing the command contract.
+  - Docker remains excluded from the current RunPod execution strategy.
+- Revisit when: a verified real Korean audio smoke is available, microphone QA is complete, or STT moves to a dedicated service/process.

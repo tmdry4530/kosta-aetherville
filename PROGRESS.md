@@ -868,3 +868,26 @@
 - World-state smoke after the command proved all visible effects: weather `rain`, infrastructure `traffic congestion active`, taxi `v01` passenger `c01`, vehicle congestion tags, and 민지/민수 talking state.
 - Local Next production server was restarted on port `3000` with tunnel `NEXT_PUBLIC_*` values; `/` and `/replay` HTTP smokes passed.
 - Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## God Mode voice/STT command path — 2026-05-25T15:15:03+09:00
+
+- Status: complete locally; direct-process RunPod redeploy/smoke follows in this turn.
+- Added shared `VoiceCommandRequest` and `VoiceCommandResponse` contracts and regenerated TypeScript.
+- Added `/api/v1/god/voice`: the endpoint transcribes voice audio through the configured STT provider, converts the transcript into a voice `GodCommand`, then routes it through the same vLLM/rules multi-action dispatcher and broadcasts the resulting events.
+- Added a default safe fallback provider and an optional lazy `faster-whisper` provider behind `AETHERVILLE_STT_MODE=faster_whisper`.
+- Browser God Mode now enables microphone recording with `MediaRecorder`; it posts the audio blob plus current typed text as a deterministic fallback transcript.
+- Direct-process startup now supports `AETHERVILLE_BOOTSTRAP_STT=1`, `AETHERVILLE_STT_INSTALL_PACKAGE`, `AETHERVILLE_STT_MODEL`, `AETHERVILLE_STT_DEVICE`, and `AETHERVILLE_STT_COMPUTE_TYPE`.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries remain excluded.
+
+## God Mode voice/STT direct-process deployment — 2026-05-25T15:38:00+09:00
+
+- Status: complete and deployed to the verified direct-process RunPod runtime.
+- RunPod verify passed: SSH and RTX 4090 GPU visible; Docker commands remained intentionally skipped by policy.
+- Synced repository with tar-over-SSH fallback; real vLLM, real YOLO, traffic policy checkpoint, and LSTM forecast checkpoint were preserved.
+- Restarted only the orchestrator path with `AETHERVILLE_STT_MODE=faster_whisper`, `AETHERVILLE_BOOTSTRAP_STT=1`, `AETHERVILLE_STT_MODEL=base`, `AETHERVILLE_STT_DEVICE=cuda`, and the existing real-vLLM/GPU traffic checkpoint settings.
+- Direct health passed with orchestrator `ok`, STT dependency `ok` (`faster-whisper configured model=base device=cuda`), vision `yolo:ok`, vLLM model `Qwen/Qwen2.5-14B-Instruct-AWQ`, and Redis memory fallback.
+- Voice fallback smoke through the local tunnel passed: `POST /api/v1/god/voice` without an audio blob returned `stt_status=fallback`, `stt_mode=fallback`, nested `command.accepted=true`, `ai_mode=vllm`, and `ai_actions=[rain, taxi_call]`.
+- Simulation was started after restart; `/api/v1/sim/status` advanced from tick 0 to tick 16 with `running=true`.
+- Local Next production server was rebuilt/restarted on port `3000` with tunnel `NEXT_PUBLIC_*` values; `/` and `/replay` HTTP smokes passed.
+- Truthfulness note: faster-whisper is installed/configured, but real audio transcription is not claimed until a microphone/audio-blob smoke returns `stt_status=ok`.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
