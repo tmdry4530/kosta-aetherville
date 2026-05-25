@@ -42,13 +42,31 @@ def test_traffic_signal_env_reset_and_step() -> None:
 def test_policy_wrapper_loads_checkpoint_or_falls_back(tmp_path: Path) -> None:
     fallback = TrafficPolicyWrapper()
     checkpoint = tmp_path / "ppo-policy.json"
-    checkpoint.write_text(json.dumps({"preferred_action": 1}), encoding="utf-8")
+    checkpoint.write_text(
+        json.dumps(
+            {
+                "policy_version": "traffic-gpu-linear-test",
+                "weights": [[1.0, -1.0, 0.0, 0.0, 0.0], [-1.0, 1.0, 0.0, 0.0, 0.0]],
+                "bias": [0.0, 0.0],
+                "trained_on_gpu": True,
+                "training_backend": "torch_cuda",
+                "episodes": 10,
+                "improvement_pct": 22.5,
+                "avg_queue_fixed_cycle": 20.0,
+                "avg_queue_candidate": 15.5,
+                "detail": "test checkpoint",
+            }
+        ),
+        encoding="utf-8",
+    )
     loaded = TrafficPolicyWrapper(checkpoint)
 
-    assert fallback.mode == "baseline"
+    assert fallback.mode == "pressure_baseline"
     assert fallback.select_action({"ns_queue": 9, "ew_queue": 2, "active_phase": 0, "tick": 0}) == 0
     assert loaded.mode == "checkpoint"
-    assert loaded.select_action({"ns_queue": 9, "ew_queue": 2, "active_phase": 0, "tick": 0}) == 1
+    assert loaded.snapshot(last_action=1).trained_on_gpu is True
+    assert loaded.select_action({"ns_queue": 9, "ew_queue": 2, "active_phase": 0, "tick": 0}) == 0
+    assert loaded.select_action({"ns_queue": 2, "ew_queue": 9, "active_phase": 0, "tick": 0}) == 1
 
 
 def test_lstm_forecast_wrapper_returns_schema_payload() -> None:
@@ -62,5 +80,10 @@ def test_lstm_forecast_wrapper_returns_schema_payload() -> None:
 def test_metrics_script_compares_baseline_and_candidate() -> None:
     report = compare_policies(steps=5)
 
-    assert set(report) == {"baseline", "candidate"}
-    assert "avg_queue" in report["baseline"]
+    assert set(report) == {
+        "fixed_cycle",
+        "pressure_baseline",
+        "candidate",
+        "improvement_pct_vs_fixed",
+    }
+    assert "avg_queue" in report["fixed_cycle"]

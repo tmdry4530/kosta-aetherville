@@ -159,3 +159,16 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - If real YOLO or the camera endpoint is unavailable, the UI falls back to state-embedded deterministic detections and stays demo-safe.
   - Docker remains excluded from the current execution strategy.
 - Revisit when: a real camera frame stream exists, batching is needed, or YOLO moves to a dedicated inference process/GPU separate from vLLM.
+
+## ADR-014: Use a short CUDA-trained traffic checkpoint before full PPO/LSTM jobs
+
+- Status: accepted
+- Context: The demo needed stronger proof that traffic AI is not only a fixed-cycle animation, but the current RunPod vLLM + YOLO workload already uses most RTX 4090 VRAM and the live demo must remain reliable.
+- Decision: Add a lightweight traffic policy trainer that can use PyTorch/CUDA on the RunPod 4090 and export a small JSON linear policy checkpoint. Runtime inference stays torch-free: the orchestrator loads `AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT`, exposes `TrafficAiSnapshot`, and drives signal phases from the checkpoint when present.
+- Consequences:
+  - The demo now has a measured GPU-trained traffic policy path with `torch_cuda` evidence.
+  - The checkpoint reduced average queue by 31.628% versus fixed cycle in the deterministic `TrafficSignalEnv` benchmark used for the live slice.
+  - Missing or underperforming checkpoints fall back to fixed-cycle/pressure-safe behavior, so demo reliability is preserved.
+  - Full PPO and LSTM training remain upgrade paths for longer, broader traffic scenarios.
+  - Docker remains excluded from the current RunPod execution strategy.
+- Revisit when: a longer training window is approved, multiple intersections require a richer observation/action space, or traffic forecasting moves from deterministic facade to a trained sequence model.

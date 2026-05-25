@@ -34,8 +34,13 @@
 ## 9:00–11:00 — Traffic panel
 
 - Show traffic lights and the forecast chart.
-- Explain fixed-cycle baseline, PPO wrapper fallback, and deterministic forecast
-  payloads.
+- Point out the `GPU POLICY` badge when the RunPod checkpoint is active.
+- Explain the measured traffic policy result: the current CUDA-trained
+  checkpoint reduced average queue by `31.628%` versus fixed cycle in the
+  deterministic traffic environment.
+- Explain that full PPO/LSTM training remains the upgrade path, but the demo is
+  no longer just a fixed-cycle animation: the signal action is loaded from a
+  GPU-trained checkpoint when `traffic_ai.mode` is `checkpoint`.
 - Mention that training jobs are intentionally not started during the live demo.
 
 ## 11:00–13:30 — God Mode command demo + AI learning panel

@@ -42,3 +42,11 @@ Real vLLM/YOLO/PPO/LSTM/STT remain opt-in upgrade paths, not current demo blocke
 | Latest vLLM pulls CUDA 13 packages incompatible with current driver | proven | high | Pin `vllm==0.10.2` and `transformers==4.55.4` for this pod. |
 | 14B AWQ model occupies most of 4090 VRAM | high | medium | Keep one-model serving, limit model len to 4096, and avoid simultaneous heavy YOLO/PPO jobs until staged. |
 | Health checks time out during cold model load | medium | medium | Use longer real-mode health retries and persistent `/workspace` model cache. |
+
+## Real traffic policy checkpoint risk update — 2026-05-25
+
+| Risk | Likelihood | Impact | Mitigation |
+|---|---:|---:|---|
+| Full PPO/LSTM training takes longer than demo window | medium | medium | Use the verified short CUDA-trained JSON checkpoint for demo; keep full PPO/LSTM as post-demo upgrade. |
+| Checkpoint underperforms fixed cycle on a broader scenario | medium | low | Runtime fallback remains fixed-cycle/pressure-safe; metric is stated only for the deterministic `TrafficSignalEnv` benchmark. |
+| vLLM + YOLO + traffic training VRAM pressure | medium | medium | Traffic checkpoint trainer is lightweight and was verified with real vLLM/YOLO still active; stage heavier jobs separately. |

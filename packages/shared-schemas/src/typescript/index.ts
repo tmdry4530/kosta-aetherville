@@ -172,6 +172,20 @@ export interface TrafficForecastPoint {
   congestion_index: number;
 }
 
+export interface TrafficAiSnapshot {
+  mode: 'fixed_cycle' | 'pressure_baseline' | 'checkpoint';
+  policy_version: string;
+  checkpoint_loaded: boolean;
+  trained_on_gpu: boolean;
+  training_backend: 'none' | 'torch_cuda' | 'torch_cpu' | 'json';
+  episodes: number;
+  improvement_pct: number;
+  avg_queue_fixed_cycle?: number | null;
+  avg_queue_candidate?: number | null;
+  last_action?: 0 | 1 | null;
+  detail: string;
+}
+
 export interface LearningSnapshot {
   mode: 'deterministic_online_adaptation';
   storage: 'json_persistence' | 'memory';
@@ -199,6 +213,7 @@ export interface WorldStatePayload {
   drones: DroneState[];
   traffic_lights: TrafficLightState[];
   traffic_forecast: TrafficForecastPoint[];
+  traffic_ai: TrafficAiSnapshot;
   learning: LearningSnapshot;
 }
 

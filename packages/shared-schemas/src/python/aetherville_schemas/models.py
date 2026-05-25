@@ -187,6 +187,20 @@ class TrafficForecastPoint(StrictModel):
     congestion_index: float = Field(ge=0, le=1)
 
 
+class TrafficAiSnapshot(StrictModel):
+    mode: Literal["fixed_cycle", "pressure_baseline", "checkpoint"] = "fixed_cycle"
+    policy_version: str = "fixed-cycle-v0"
+    checkpoint_loaded: bool = False
+    trained_on_gpu: bool = False
+    training_backend: Literal["none", "torch_cuda", "torch_cpu", "json"] = "none"
+    episodes: int = Field(default=0, ge=0)
+    improvement_pct: float = 0.0
+    avg_queue_fixed_cycle: float | None = Field(default=None, ge=0)
+    avg_queue_candidate: float | None = Field(default=None, ge=0)
+    last_action: Literal[0, 1] | None = None
+    detail: str = "fixed cycle baseline"
+
+
 class LearningSnapshot(StrictModel):
     mode: Literal["deterministic_online_adaptation"] = "deterministic_online_adaptation"
     storage: Literal["json_persistence", "memory"] = "memory"
@@ -214,6 +228,7 @@ class WorldStatePayload(StrictModel):
     drones: list[DroneState] = Field(default_factory=list)
     traffic_lights: list[TrafficLightState] = Field(default_factory=list)
     traffic_forecast: list[TrafficForecastPoint] = Field(default_factory=list)
+    traffic_ai: TrafficAiSnapshot = Field(default_factory=TrafficAiSnapshot)
     learning: LearningSnapshot = Field(default_factory=LearningSnapshot)
 
 

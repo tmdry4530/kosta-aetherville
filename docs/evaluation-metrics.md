@@ -33,3 +33,12 @@ Create `docs/metrics-report.md` with:
 - commands run
 - raw results
 - known caveats
+
+## Latest measured AI metric — 2026-05-25
+
+- RL/traffic proxy metric: RunPod CUDA-trained traffic policy reduced average
+  queue by `31.628%` versus fixed cycle in `TrafficSignalEnv` horizon 80
+  (`32.913` candidate vs `48.138` fixed cycle).
+- This satisfies the demo target of ≥20% queue reduction for the current
+  deterministic environment. Full PPO remains the upgrade path for broader
+  traffic scenarios.

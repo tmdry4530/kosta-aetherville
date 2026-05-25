@@ -19,6 +19,7 @@ from aetherville_schemas import (
     GodCommandResponse,
     LearningStatusResponse,
     SimStatusResponse,
+    TrafficAiSnapshot,
     VehicleCameraFrame,
     WorldClock,
     WorldStatePayload,
@@ -28,7 +29,11 @@ from aetherville_server.agents import CitizenAgentService
 from aetherville_server.learning import LearningStore
 from aetherville_server.llm import planner_from_env
 from aetherville_server.orchestrator import GodCommandDispatcher
-from aetherville_server.traffic_ai import FixedCycleController, LstmForecastWrapper
+from aetherville_server.traffic_ai import (
+    FixedCycleController,
+    LstmForecastWrapper,
+    TrafficPolicyWrapper,
+)
 from aetherville_server.vehicles import VehicleController
 
 BroadcastCallback = Callable[[Envelope], Awaitable[None]]
@@ -70,6 +75,7 @@ class SimulationEngine:
         )
         self.vehicles = VehicleController()
         self.traffic_controller = FixedCycleController()
+        self.traffic_policy = TrafficPolicyWrapper.from_env()
         self.traffic_forecaster = LstmForecastWrapper()
         self.command_dispatcher = GodCommandDispatcher()
         self.learning = learning_store or LearningStore()
@@ -105,6 +111,7 @@ class SimulationEngine:
         )
         self.vehicles = VehicleController()
         self.traffic_controller = FixedCycleController()
+        self.traffic_policy = TrafficPolicyWrapper.from_env()
         self.traffic_forecaster = LstmForecastWrapper()
         self._timeline = [
             EventPayload(
@@ -171,7 +178,18 @@ class SimulationEngine:
                 )
                 for vehicle in vehicles
             ]
-        traffic_lights = self.traffic_controller.lights_for_tick(self.tick)
+        traffic_action: int | None = None
+        traffic_ai = TrafficAiSnapshot()
+        if self.traffic_policy.checkpoint_loaded:
+            traffic_observation = self._traffic_policy_observation(total_queue)
+            traffic_action = self.traffic_policy.select_action(traffic_observation)
+            traffic_ai = self.traffic_policy.snapshot(last_action=traffic_action)
+
+        traffic_lights = self.traffic_controller.lights_for_tick(
+            self.tick,
+            policy_action=traffic_action,
+            policy_mode=traffic_ai.mode if traffic_action is not None else None,
+        )
         if learning.adaptation_epoch > 0:
             traffic_lights = [
                 light.model_copy(
@@ -211,6 +229,7 @@ class SimulationEngine:
                 vehicle_count=len(vehicles),
                 total_queue=total_queue,
             ),
+            traffic_ai=traffic_ai,
             learning=learning,
         )
 
@@ -234,6 +253,20 @@ class SimulationEngine:
 
     def learning_status(self) -> LearningStatusResponse:
         return self.learning.status_response()
+
+    def _traffic_policy_observation(self, total_queue: int) -> dict[str, int]:
+        wave = int(8 * math.sin(self.tick * 0.08))
+        ns_queue = max(0, total_queue // 2 + wave)
+        ew_queue = max(0, total_queue - ns_queue)
+        active_phase = (
+            0 if self.traffic_controller.phase_for_tick(self.tick) == "north_south" else 1
+        )
+        return {
+            "ns_queue": ns_queue,
+            "ew_queue": ew_queue,
+            "active_phase": active_phase,
+            "tick": self.tick,
+        }
 
     def execute_god_command(self, command: GodCommand) -> GodCommandResponse:
         effect = self.command_dispatcher.dispatch(command)

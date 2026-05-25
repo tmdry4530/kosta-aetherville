@@ -219,6 +219,19 @@ export function createFallbackWorldState(tick = 0): WorldStatePayload {
       expected_vehicle_count: 28 + minute * 2 + (tick % 7),
       congestion_index: Math.min(1, 0.22 + minute / 60 + (tick % 9) / 100)
     })),
+    traffic_ai: {
+      mode: 'fixed_cycle',
+      policy_version: 'fixed-cycle-replay-v0',
+      checkpoint_loaded: false,
+      trained_on_gpu: false,
+      training_backend: 'none',
+      episodes: 0,
+      improvement_pct: 0,
+      avg_queue_fixed_cycle: null,
+      avg_queue_candidate: null,
+      last_action: null,
+      detail: 'replay fallback fixed-cycle baseline'
+    },
     learning: {
       mode: 'deterministic_online_adaptation',
       storage: 'memory',

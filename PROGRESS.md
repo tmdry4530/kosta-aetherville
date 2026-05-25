@@ -794,3 +794,22 @@
 - Local tunnel smoke passed: `/api/v1/vehicles/v01/camera` returned `mode: real`, dimensions `640x384`, and a traffic-light detection from the real vision service.
 - God Mode smoke passed after restart: simulation started, `교통량 증가시켜` set traffic congestion, `민지가 택시를 불러줘` moved taxi tags into dispatch/pickup phases, and `도시에 비를 내려줘` set weather to rain.
 - Local Next dev server was restarted on port `3000` with tunnel `NEXT_PUBLIC_*` values; `/` and `/replay` HTTP smokes passed after compilation.
+
+## Real 4090 traffic policy checkpoint — 2026-05-25T13:50:33+09:00
+
+- Status: complete and deployed to the verified direct-process RunPod runtime.
+- Added `TrafficAiSnapshot` to the shared world-state contract and regenerated TypeScript contracts.
+- Added a RunPod-safe traffic policy trainer: `python -m aetherville_server.traffic_ai.train_gpu_policy`.
+- Trained a checkpoint on the RTX 4090 with PyTorch CUDA: 320 episodes, horizon 80.
+- Training output reported `trained_on_gpu: true`, `training_backend: torch_cuda`, selection `trained_linear_policy`, and loss `0.208008`.
+- Measured traffic policy result: average queue `32.913` vs fixed-cycle `48.138`, a `31.628%` reduction in the deterministic traffic environment.
+- Orchestrator was restarted with `AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT` pointing to the RunPod model cache checkpoint.
+- Runtime smoke via local tunnel confirmed `traffic_ai.mode=checkpoint`, `trained_on_gpu=true`, `training_backend=torch_cuda`, and traffic-light tags include `AI정책:checkpoint`.
+- Browser traffic panel now displays a `GPU POLICY` badge and queue-cut percentage from shared state.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## Local client traffic policy panel restart — 2026-05-25T13:58:30+09:00
+
+- Status: complete locally.
+- Restarted the local Next dev server on port `3000` with tunnel `NEXT_PUBLIC_*` values.
+- HTTP smoke passed for `/` and `/replay` after Next compiled the updated traffic panel.

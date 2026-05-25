@@ -1,6 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+import json
+from pathlib import Path
+
+import pytest
 
 from aetherville_schemas import Envelope, EnvelopeType, WorldStatePayload
 from aetherville_server.sim import SimulationConfig, SimulationEngine
@@ -20,6 +24,7 @@ def test_tick_scheduler_step_advances_full_world_state() -> None:
     assert payload.drones
     assert len(payload.traffic_lights) == 4
     assert payload.traffic_forecast
+    assert payload.traffic_ai.mode == "fixed_cycle"
     assert payload.learning.mode == "deterministic_online_adaptation"
     assert payload.citizens[0].name == "민지"
     assert payload.citizens[0].display_tags[:2] == ["민지", "인도"]
@@ -51,6 +56,38 @@ def test_citizens_follow_waypoint_corridors_not_orbits() -> None:
     assert abs(first_later.rot[1] - 1.571) < 0.01
     assert first_later.anim == "idle"
     assert "인도" in first_later.display_tags
+
+
+def test_simulation_loads_traffic_policy_checkpoint(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    checkpoint = tmp_path / "traffic_policy.json"
+    checkpoint.write_text(
+        json.dumps(
+            {
+                "policy_version": "traffic-gpu-linear-test",
+                "weights": [[1.0, -1.0, 0.0, 0.0, 0.0], [-1.0, 1.0, 0.0, 0.0, 0.0]],
+                "bias": [0.0, 0.0],
+                "trained_on_gpu": True,
+                "training_backend": "torch_cuda",
+                "episodes": 24,
+                "improvement_pct": 20.0,
+                "avg_queue_fixed_cycle": 30.0,
+                "avg_queue_candidate": 24.0,
+                "detail": "test checkpoint",
+            }
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT", str(checkpoint))
+
+    state = SimulationEngine(SimulationConfig(seed=7)).snapshot()
+
+    assert state.traffic_ai.mode == "checkpoint"
+    assert state.traffic_ai.trained_on_gpu is True
+    assert state.traffic_ai.last_action in (0, 1)
+    assert any("AI정책:checkpoint" in tag for tag in state.traffic_lights[0].display_tags)
 
 
 def test_async_run_broadcasts_sequential_ticks() -> None:

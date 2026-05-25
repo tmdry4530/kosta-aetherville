@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "real_4090_vllm_yolo_camera_panel_active",
+  "status": "real_4090_vllm_yolo_and_traffic_policy_active",
   "source_prd": "source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -653,6 +653,28 @@
         "docker_policy": "no_docker_no_compose_no_dind",
         "runpod": "sync_only_deploy_then_orchestrator_restart_preserved_existing_real_vllm_and_yolo_processes",
         "smoke": "local_tunnel_camera_endpoint_returned_mode_real_with_traffic_light_detection; god_rain_taxi_traffic_state_smokes_passed"
+      }
+    },
+    {
+      "id": "M8-005",
+      "title": "Train and load real 4090-backed traffic policy checkpoint",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/08-traffic-ai.md",
+      "depends_on": [
+        "M8-004"
+      ],
+      "unblocked_by": "user_approved_all_gpu_workloads",
+      "last_checked_at": "2026-05-25T13:50:33+09:00",
+      "completed_at": "2026-05-25T13:50:33+09:00",
+      "diagnostics": {
+        "schema": "WorldStatePayload now includes TrafficAiSnapshot with checkpoint/gpu/metric fields",
+        "backend": "Simulation loads AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT and drives traffic lights with checkpoint action when present",
+        "training": "RunPod .venv python trained linear traffic policy with torch_cuda on RTX_4090 for 320 episodes horizon_80",
+        "metrics": "checkpoint avg_queue 32.913 vs fixed_cycle 48.138 = 31.628 percent queue reduction",
+        "runtime": "orchestrator restarted with checkpoint path; sim state reports mode_checkpoint trained_on_gpu_true training_backend_torch_cuda",
+        "client": "Traffic panel displays GPU POLICY badge and queue cut percentage from shared traffic_ai state",
+        "docker_policy": "no_docker_no_compose_no_dind"
       }
     }
   ]

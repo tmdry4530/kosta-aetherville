@@ -16,6 +16,7 @@ from aetherville_schemas import (
     LearningStatusResponse,
     MemoryRecord,
     PlanNode,
+    TrafficAiSnapshot,
     TripState,
     VehicleCameraFrame,
     VisionDetectResponse,
@@ -191,3 +192,25 @@ def test_learning_status_contract_validates() -> None:
 
     assert status.learning.policy_version == "adaptive-demo-v1"
     assert status.learning.traffic_bias == 0.24
+
+
+def test_traffic_ai_snapshot_contract_validates() -> None:
+    snapshot = TrafficAiSnapshot.model_validate(
+        {
+            "mode": "checkpoint",
+            "policy_version": "traffic-gpu-linear-v1",
+            "checkpoint_loaded": True,
+            "trained_on_gpu": True,
+            "training_backend": "torch_cuda",
+            "episodes": 240,
+            "improvement_pct": 28.4,
+            "avg_queue_fixed_cycle": 20.5,
+            "avg_queue_candidate": 14.7,
+            "last_action": 1,
+            "detail": "RunPod CUDA-trained linear traffic policy",
+        }
+    )
+
+    assert snapshot.mode == "checkpoint"
+    assert snapshot.trained_on_gpu is True
+    assert snapshot.last_action == 1

@@ -62,6 +62,31 @@ In this mode the orchestrator camera endpoint inherits
 return `VehicleCameraFrame.mode="real"` and the browser vehicle panel can badge
 `REAL YOLO · RunPod 4090`.
 
+To include the verified CUDA-trained traffic policy, train/export the checkpoint
+once on the pod, then restart the orchestrator with its path:
+
+```bash
+ssh "$RUNPOD_USER@$RUNPOD_HOST" -p "$RUNPOD_SSH_PORT" -i "$RUNPOD_SSH_KEY" \
+  "cd \"$RUNPOD_REMOTE_DIR\" && mkdir -p /workspace/aetherville-model-cache/traffic && \
+   .venv/bin/python -m aetherville_server.traffic_ai.train_gpu_policy \
+     --output /workspace/aetherville-model-cache/traffic/traffic_policy_v1.json \
+     --episodes 320 --horizon 80 --device cuda"
+
+AETHERVILLE_BOOTSTRAP_UV=1 \
+AETHERVILLE_VLLM_MODE=real \
+AETHERVILLE_LLM_MODE=vllm \
+AETHERVILLE_VISION_MODE=real \
+AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT=/workspace/aetherville-model-cache/traffic/traffic_policy_v1.json \
+AETHERVILLE_REDIS_MODE=memory \
+AETHERVILLE_VISION_PORT=18001 \
+AETHERVILLE_HEALTH_RETRIES=120 \
+AETHERVILLE_HEALTH_SLEEP=2 \
+bash infra/runpod/deploy_over_ssh.sh --mode direct
+```
+
+Expected state marker after restart: `traffic_ai.mode="checkpoint"` and
+`traffic_ai.training_backend="torch_cuda"`.
+
 ## 2. Verify RunPod health
 
 ```bash
@@ -195,6 +220,7 @@ In a second terminal:
 curl -fsS http://127.0.0.1:18080/api/v1/health
 curl -fsS http://127.0.0.1:18080/api/v1/learning/status
 curl -fsS http://127.0.0.1:18080/api/v1/vehicles/v01/camera
+curl -fsS http://127.0.0.1:18080/api/v1/sim/state | python3 -m json.tool
 curl -fsS http://127.0.0.1:18001/health
 python3 scripts/demo_smoke.py --orchestrator-url http://127.0.0.1:18080
 # Then run the Socket.IO polling smoke from section 3 with:

@@ -30,6 +30,7 @@
 | God Mode effect | REST/RunPod smoke updated state | ≤ 3 sec target not benchmarked |
 | Vision boxes | Vehicle camera endpoint can enrich from real RunPod YOLO; browser panel polls it and badges `REAL YOLO · RunPod 4090` | fallback keeps mock detections when YOLO is unavailable |
 | Traffic forecast | 5/10/15 minute payload rendered | real LSTM deferred |
+| Traffic policy | RunPod CUDA-trained checkpoint loaded in world state | 31.628% avg queue reduction vs fixed cycle |
 
 ## Caveats
 
@@ -64,3 +65,16 @@
   - `VehicleCameraFrame.mode` distinguishes `mock` and `real`.
   - Browser `VehicleCamPanel` polls the camera endpoint and shows `REAL YOLO · RunPod 4090` when the real path is active.
   - If the camera endpoint or real YOLO fails, the panel falls back to state-embedded mock detections instead of breaking the demo.
+
+## Real 4090 traffic policy checkpoint — 2026-05-25
+
+- Trainer: `aetherville_server.traffic_ai.train_gpu_policy`.
+- Backend: `torch_cuda` on NVIDIA GeForce RTX 4090.
+- Episodes/horizon: 320 episodes, horizon 80.
+- Checkpoint: JSON linear policy under the RunPod model cache.
+- Runtime: orchestrator loaded `AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT` and
+  `WorldStatePayload.traffic_ai` reported `mode=checkpoint`,
+  `trained_on_gpu=true`, and `training_backend=torch_cuda`.
+- Metric: average queue `32.913` vs fixed-cycle `48.138`, `31.628%` reduction.
+- UI: traffic panel displays a `GPU POLICY` badge and queue-cut percentage from
+  the shared `traffic_ai` state.

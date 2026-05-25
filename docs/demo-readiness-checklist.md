@@ -15,7 +15,7 @@
 2. 2:00–5:00 — city scene, citizens, vehicle motion, traffic lights.
 3. 5:00–8:00 — memory panel and citizen dialogue/reflection events.
 4. 8:00–10:00 — vehicle camera endpoint, real YOLO badge when available, and fallback slowdown boxes.
-5. 10:00–12:00 — traffic forecast + fixed-cycle/PPO fallback explanation.
+5. 10:00–12:00 — traffic forecast + GPU policy checkpoint badge when active.
 6. 12:00–14:00 — God Mode text command and macro buttons.
 7. 14:00–15:00 — replay fallback and metrics report.
 
@@ -24,7 +24,8 @@
 - RunPod unreachable: switch to `/replay`.
 - Voice/STT unavailable: use text command or macro buttons.
 - Real YOLO unavailable: continue with deterministic mock boxes and state that the panel is in fallback mode.
-- PPO/LSTM unavailable: show baseline controller and deterministic forecast.
+- Traffic checkpoint unavailable: show baseline controller and deterministic forecast.
+- PPO/LSTM unavailable: explain that the current short CUDA-trained checkpoint is the demo-safe bridge before full PPO/LSTM training.
 - Public WSS/REST not configured: use SSH/in-pod smoke evidence and replay route for presentation.
 
 ## Final freeze checklist
@@ -34,6 +35,8 @@
 - [ ] Orchestrator health returns `ok`.
 - [ ] Learning status returns a `deterministic_online_adaptation` snapshot.
 - [ ] Vision health returns `ok` on port `18001`.
+- [ ] If using the 4090 traffic checkpoint, `/api/v1/sim/state` reports
+      `traffic_ai.mode="checkpoint"` and `training_backend="torch_cuda"`.
 - [ ] Socket.IO polling smoke receives `aetherville:state_update`.
 - [ ] Local client starts with `NEXT_PUBLIC_ORCHESTRATOR_URL`,
       `NEXT_PUBLIC_SOCKET_URL`, and `NEXT_PUBLIC_SOCKET_TRANSPORTS=polling`

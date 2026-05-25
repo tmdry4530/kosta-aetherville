@@ -518,6 +518,33 @@ h1 {
   min-height: 128px;
 }
 
+.trafficAiBadge {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0 0 0.65rem;
+  padding: 0.28rem 0.58rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.08);
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.trafficAiBadge-active {
+  border-color: rgba(255, 204, 102, 0.72);
+  background: linear-gradient(90deg, rgba(255, 204, 102, 0.2), rgba(255, 92, 168, 0.12));
+  color: #ffe8a3;
+  box-shadow: 0 0 22px rgba(255, 204, 102, 0.2);
+}
+
+.trafficAiDetail {
+  display: block;
+  margin-top: 0.6rem;
+}
+
 .trafficBar {
   display: grid;
   grid-template-rows: 1fr auto;

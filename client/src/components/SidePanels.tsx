@@ -34,7 +34,7 @@ export function SidePanels() {
     <section className="panelDeck" aria-label="Aetherville side panels">
       <MemoryPanel citizen={primaryCitizen} tick={tick} worldState={worldState} />
       <VehicleCamPanel vehicle={primaryVehicle} />
-      <TrafficChartPanel forecast={worldState.traffic_forecast} />
+      <TrafficChartPanel forecast={worldState.traffic_forecast} trafficAi={worldState.traffic_ai} />
       <LearningPanel learning={worldState.learning} />
       <GodModeMicPanel mode={mode} worldState={worldState} />
     </section>

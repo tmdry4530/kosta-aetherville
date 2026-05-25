@@ -335,3 +335,28 @@ Verified runtime state:
 Demo talking point:
 
 - The vehicle panel is no longer just a state-embedded mock overlay. It polls the orchestrator camera endpoint; in real mode the endpoint calls the RunPod vision service and badges `REAL YOLO · RunPod 4090` in the browser.
+
+## Real traffic policy checkpoint handoff — 2026-05-25T13:50:33+09:00
+
+Current runtime state:
+
+- RunPod direct-process services are running without Docker.
+- Real vLLM and real YOLO remain active.
+- Traffic policy checkpoint exists under the RunPod model cache and was trained with `torch_cuda` on the RTX 4090.
+- Orchestrator is running with `AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT` set to that checkpoint.
+- Local tunnel smoke showed:
+  - `traffic_ai.mode`: `checkpoint`
+  - `traffic_ai.trained_on_gpu`: `true`
+  - `traffic_ai.training_backend`: `torch_cuda`
+  - `traffic_ai.improvement_pct`: `31.628`
+  - first traffic-light tags include `AI정책:checkpoint`
+
+Demo talking point:
+
+- The traffic panel is no longer only fixed-cycle/fallback. When the checkpoint is active, it shows `GPU POLICY` and the signal phase comes from the JSON checkpoint trained on the RunPod 4090. Full PPO/LSTM remains the next heavier upgrade path.
+
+## Local client after traffic policy update — 2026-05-25T13:58:30+09:00
+
+- Local client dev server is running on `http://127.0.0.1:3000/` with tunnel endpoint environment values.
+- `/` and `/replay` HTTP smokes passed after recompilation.
+- The traffic panel source now reads shared `traffic_ai` state and should show `GPU POLICY` when connected to the current RunPod orchestrator.
