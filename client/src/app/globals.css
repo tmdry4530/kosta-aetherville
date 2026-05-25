@@ -464,6 +464,28 @@ h1 {
   font-size: 1.4rem;
 }
 
+.cameraModeBadge {
+  display: inline-flex;
+  width: fit-content;
+  margin: 0 0 0.65rem;
+  padding: 0.28rem 0.58rem;
+  border: 1px solid rgba(101, 244, 216, 0.28);
+  border-radius: 999px;
+  background: rgba(101, 244, 216, 0.08);
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.cameraModeBadge-real {
+  border-color: rgba(101, 244, 216, 0.72);
+  background: linear-gradient(90deg, rgba(101, 244, 216, 0.22), rgba(255, 92, 168, 0.14));
+  color: var(--accent);
+  box-shadow: 0 0 22px rgba(101, 244, 216, 0.24);
+}
+
 .scanLine {
   position: absolute;
   inset: 0;

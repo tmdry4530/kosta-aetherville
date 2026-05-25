@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import time
 import urllib.error
@@ -14,6 +15,7 @@ from typing import Any, Literal
 import socketio  # type: ignore[import-untyped]
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import ValidationError
 
 from aetherville_schemas import (
     AckPayload,
@@ -34,6 +36,8 @@ from aetherville_schemas import (
     SimResetRequest,
     SimStatusResponse,
     VehicleCameraFrame,
+    VisionDetectRequest,
+    VisionDetectResponse,
     WorldStatePayload,
 )
 from aetherville_server import __version__
@@ -134,6 +138,83 @@ def probe_http_dependency(name: str, url: str, timeout: float = 0.5) -> ServiceS
     if 200 <= status_code < 300:
         return ServiceStatus(name=name, status="ok", detail=url)
     return ServiceStatus(name=name, status="degraded", detail=f"{url} returned {status_code}")
+
+
+def camera_vision_mode() -> str:
+    """Return the camera enrichment mode without forcing real YOLO by default."""
+
+    return os.getenv(
+        "AETHERVILLE_CAMERA_VISION_MODE",
+        os.getenv("AETHERVILLE_VISION_MODE", "mock"),
+    ).lower()
+
+
+def _post_vision_detect(request: VisionDetectRequest) -> VisionDetectResponse:
+    """Call the direct-process vision service using only stdlib HTTP."""
+
+    vision_url = os.getenv("AETHERVILLE_VISION_URL", "http://127.0.0.1:8001").rstrip("/")
+    encoded = json.dumps(request.model_dump(mode="json")).encode("utf-8")
+    http_request = urllib.request.Request(
+        f"{vision_url}/detect",
+        data=encoded,
+        headers={"content-type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(http_request, timeout=2.0) as response:
+        body = response.read().decode("utf-8")
+    return VisionDetectResponse.model_validate(json.loads(body))
+
+
+def enrich_camera_frame_with_vision(
+    frame: VehicleCameraFrame,
+    *,
+    tick: int,
+) -> VehicleCameraFrame:
+    """Replace mock camera boxes with real YOLO detections when explicitly enabled.
+
+    This is intentionally request-scoped: the simulation tick loop stays cheap,
+    while the vehicle camera panel can prove the real RunPod vision service is
+    active without turning every world-state tick into a GPU inference job.
+    """
+
+    if camera_vision_mode() != "real":
+        return frame
+
+    request = VisionDetectRequest(
+        frame_b64=frame.frame_b64,
+        camera_id=f"{frame.vehicle_id}-front",
+        metadata={
+            "tick": tick,
+            "vehicle_id": frame.vehicle_id,
+            "frame_width": frame.width,
+            "frame_height": frame.height,
+        },
+    )
+    try:
+        vision_response = _post_vision_detect(request)
+    except (
+        OSError,
+        TimeoutError,
+        urllib.error.URLError,
+        json.JSONDecodeError,
+        ValidationError,
+        ValueError,
+    ):
+        return frame
+
+    if vision_response.mode != "real":
+        return frame
+
+    real_width = 640 if frame.frame_b64 is None else frame.width
+    real_height = 384 if frame.frame_b64 is None else frame.height
+    return frame.model_copy(
+        update={
+            "mode": "real",
+            "width": real_width,
+            "height": real_height,
+            "detections": vision_response.detections,
+        }
+    )
 
 
 def build_health_response() -> HealthResponse:
@@ -309,9 +390,10 @@ async def start_citizen_dialogue(
 @fastapi_app.get("/api/v1/vehicles/{vehicle_id}/camera", response_model=VehicleCameraFrame)
 async def vehicle_camera(vehicle_id: str) -> VehicleCameraFrame:
     try:
-        return simulation.vehicle_camera_frame(vehicle_id)
+        frame = simulation.vehicle_camera_frame(vehicle_id)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=f"unknown vehicle {vehicle_id}") from exc
+    return await asyncio.to_thread(enrich_camera_frame_with_vision, frame, tick=simulation.tick)
 
 
 @fastapi_app.post("/api/v1/god/command", response_model=GodCommandResponse)

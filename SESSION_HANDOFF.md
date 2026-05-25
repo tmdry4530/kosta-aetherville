@@ -300,3 +300,38 @@ Restart command pattern:
 `AETHERVILLE_VLLM_MODE=real AETHERVILLE_LLM_MODE=vllm AETHERVILLE_VISION_MODE=real AETHERVILLE_BOOTSTRAP_YOLO=1 AETHERVILLE_YOLO_MODEL=yolo11n.pt AETHERVILLE_YOLO_DEVICE=0 AETHERVILLE_SKIP_UV_SYNC=1 bash infra/runpod/deploy_over_ssh.sh --mode direct`
 
 Do not run Docker on this pod.
+
+## Real YOLO camera panel handoff — 2026-05-25T13:22:50+09:00
+
+Current implementation state:
+
+- `/api/v1/vehicles/v01/camera` is still cheap/mock by default.
+- Set `AETHERVILLE_CAMERA_VISION_MODE=real` or start direct processes with `AETHERVILLE_VISION_MODE=real` to enrich the camera endpoint through vision `/detect`.
+- The browser vehicle camera panel polls the orchestrator camera endpoint every ~3.5 seconds and shows `REAL YOLO · RunPod 4090` when `VehicleCameraFrame.mode` is `real`.
+- If real YOLO fails, the panel falls back to world-state mock detections so the demo does not break.
+
+Next operator check after redeploy:
+
+```bash
+curl -fsS http://127.0.0.1:18080/api/v1/vehicles/v01/camera | python3 -m json.tool
+```
+
+Expected real-mode marker: `"mode": "real"` and at least one traffic-relevant detection from the vision service.
+
+## Real YOLO camera panel deployment handoff — 2026-05-25T13:35:02+09:00
+
+Verified runtime state:
+
+- RunPod direct-process services are running without Docker.
+- Existing real vLLM and real YOLO processes were preserved; orchestrator was restarted with the new camera enrichment path.
+- Local tunnel endpoints verified:
+  - orchestrator: `http://127.0.0.1:18080`
+  - vLLM: `http://127.0.0.1:18000/v1`
+  - vision: `http://127.0.0.1:18001`
+- `/api/v1/vehicles/v01/camera` returned `mode: real` and a `traffic light` detection.
+- Simulation is running; recent God Mode smokes activated rain, traffic congestion, and taxi dispatch.
+- Local browser client is running on `http://127.0.0.1:3000/` with tunnel endpoint envs.
+
+Demo talking point:
+
+- The vehicle panel is no longer just a state-embedded mock overlay. It polls the orchestrator camera endpoint; in real mode the endpoint calls the RunPod vision service and badges `REAL YOLO · RunPod 4090` in the browser.

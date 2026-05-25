@@ -56,6 +56,9 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(learningPanelSource, /AI 학습 루프/);
   assert.match(learningPanelSource, /learningMetrics/);
   assert.match(vehiclePanelSource, /YoloDetection/);
+  assert.match(vehiclePanelSource, /VehicleCameraFrame/);
+  assert.ok(vehiclePanelSource.includes('/api/v1/vehicles/'));
+  assert.match(vehiclePanelSource, /REAL YOLO · RunPod 4090/);
   assert.match(vehiclePanelSource, /cameraBox/);
   assert.match(vehiclePanelSource, /Vehicle cam/);
   assert.match(citySource, /SceneLegend/);
@@ -88,6 +91,7 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(cssSource, /trafficPanel-surge/);
   assert.match(cssSource, /learningMetrics/);
   assert.match(cssSource, /learningMeter/);
+  assert.match(cssSource, /cameraModeBadge-real/);
   assert.match(cssSource, /MINI MAP/);
   assert.match(cssSource, /LIVE ACTORS/);
   assert.match(mockWorldSource, /poseOnRoute/);
@@ -103,5 +107,6 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(typesSource, /export interface SimStatusResponse/);
   assert.match(typesSource, /export interface GodCommandResponse/);
   assert.match(typesSource, /export interface LearningSnapshot/);
+  assert.match(typesSource, /mode: 'mock' \\| 'real'/);
   assert.match(typesSource, /learning: LearningSnapshot/);
 });

@@ -49,6 +49,7 @@ export interface VisionDetectResponse {
 
 export interface VehicleCameraFrame {
   vehicle_id: string;
+  mode: 'mock' | 'real';
   frame_b64?: string | null;
   width: number;
   height: number;

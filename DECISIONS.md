@@ -147,3 +147,15 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - The CUDA/version pins are part of the current pod contract until the driver or image changes.
   - If real vLLM fails, deterministic cached planner fallback remains available without breaking the demo.
 - Revisit when: the RunPod image/driver changes, a larger model is selected, or model serving moves to a managed endpoint.
+
+## ADR-013: Vehicle camera panel proves request-scoped real YOLO instead of tick-loop inference
+
+- Status: accepted
+- Context: The demo could still look like a loop if the vehicle camera panel only displayed state-embedded mock detections while the separate vision service ran real YOLO. Running YOLO on every simulation tick would also waste GPU budget because real vLLM already occupies most RTX 4090 VRAM.
+- Decision: Keep the simulation tick loop deterministic and cheap, but let `/api/v1/vehicles/{id}/camera` call the direct-process vision `/detect` endpoint when `AETHERVILLE_CAMERA_VISION_MODE=real`. The shared `VehicleCameraFrame` contract now reports `mode: mock|real`, and the browser panel polls the camera endpoint and badges `REAL YOLO · RunPod 4090` when real detections arrive.
+- Consequences:
+  - The 15-minute demo has visible proof that the vehicle camera path is backed by the real RunPod YOLO process.
+  - GPU inference is request-scoped to the panel/smoke path, not multiplied by the 10 Hz world-state loop.
+  - If real YOLO or the camera endpoint is unavailable, the UI falls back to state-embedded deterministic detections and stays demo-safe.
+  - Docker remains excluded from the current execution strategy.
+- Revisit when: a real camera frame stream exists, batching is needed, or YOLO moves to a dedicated inference process/GPU separate from vLLM.

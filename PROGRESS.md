@@ -774,3 +774,23 @@
 - GPU evidence after real YOLO smoke with real vLLM still loaded: about 23.1 GiB VRAM used.
 - Detection filter now defaults to traffic-relevant COCO labels so non-demo classes from synthetic shapes are suppressed.
 - Docker daemon setup, Docker Compose, and Docker-in-Docker were not used.
+
+## Real YOLO vehicle camera panel integration — 2026-05-25T13:22:50+09:00
+
+- Status: complete locally; RunPod direct-process redeploy/smoke follows in this turn.
+- Added `VehicleCameraFrame.mode` to distinguish mock camera boxes from real RunPod YOLO detections.
+- Orchestrator `/api/v1/vehicles/{id}/camera` now calls vision `/detect` when `AETHERVILLE_CAMERA_VISION_MODE=real`, without putting YOLO inference in the 10 Hz simulation tick loop.
+- Direct-process startup passes the vision mode into orchestrator camera enrichment so `AETHERVILLE_VISION_MODE=real` activates the camera endpoint path.
+- Browser `VehicleCamPanel` now polls the camera endpoint and displays `REAL YOLO · RunPod 4090` when real detections are returned; state-embedded mock detections remain the fallback.
+- Updated demo/metrics/YOLO docs to remove the stale “browser camera still mock-only” gap.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## Real YOLO vehicle camera panel deployment — 2026-05-25T13:35:02+09:00
+
+- Status: complete and deployed to the verified direct-process RunPod runtime.
+- Sync used tar-over-SSH fallback; Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+- Restart strategy preserved existing real vLLM and real YOLO processes, then restarted only the orchestrator so the new camera enrichment code loaded.
+- RunPod health passed: orchestrator `ok`, vision `yolo:ok`, vLLM model list returned `Qwen/Qwen2.5-14B-Instruct-AWQ`, Redis memory fallback active.
+- Local tunnel smoke passed: `/api/v1/vehicles/v01/camera` returned `mode: real`, dimensions `640x384`, and a traffic-light detection from the real vision service.
+- God Mode smoke passed after restart: simulation started, `교통량 증가시켜` set traffic congestion, `민지가 택시를 불러줘` moved taxi tags into dispatch/pickup phases, and `도시에 비를 내려줘` set weather to rain.
+- Local Next dev server was restarted on port `3000` with tunnel `NEXT_PUBLIC_*` values; `/` and `/replay` HTTP smokes passed after compilation.

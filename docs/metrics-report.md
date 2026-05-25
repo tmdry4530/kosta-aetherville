@@ -2,10 +2,10 @@
 
 ## Measurement
 
-- Date: 2026-05-24
-- Scope: Phase 10 local demo-readiness snapshot after Phases 01–09.
+- Date: 2026-05-25
+- Scope: Phase 10 plus approved real 4090 vLLM/YOLO demo-readiness snapshot.
 - RunPod mode: direct-process runtime.
-- GPU workload: none; mock vLLM, mock vision, deterministic traffic/citizen/vehicle paths.
+- GPU workload: real vLLM plus optional real Ultralytics YOLO camera inference on the verified RTX 4090 path.
 
 ## Verification commands
 
@@ -28,14 +28,14 @@
 | Client city scene | Next build includes `/` | playable city shell |
 | Replay fallback | `/replay` route and e2e test | switch when RunPod fails |
 | God Mode effect | REST/RunPod smoke updated state | ≤ 3 sec target not benchmarked |
-| Vision boxes | Mock detections in vehicle state + UI overlay | real YOLO deferred |
+| Vision boxes | Vehicle camera endpoint can enrich from real RunPod YOLO; browser panel polls it and badges `REAL YOLO · RunPod 4090` | fallback keeps mock detections when YOLO is unavailable |
 | Traffic forecast | 5/10/15 minute payload rendered | real LSTM deferred |
 
 ## Caveats
 
 - Public RunPod URL exposure is not configured in tracked files.
 - Vision default architecture port `8001` is still occupied by pod nginx; direct-process vision uses `18001`.
-- Real vLLM, YOLO, PPO, LSTM, and STT model workloads are intentionally deferred behind explicit cost/model approval.
+- PPO, LSTM, and STT model workloads remain deferred behind explicit cost/model approval.
 
 ## Real 4090 vLLM smoke — 2026-05-25
 
@@ -47,7 +47,7 @@
   - Orchestrator `/api/v1/health` reported `vllm:ok`.
   - `POST /api/v1/citizens/c01/reflect` returned a real model-generated Korean reflection.
 - GPU memory after smoke: approximately 22.5 GiB VRAM used.
-- Remaining real ML gaps: YOLO, PPO/LSTM, and STT are still next GPU integration targets.
+- Remaining real ML gaps: PPO/LSTM and STT are still next GPU integration targets.
 
 ## Real 4090 YOLO smoke — 2026-05-25
 
@@ -59,4 +59,8 @@
   - `/detect` returned `mode=real` on a deterministic synthetic road frame.
   - Real vLLM and real YOLO were active at the same time.
 - GPU memory after combined real vLLM + YOLO smoke: approximately 23.1 GiB VRAM used.
-- Remaining gap: browser vehicle camera still displays state-embedded detections; next step is feeding real `/detect` results into vehicle camera/state or a live frame stream.
+- Follow-up integration — 2026-05-25:
+  - Orchestrator `/api/v1/vehicles/{id}/camera` now calls vision `/detect` when `AETHERVILLE_CAMERA_VISION_MODE=real`.
+  - `VehicleCameraFrame.mode` distinguishes `mock` and `real`.
+  - Browser `VehicleCamPanel` polls the camera endpoint and shows `REAL YOLO · RunPod 4090` when the real path is active.
+  - If the camera endpoint or real YOLO fails, the panel falls back to state-embedded mock detections instead of breaking the demo.

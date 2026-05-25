@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "real_4090_vllm_and_yolo_active",
+  "status": "real_4090_vllm_yolo_camera_panel_active",
   "source_prd": "source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -630,6 +630,29 @@
         "gpu": "combined_real_vllm_plus_yolo_smoke_used_about_23_1GiB_VRAM",
         "filter": "traffic_relevant_COCO_labels_kept_by_default",
         "docker_policy": "no_docker_no_compose_no_dind"
+      }
+    },
+    {
+      "id": "M8-004",
+      "title": "Connect real RunPod YOLO detections to vehicle camera endpoint and browser panel",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/07-vehicles-vision.md",
+      "depends_on": [
+        "M8-003"
+      ],
+      "unblocked_by": "user_requested_immediate_reactive_demo_improvement",
+      "last_checked_at": "2026-05-25T13:35:02+09:00",
+      "completed_at": "2026-05-25T13:35:02+09:00",
+      "diagnostics": {
+        "schema": "VehicleCameraFrame now carries mock_or_real mode and generated TypeScript was refreshed",
+        "backend": "orchestrator camera endpoint enriches camera frames through vision /detect when AETHERVILLE_CAMERA_VISION_MODE=real",
+        "client": "local_next_dev_started_on_3000_with_tunnel_NEXT_PUBLIC_urls; index_and_replay_http_smokes_passed_after_compile",
+        "runpod_script": "direct-process orchestrator inherits AETHERVILLE_CAMERA_VISION_MODE from vision mode",
+        "fallback": "state embedded mock detections remain available if camera endpoint or real YOLO is unavailable",
+        "docker_policy": "no_docker_no_compose_no_dind",
+        "runpod": "sync_only_deploy_then_orchestrator_restart_preserved_existing_real_vllm_and_yolo_processes",
+        "smoke": "local_tunnel_camera_endpoint_returned_mode_real_with_traffic_light_detection; god_rain_taxi_traffic_state_smokes_passed"
       }
     }
   ]

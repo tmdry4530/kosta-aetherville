@@ -64,6 +64,7 @@ class VisionDetectResponse(StrictModel):
 
 class VehicleCameraFrame(StrictModel):
     vehicle_id: str
+    mode: Literal["mock", "real"] = "mock"
     frame_b64: str | None = None
     width: int = Field(gt=0)
     height: int = Field(gt=0)

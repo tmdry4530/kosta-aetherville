@@ -38,8 +38,29 @@ verified pod:
 
 - Orchestrator REST + Socket.IO: `8080`
 - vLLM OpenAI-compatible fallback: `8000`
-- Vision deterministic stub: `18001`
+- Vision mock or real YOLO service: `18001`
 - Redis: memory fallback
+
+For the approved RTX 4090 “real AI” demo mode, use the same direct-process path
+with explicit opt-in variables:
+
+```bash
+AETHERVILLE_BOOTSTRAP_UV=1 \
+AETHERVILLE_VLLM_MODE=real \
+AETHERVILLE_LLM_MODE=vllm \
+AETHERVILLE_VISION_MODE=real \
+AETHERVILLE_BOOTSTRAP_YOLO=1 \
+AETHERVILLE_REDIS_MODE=memory \
+AETHERVILLE_VISION_PORT=18001 \
+AETHERVILLE_HEALTH_RETRIES=120 \
+AETHERVILLE_HEALTH_SLEEP=2 \
+bash infra/runpod/deploy_over_ssh.sh --mode direct
+```
+
+In this mode the orchestrator camera endpoint inherits
+`AETHERVILLE_CAMERA_VISION_MODE=real`, so `/api/v1/vehicles/v01/camera` can
+return `VehicleCameraFrame.mode="real"` and the browser vehicle panel can badge
+`REAL YOLO · RunPod 4090`.
 
 ## 2. Verify RunPod health
 
@@ -173,6 +194,7 @@ In a second terminal:
 ```bash
 curl -fsS http://127.0.0.1:18080/api/v1/health
 curl -fsS http://127.0.0.1:18080/api/v1/learning/status
+curl -fsS http://127.0.0.1:18080/api/v1/vehicles/v01/camera
 curl -fsS http://127.0.0.1:18001/health
 python3 scripts/demo_smoke.py --orchestrator-url http://127.0.0.1:18080
 # Then run the Socket.IO polling smoke from section 3 with:

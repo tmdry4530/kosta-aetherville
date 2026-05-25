@@ -191,6 +191,6 @@ else
   start_process vllm-fallback "uv run uvicorn aetherville_server.vllm_fallback:app --host '$HOST' --port '$VLLM_PORT'"
 fi
 
-start_process orchestrator "AETHERVILLE_PROBE_DEPENDENCIES=1 AETHERVILLE_REDIS_MODE='$REDIS_MODE' AETHERVILLE_LLM_MODE='$LLM_MODE' AETHERVILLE_LLM_MODEL='$MODEL_NAME' AETHERVILLE_VISION_URL='http://127.0.0.1:$VISION_PORT' AETHERVILLE_VLLM_URL='http://127.0.0.1:$VLLM_PORT/v1' uv run uvicorn aetherville_server.main:app --host '$HOST' --port '$ORCHESTRATOR_PORT'"
+start_process orchestrator "AETHERVILLE_PROBE_DEPENDENCIES=1 AETHERVILLE_REDIS_MODE='$REDIS_MODE' AETHERVILLE_LLM_MODE='$LLM_MODE' AETHERVILLE_LLM_MODEL='$MODEL_NAME' AETHERVILLE_CAMERA_VISION_MODE='$VISION_MODE' AETHERVILLE_VISION_URL='http://127.0.0.1:$VISION_PORT' AETHERVILLE_VLLM_URL='http://127.0.0.1:$VLLM_PORT/v1' uv run uvicorn aetherville_server.main:app --host '$HOST' --port '$ORCHESTRATOR_PORT'"
 
 echo "Direct-process start complete. Run: bash infra/runpod/health_check_direct.sh"

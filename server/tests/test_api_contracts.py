@@ -17,6 +17,9 @@ from aetherville_schemas import (
     ReflectionResponse,
     SimStatusResponse,
     VehicleCameraFrame,
+    VisionDetectRequest,
+    VisionDetectResponse,
+    YoloDetection,
 )
 from aetherville_server import main
 from aetherville_server.main import fastapi_app
@@ -172,4 +175,36 @@ def test_vehicle_camera_endpoint_uses_shared_schema() -> None:
     assert response.status_code == 200
     frame = VehicleCameraFrame.model_validate(response.json())
     assert frame.vehicle_id == "v01"
+    assert frame.mode == "mock"
     assert frame.detections
+
+
+def test_vehicle_camera_endpoint_can_use_real_vision_boundary(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_post_vision_detect(request: VisionDetectRequest) -> VisionDetectResponse:
+        assert request.camera_id == "v01-front"
+        assert request.metadata["vehicle_id"] == "v01"
+        return VisionDetectResponse(
+            mode="real",
+            detections=[
+                YoloDetection(
+                    label="traffic light",
+                    confidence=0.93,
+                    bbox=[274.0, 92.0, 288.0, 158.0],
+                    traffic_light_state="unknown",
+                )
+            ],
+        )
+
+    monkeypatch.setenv("AETHERVILLE_CAMERA_VISION_MODE", "real")
+    monkeypatch.setattr(main, "_post_vision_detect", fake_post_vision_detect)
+
+    response = TestClient(fastapi_app).get("/api/v1/vehicles/v01/camera")
+
+    assert response.status_code == 200
+    frame = VehicleCameraFrame.model_validate(response.json())
+    assert frame.mode == "real"
+    assert frame.width == 640
+    assert frame.height == 384
+    assert [detection.label for detection in frame.detections] == ["traffic light"]

@@ -24,9 +24,12 @@
 ## 7:00–9:00 — Vehicle and vision panel
 
 - Show the vehicle camera panel.
-- Point out deterministic detection boxes and vehicle slowdown behavior.
-- Explain that the verified demo uses vision service port `18001`; real YOLO is a
-  documented GPU upgrade path.
+- Point out the `REAL YOLO · RunPod 4090` badge when the camera endpoint is running
+  in real mode, and explain that the panel is polling
+  `/api/v1/vehicles/v01/camera`.
+- Explain that the verified demo uses vision service port `18001`; if real YOLO is
+  unavailable, the panel falls back to deterministic detections instead of hiding
+  the feature.
 
 ## 9:00–11:00 — Traffic panel
 

@@ -141,6 +141,7 @@ def test_vehicle_and_vision_contracts_validate() -> None:
     frame = VehicleCameraFrame.model_validate(
         {
             "vehicle_id": "v01",
+            "mode": "real",
             "frame_b64": None,
             "width": 320,
             "height": 180,
@@ -160,6 +161,7 @@ def test_vehicle_and_vision_contracts_validate() -> None:
     )
 
     assert response.detections[0].label == "pedestrian"
+    assert frame.mode == "real"
     assert frame.width == 320
     assert trip.path[-1] == [4, 0, 4]
 
