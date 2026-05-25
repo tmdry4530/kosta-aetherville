@@ -12,6 +12,8 @@ def test_text_god_command_changes_weather_and_world_state() -> None:
     engine = SimulationEngine()
 
     response = engine.execute_god_command(make_command("도시에 비를 내려줘"))
+    for _ in range(240):
+        engine.step()
     state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
 
     assert response.category == "environment"
@@ -24,19 +26,43 @@ def test_person_and_relationship_commands_inject_memory_events() -> None:
     engine = SimulationEngine()
 
     person = engine.execute_god_command(make_command("민준에게 오늘 일을 기억시켜줘"))
-    relationship = engine.execute_god_command(make_command("민준과 서연의 관계를 친구로 바꿔줘"))
+    relationship = engine.execute_god_command(make_command("민지랑 민수가 만난다"))
+    state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+    minji = next(citizen for citizen in state.citizens if citizen.name == "민지")
+    minsu = next(citizen for citizen in state.citizens if citizen.name == "민수")
 
     assert person.category == "person"
     assert relationship.category == "relationship"
     assert any(event.kind == "memory_added" for event in person.events)
     assert sum(event.kind == "memory_added" for event in relationship.events) == 2
+    assert minji.talking_to == minsu.id
+    assert minsu.talking_to == minji.id
+    assert "만남" in minji.display_tags
 
 
 def test_infrastructure_command_has_visible_world_effect() -> None:
     engine = SimulationEngine()
 
-    response = engine.execute_god_command(make_command("동쪽 도로 정체를 만들어줘"))
+    response = engine.execute_god_command(make_command("교통량 증가시켜"))
     state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
 
     assert response.category == "infrastructure"
-    assert state.world.infrastructure_status == "reroute active"
+    assert response.event.metadata["action"] == "traffic_jam"
+    assert state.world.infrastructure_status == "traffic congestion active"
+    assert state.vehicles[1].display_tags[:2] == ["정체", "저속"]
+    assert state.traffic_forecast[0].congestion_index >= 0.9
+    assert state.learning.traffic_bias > 0
+
+
+def test_taxi_command_adds_visible_taxi_tag() -> None:
+    engine = SimulationEngine()
+
+    response = engine.execute_god_command(make_command("민지가 택시를 불러줘"))
+    state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+
+    assert response.event.kind == "trip_requested"
+    assert response.event.metadata["action"] == "taxi_call"
+    assert state.vehicles[0].passenger_id == "c01"
+    assert state.vehicles[0].display_tags[0] == "택시 호출"
+    assert "민지에게 이동" in state.vehicles[0].display_tags
+    assert state.learning.taxi_success_rate > 0.5

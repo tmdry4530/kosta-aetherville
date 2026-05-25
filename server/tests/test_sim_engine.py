@@ -15,11 +15,15 @@ def test_tick_scheduler_step_advances_full_world_state() -> None:
     assert second.tick == 2
     payload = WorldStatePayload.model_validate(second.payload)
     assert payload.world.time_of_day == "09:30"
-    assert payload.citizens
-    assert payload.vehicles
+    assert len(payload.citizens) == 7
+    assert len(payload.vehicles) == 3
     assert payload.drones
-    assert payload.traffic_lights
+    assert len(payload.traffic_lights) == 4
     assert payload.traffic_forecast
+    assert payload.learning.mode == "deterministic_online_adaptation"
+    assert payload.citizens[0].name == "민지"
+    assert payload.citizens[0].display_tags[:2] == ["민지", "인도"]
+    assert payload.vehicles[0].display_tags[:2] == ["TAXI", "차도"]
 
 
 def test_reset_is_deterministic_for_same_seed() -> None:
@@ -46,6 +50,7 @@ def test_citizens_follow_waypoint_corridors_not_orbits() -> None:
     assert first_later.pos[2] == first_start.pos[2]
     assert abs(first_later.rot[1] - 1.571) < 0.01
     assert first_later.anim == "idle"
+    assert "인도" in first_later.display_tags
 
 
 def test_async_run_broadcasts_sequential_ticks() -> None:

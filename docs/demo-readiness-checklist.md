@@ -32,6 +32,7 @@
 - [ ] `docs/live-demo-runbook.md` has been followed in Mode A or Mode B.
 - [ ] RunPod direct-process services started with `AETHERVILLE_VISION_PORT=18001`.
 - [ ] Orchestrator health returns `ok`.
+- [ ] Learning status returns a `deterministic_online_adaptation` snapshot.
 - [ ] Vision health returns `ok` on port `18001`.
 - [ ] Socket.IO polling smoke receives `aetherville:state_update`.
 - [ ] Local client starts with `NEXT_PUBLIC_ORCHESTRATOR_URL`,
@@ -42,4 +43,6 @@
 - [ ] Live route `/` renders city state.
 - [ ] Replay route `/replay` works before the live demo begins.
 - [ ] God Mode text command has been tested once.
+- [ ] `AI 학습 루프` panel is visible, and presenter says it is persistent
+      deterministic adaptation rather than real neural-weight training.
 - [ ] No Docker or Docker Compose command is part of the demo path.

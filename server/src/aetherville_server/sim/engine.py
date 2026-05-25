@@ -17,6 +17,7 @@ from aetherville_schemas import (
     EventPayload,
     GodCommand,
     GodCommandResponse,
+    LearningStatusResponse,
     SimStatusResponse,
     VehicleCameraFrame,
     WorldClock,
@@ -24,6 +25,7 @@ from aetherville_schemas import (
     make_state_update,
 )
 from aetherville_server.agents import CitizenAgentService
+from aetherville_server.learning import LearningStore
 from aetherville_server.orchestrator import GodCommandDispatcher
 from aetherville_server.traffic_ai import FixedCycleController, LstmForecastWrapper
 from aetherville_server.vehicles import VehicleController
@@ -36,6 +38,7 @@ class SimulationConfig:
     tick_rate_hz: float = 10.0
     seed: int = 42
     start_minute: int = 9 * 60 + 30
+    visible_citizen_count: int = 7
 
 
 class SimulationEngine:
@@ -45,6 +48,7 @@ class SimulationEngine:
         self,
         config: SimulationConfig | None = None,
         citizen_service: CitizenAgentService | None = None,
+        learning_store: LearningStore | None = None,
     ) -> None:
         self.config = config or SimulationConfig()
         self.tick = 0
@@ -53,15 +57,20 @@ class SimulationEngine:
         self._seed = self.config.seed
         self._rng = random.Random(self._seed)
         self._weather = "clear"
+        self._weather_lock_until_tick: int | None = None
         self._temperature = 21.5
         self._active_event: str | None = None
         self._infrastructure_status: str | None = None
         self._timeline: list[EventPayload] = []
-        self.citizens = citizen_service or CitizenAgentService(seed=self.config.seed)
+        self.citizens = citizen_service or CitizenAgentService(
+            count=self.config.visible_citizen_count,
+            seed=self.config.seed,
+        )
         self.vehicles = VehicleController()
         self.traffic_controller = FixedCycleController()
         self.traffic_forecaster = LstmForecastWrapper()
         self.command_dispatcher = GodCommandDispatcher()
+        self.learning = learning_store or LearningStore()
 
     @property
     def timeline(self) -> list[EventPayload]:
@@ -83,10 +92,14 @@ class SimulationEngine:
         self.running = False
         self.speed_multiplier = 1.0
         self._weather = "clear"
+        self._weather_lock_until_tick = None
         self._temperature = 21.5
         self._active_event = None
         self._infrastructure_status = None
-        self.citizens = CitizenAgentService(seed=self._seed)
+        self.citizens = CitizenAgentService(
+            count=self.config.visible_citizen_count,
+            seed=self._seed,
+        )
         self.vehicles = VehicleController()
         self.traffic_controller = FixedCycleController()
         self.traffic_forecaster = LstmForecastWrapper()
@@ -102,9 +115,13 @@ class SimulationEngine:
     def step(self) -> Envelope:
         self.tick += 1
         # Keep the first slice deterministic while still visibly changing state.
-        if self.tick % 120 == 0:
+        weather_locked = (
+            self._weather_lock_until_tick is not None
+            and self.tick < self._weather_lock_until_tick
+        )
+        if self.tick % 120 == 0 and not weather_locked:
             self._weather = "rain" if self._weather == "clear" else "clear"
-            self._timeline.append(
+            self._record_event(
                 EventPayload(
                     kind="weather_changed",
                     message=f"weather changed to {self._weather}",
@@ -112,7 +129,7 @@ class SimulationEngine:
                 )
             )
         if self.tick % 80 == 12:
-            self._timeline.append(
+            self._record_event(
                 EventPayload(
                     kind="collision_avoided",
                     message="v01 slowed for a mock pedestrian detection",
@@ -126,7 +143,45 @@ class SimulationEngine:
         angle = self.tick * 0.08
         minute = self.config.start_minute + int(self.tick * self.speed_multiplier / 10)
         time_of_day = f"{(minute // 60) % 24:02d}:{minute % 60:02d}"
-        total_queue = int(12 + 20 * abs(math.sin(angle)))
+        congestion_active = self.vehicles.congestion_active(self.tick)
+        learning = self.learning.snapshot()
+        learned_queue_boost = self.learning.learned_queue_boost()
+        total_queue = (
+            int(62 + 18 * abs(math.sin(angle))) + learned_queue_boost
+            if congestion_active
+            else int(12 + 20 * abs(math.sin(angle))) + learned_queue_boost
+        )
+        vehicles = self.vehicles.vehicle_states(
+            self.tick,
+            self.running,
+            learned_speed_factor=self.learning.traffic_speed_factor(),
+        )
+        if learning.adaptation_epoch > 0:
+            vehicles = [
+                vehicle.model_copy(
+                    update={
+                        "display_tags": [
+                            *vehicle.display_tags,
+                            f"AI학습 v{learning.adaptation_epoch}",
+                        ]
+                    }
+                )
+                for vehicle in vehicles
+            ]
+        traffic_lights = self.traffic_controller.lights_for_tick(self.tick)
+        if learning.adaptation_epoch > 0:
+            traffic_lights = [
+                light.model_copy(
+                    update={
+                        "display_tags": [
+                            *light.display_tags,
+                            "학습제어",
+                            f"v{learning.adaptation_epoch}",
+                        ]
+                    }
+                )
+                for light in traffic_lights
+            ]
 
         return WorldStatePayload(
             world=WorldClock(
@@ -137,7 +192,7 @@ class SimulationEngine:
                 infrastructure_status=self._infrastructure_status,
             ),
             citizens=self.citizens.world_states(self.tick, self.running),
-            vehicles=self.vehicles.vehicle_states(self.tick, self.running),
+            vehicles=vehicles,
             drones=[
                 DroneState(
                     id="d01",
@@ -147,12 +202,13 @@ class SimulationEngine:
                     battery=0.94,
                 )
             ],
-            traffic_lights=self.traffic_controller.lights_for_tick(self.tick),
+            traffic_lights=traffic_lights,
             traffic_forecast=self.traffic_forecaster.predict(
                 tick=self.tick,
-                vehicle_count=1,
+                vehicle_count=len(vehicles),
                 total_queue=total_queue,
             ),
+            learning=learning,
         )
 
     def state_update(self) -> Envelope:
@@ -173,14 +229,42 @@ class SimulationEngine:
     def vehicle_camera_frame(self, vehicle_id: str) -> VehicleCameraFrame:
         return self.vehicles.camera_frame(vehicle_id, self.tick)
 
+    def learning_status(self) -> LearningStatusResponse:
+        return self.learning.status_response()
+
     def execute_god_command(self, command: GodCommand) -> GodCommandResponse:
         effect = self.command_dispatcher.dispatch(command)
         if effect.weather is not None:
             self._weather = effect.weather
+            self._weather_lock_until_tick = self.tick + 900
         if effect.active_event is not None:
             self._active_event = effect.active_event
         if effect.infrastructure_status is not None:
             self._infrastructure_status = effect.infrastructure_status
+        if effect.event.metadata.get("action") == "meeting":
+            source = str(effect.event.metadata.get("source", "c01"))
+            target = str(effect.event.metadata.get("target", "c02"))
+            self.citizens.activate_meeting(source, target)
+        if effect.event.metadata.get("action") == "taxi_call":
+            passenger_id = str(effect.event.metadata.get("passenger_id", "c01"))
+            vehicle_id = str(effect.event.metadata.get("vehicle_id", "v01"))
+            passenger = next(
+                (
+                    citizen
+                    for citizen in self.citizens.world_states(self.tick, self.running)
+                    if citizen.id == passenger_id
+                ),
+                None,
+            )
+            pickup_xz = (passenger.pos[0], passenger.pos[2]) if passenger else None
+            self.vehicles.request_taxi(
+                passenger_id,
+                vehicle_id=vehicle_id,
+                pickup_xz=pickup_xz,
+                requested_tick=self.tick,
+            )
+        if effect.event.metadata.get("action") == "traffic_jam":
+            self.vehicles.activate_congestion(self.tick)
 
         events: list[EventPayload] = []
         for memory in effect.memories:
@@ -194,7 +278,8 @@ class SimulationEngine:
                 )
             )
         events.append(effect.event)
-        self._timeline.extend(events)
+        for event in events:
+            self._record_event(event)
         envelopes = [self._event_envelope(event) for event in events]
         envelope = envelopes[-1]
         return GodCommandResponse(
@@ -206,6 +291,10 @@ class SimulationEngine:
             events=events,
             envelopes=envelopes,
         )
+
+    def _record_event(self, event: EventPayload) -> None:
+        self._timeline.append(event)
+        self.learning.record_event(event, tick=self.tick)
 
     def _event_envelope(self, event: EventPayload) -> Envelope:
         return Envelope(

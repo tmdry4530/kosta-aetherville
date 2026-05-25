@@ -14,6 +14,16 @@ from aetherville_schemas import EventPayload, GodCommand
 
 GodCommandCategory = Literal["environment", "event", "person", "infrastructure", "relationship"]
 
+NAME_TO_CITIZEN_ID = {
+    "민지": "c01",
+    "민수": "c02",
+    "서연": "c03",
+    "도윤": "c04",
+    "하린": "c05",
+    "지호": "c06",
+    "민준": "c07",
+}
+
 
 @dataclass(frozen=True)
 class MemoryInjection:
@@ -62,7 +72,26 @@ class GodCommandDispatcher:
             return self._person_effect(text)
         if category == "relationship":
             return self._relationship_effect(text)
+        if "택시" in text or "taxi" in lowered:
+            return self._taxi_effect(text)
         if category == "infrastructure":
+            if any(keyword in text for keyword in ("정체", "교통량", "혼잡", "막혀")) or any(
+                keyword in lowered for keyword in ("traffic jam", "congestion", "jam")
+            ):
+                return GodCommandEffect(
+                    category=category,
+                    active_event="traffic congestion",
+                    infrastructure_status="traffic congestion active",
+                    event=EventPayload(
+                        kind="infrastructure_changed",
+                        message=f"Traffic congestion surge applied: {text}",
+                        metadata={
+                            "category": category,
+                            "action": "traffic_jam",
+                            "status": "traffic congestion active",
+                        },
+                    ),
+                )
             return GodCommandEffect(
                 category=category,
                 active_event="infrastructure intervention",
@@ -89,16 +118,28 @@ class GodCommandDispatcher:
             keyword in lowered for keyword in ("rain", "clear", "sun", "weather", "snow")
         ):
             return "environment"
-        if any(keyword in text for keyword in ("관계", "친구", "대화")) or any(
-            keyword in lowered for keyword in ("relationship", "friend", "rival")
+        relationship_keywords = ("관계", "친구", "대화", "만나", "만난", "만날", "만남")
+        if any(keyword in text for keyword in relationship_keywords) or any(
+            keyword in lowered for keyword in ("relationship", "friend", "rival", "meet")
         ):
             return "relationship"
-        if any(keyword in text for keyword in ("시민", "사람", "민준", "서연")) or any(
+        if "택시" in text or "taxi" in lowered:
+            return "infrastructure"
+        if any(keyword in text for keyword in ("시민", "사람", *NAME_TO_CITIZEN_ID.keys())) or any(
             keyword in lowered for keyword in ("person", "citizen")
         ):
             return "person"
-        if any(keyword in text for keyword in ("도로", "다리", "신호", "정체")) or any(
-            keyword in lowered for keyword in ("road", "bridge", "traffic", "infrastructure")
+        infrastructure_terms = ("도로", "다리", "신호", "정체", "교통량", "혼잡", "막혀", "차량")
+        infrastructure_terms_en = (
+            "road",
+            "bridge",
+            "traffic",
+            "infrastructure",
+            "congestion",
+            "jam",
+        )
+        if any(keyword in text for keyword in infrastructure_terms) or any(
+            keyword in lowered for keyword in infrastructure_terms_en
         ):
             return "infrastructure"
         return "event"
@@ -113,45 +154,116 @@ class GodCommandDispatcher:
 
     @staticmethod
     def _person_effect(text: str) -> GodCommandEffect:
+        citizen_id, citizen_name = _first_named_citizen(text, default=("c01", "민지"))
         return GodCommandEffect(
             category="person",
             active_event="person intervention",
             event=EventPayload(
                 kind="person_updated",
                 message=f"Person command applied: {text}",
-                entity_id="c01",
-                metadata={"category": "person", "citizen_id": "c01"},
+                entity_id=citizen_id,
+                metadata={"category": "person", "citizen_id": citizen_id, "name": citizen_name},
             ),
             memories=[
                 MemoryInjection(
-                    citizen_id="c01",
+                    citizen_id=citizen_id,
                     text=f"Personal intervention remembered: {text}",
-                    tags=["god-mode", "person"],
+                    tags=["god-mode", "person", citizen_name],
                 )
             ],
         )
 
     @staticmethod
     def _relationship_effect(text: str) -> GodCommandEffect:
+        source_id, source_name = _first_named_citizen(text, default=("c01", "민지"))
+        target_id, target_name = _second_named_citizen(
+            text,
+            source_id=source_id,
+            default=("c02", "민수") if source_id != "c02" else ("c01", "민지"),
+        )
+        is_meeting = (
+            "만나" in text
+            or "만난" in text
+            or "만날" in text
+            or "만남" in text
+            or "meet" in text.lower()
+        )
+        action = "meeting" if is_meeting else "relationship"
+        message = (
+            f"{source_name} and {target_name} are meeting on the sidewalk"
+            if is_meeting
+            else f"Relationship command applied: {text}"
+        )
         return GodCommandEffect(
             category="relationship",
-            active_event="relationship intervention",
+            active_event="citizen meeting" if is_meeting else "relationship intervention",
             event=EventPayload(
                 kind="relationship_changed",
-                message=f"Relationship command applied: {text}",
-                entity_id="c01",
-                metadata={"category": "relationship", "source": "c01", "target": "c02"},
+                message=message,
+                entity_id=source_id,
+                metadata={
+                    "category": "relationship",
+                    "action": action,
+                    "source": source_id,
+                    "target": target_id,
+                    "source_name": source_name,
+                    "target_name": target_name,
+                },
             ),
             memories=[
                 MemoryInjection(
-                    citizen_id="c01",
-                    text=f"Relationship with c02 changed: {text}",
-                    tags=["god-mode", "relationship", "c02"],
+                    citizen_id=source_id,
+                    text=f"{source_name} remembered meeting {target_name}: {text}",
+                    tags=["god-mode", "relationship", action, target_name],
                 ),
                 MemoryInjection(
-                    citizen_id="c02",
-                    text=f"Relationship with c01 changed: {text}",
-                    tags=["god-mode", "relationship", "c01"],
+                    citizen_id=target_id,
+                    text=f"{target_name} remembered meeting {source_name}: {text}",
+                    tags=["god-mode", "relationship", action, source_name],
                 ),
             ],
         )
+
+    @staticmethod
+    def _taxi_effect(text: str) -> GodCommandEffect:
+        citizen_id, citizen_name = _first_named_citizen(text, default=("c01", "민지"))
+        return GodCommandEffect(
+            category="infrastructure",
+            active_event="taxi dispatch",
+            event=EventPayload(
+                kind="trip_requested",
+                message=f"Taxi v01 dispatched for {citizen_name}",
+                entity_id="v01",
+                metadata={
+                    "category": "infrastructure",
+                    "action": "taxi_call",
+                    "vehicle_id": "v01",
+                    "passenger_id": citizen_id,
+                    "passenger_name": citizen_name,
+                    "command": text,
+                },
+            ),
+            memories=[
+                MemoryInjection(
+                    citizen_id=citizen_id,
+                    text=f"{citizen_name} called taxi v01: {text}",
+                    tags=["god-mode", "taxi", "trip_requested", "v01"],
+                )
+            ],
+        )
+
+
+def _first_named_citizen(text: str, default: tuple[str, str]) -> tuple[str, str]:
+    for name, citizen_id in NAME_TO_CITIZEN_ID.items():
+        if name in text:
+            return citizen_id, name
+    return default
+
+
+def _second_named_citizen(
+    text: str, *, source_id: str, default: tuple[str, str]
+) -> tuple[str, str]:
+    for name, citizen_id in NAME_TO_CITIZEN_ID.items():
+        if citizen_id != source_id and name in text:
+            return citizen_id, name
+    return default

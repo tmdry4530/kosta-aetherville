@@ -12,6 +12,8 @@ from aetherville_schemas import (
     EnvelopeType,
     GodCommand,
     HealthResponse,
+    LearningSnapshot,
+    LearningStatusResponse,
     MemoryRecord,
     PlanNode,
     TripState,
@@ -33,7 +35,12 @@ def test_state_update_fixture_parses() -> None:
     assert envelope.tick == 12
     assert payload.world.weather == "clear"
     assert payload.citizens[0].id == "c01"
+    assert payload.citizens[0].display_tags == ["시민", "인도"]
     assert payload.vehicles[0].yolo_detections[0].label == "pedestrian"
+    assert payload.vehicles[0].display_tags == ["택시", "차도"]
+    assert payload.traffic_lights[0].display_tags == ["신호등", "green"]
+    assert payload.learning.mode == "deterministic_online_adaptation"
+    assert payload.learning.experience_count == 0
 
 
 def test_invalid_envelope_type_is_rejected() -> None:
@@ -155,3 +162,30 @@ def test_vehicle_and_vision_contracts_validate() -> None:
     assert response.detections[0].label == "pedestrian"
     assert frame.width == 320
     assert trip.path[-1] == [4, 0, 4]
+
+
+def test_learning_status_contract_validates() -> None:
+    snapshot = LearningSnapshot.model_validate(
+        {
+            "storage": "json_persistence",
+            "experience_count": 4,
+            "adaptation_epoch": 1,
+            "policy_version": "adaptive-demo-v1",
+            "traffic_bias": 0.24,
+            "taxi_success_rate": 0.62,
+            "citizen_memory_count": 3,
+            "weather_bias": 0.08,
+            "last_updated_tick": 44,
+            "insights": ["교통량 증가 패턴 학습"],
+        }
+    )
+    status = LearningStatusResponse.model_validate(
+        {
+            "learning": snapshot.model_dump(mode="json"),
+            "explanation": "deterministic online adaptation",
+            "upgrade_path": ["PPO checkpoint"],
+        }
+    )
+
+    assert status.learning.policy_version == "adaptive-demo-v1"
+    assert status.learning.traffic_bias == 0.24

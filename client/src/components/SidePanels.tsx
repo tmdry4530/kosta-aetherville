@@ -5,6 +5,7 @@ import type { WorldStatePayload } from '@aetherville/shared-schemas';
 import { createFallbackWorldState } from '@/lib/mockWorld';
 import { useConnectionStore } from '@/store/connection';
 import { GodModeMicPanel } from '@/ui/GodModeMicPanel';
+import { LearningPanel } from '@/ui/LearningPanel';
 import { MemoryPanel } from '@/ui/MemoryPanel';
 import { TrafficChartPanel } from '@/ui/TrafficChartPanel';
 import { VehicleCamPanel } from '@/ui/VehicleCamPanel';
@@ -34,6 +35,7 @@ export function SidePanels() {
       <MemoryPanel citizen={primaryCitizen} tick={tick} worldState={worldState} />
       <VehicleCamPanel vehicle={primaryVehicle} />
       <TrafficChartPanel forecast={worldState.traffic_forecast} />
+      <LearningPanel learning={worldState.learning} />
       <GodModeMicPanel mode={mode} worldState={worldState} />
     </section>
   );

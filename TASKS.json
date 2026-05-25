@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "demo_top_bottom_layout_polished",
+  "status": "demo_persistent_learning_loop_active",
   "source_prd": "source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -495,6 +495,98 @@
         "hero": "full_width_top_banner_with_tighter_title_and_compact_endpoint_cards",
         "city": "full_width_scene_below_hero_with_panel_deck_under_canvas",
         "runtime": "client_css_only_no_runpod_restart_no_docker"
+      }
+    },
+    {
+      "id": "M7-012",
+      "title": "Add tagged 4x4 city grid, meeting scenario, taxi call, and larger demo city stage",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "client/src/components/CityPlaceholder.tsx",
+      "depends_on": [
+        "M7-011"
+      ],
+      "unblocked_by": "M7-011",
+      "last_checked_at": "2026-05-25T06:05:46+09:00",
+      "completed_at": "2026-05-25T06:05:46+09:00",
+      "diagnostics": {
+        "world_density": "4x4_grid_16_building_blocks_7_citizens_3_vehicles_4_traffic_lights",
+        "movement_policy": "citizens_follow_sidewalk_routes_vehicles_follow_road_waypoint_routes_no_orbits",
+        "labels": "display_tags_shared_schema_added_for_citizens_vehicles_traffic_lights_and_rendered_as_billboard_tags",
+        "god_mode_meeting": "민지랑_민수가_만난다_sets_c01_c02_meeting_tags_and_talking_to_state",
+        "god_mode_taxi": "민지가_택시를_불러줘_sets_v01_taxi_call_display_tag_and_trip_requested_event",
+        "city_scale": "top_hero_compacted_city_panel_min_height_clamp_560px_78vh_880px_visual_verdict_score_94",
+        "verification": "shared_schema_generator_uv_pytest_ruff_mypy_client_test_typecheck_lint_browser_smoke_passed",
+        "runpod": "direct_process_redeployed_uv_bootstrap_enabled_sim_started_rest_health_status_state_godmode_socketio_polling_passed",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
+        "secrets": "no_env_runpod_or_secret_material_printed_or_committed"
+      }
+    },
+    {
+      "id": "M7-013",
+      "title": "Make God Mode rain, taxi, and traffic surge visibly change city behavior",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "server/src/aetherville_server/sim/engine.py",
+      "depends_on": [
+        "M7-012"
+      ],
+      "unblocked_by": "M7-012",
+      "last_checked_at": "2026-05-25T07:29:15+09:00",
+      "completed_at": "2026-05-25T07:29:15+09:00",
+      "diagnostics": {
+        "video_audit": "Video_Project_8_mp4_frames_showed_event_effects_read_as_loop_without_stronger_feedback",
+        "rain": "God_Mode_rain_locks_weather_for_demo_window_and_client_renders_animated_rain_sheet_plus_RAIN_ACTIVE_badge",
+        "taxi": "taxi_call_now_dispatches_v01_toward_passenger_pickup_and_changes_tags_to_moving_pickup_waiting_or_passenger_onboard",
+        "traffic": "traffic_jam_now_sets_congestion_status_slows_vehicle_routes_adds_low_speed_tags_raises_forecast_to_high_congestion_and_renders_red_surge_overlay",
+        "verification": "uv_pytest_ruff_mypy_client_test_typecheck_lint_build_git_diff_check_browser_smoke_passed",
+        "runpod": "direct_process_redeployed_with_uv_bootstrap_mock_vllm_memory_redis_no_docker_and_runtime_smoke_passed",
+        "browser": "http_WSL_IP_3000_event_feedback_final_connected_tick_rain_rainOverlay_trafficOverlay_taxiTag_true",
+        "secrets": "no_env_runpod_or_secret_material_printed_or_committed"
+      }
+    },
+    {
+      "id": "M7-014",
+      "title": "Polish live city scene toward mini-GTA motion and visible God Mode consequences",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/99-final-audit.md",
+      "depends_on": [
+        "M7-013"
+      ],
+      "last_checked_at": "2026-05-25T08:44:38+09:00",
+      "completed_at": "2026-05-25T08:44:38+09:00",
+      "diagnostics": {
+        "client_scene": "added smooth game camera, street lights, lane dashes, mini-map HUD, animated pedestrian rigs, wheel-spinning vehicles, drone rotors, 3D rain streaks, and traffic-jam vehicle queues",
+        "godmode_classification_fix": "교통량/혼잡/막혀/차량 commands now classify as infrastructure and trigger traffic_jam effects",
+        "runpod_direct_process": "redeployed with direct-process runtime, Docker skipped, tar-over-SSH fallback used",
+        "runtime_smoke": "rain true, traffic congestion active, taxi dispatch tags visible, v02 정체/저속 tags visible, forecast indices 1.0",
+        "browser_smoke": "local client connected via polling, rain/traffic/taxi overlays true, canvas and four panels present",
+        "screenshot": "/tmp/aetherville-mini-gta-envbuild.png"
+      }
+    },
+    {
+      "id": "M8-001",
+      "title": "Add persistent deterministic online adaptation loop for demo self-learning",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "server/src/aetherville_server/learning.py",
+      "depends_on": [
+        "M7-014"
+      ],
+      "unblocked_by": "M7-014",
+      "last_checked_at": "2026-05-25T12:06:00+09:00",
+      "completed_at": "2026-05-25T11:47:49+09:00",
+      "diagnostics": {
+        "schema": "LearningSnapshot_and_LearningStatusResponse_added_to_shared_schemas_and_WorldStatePayload",
+        "server": "LearningStore_persists_event_experience_to_JSON_and_exposes_api_v1_learning_status",
+        "simulation": "God_Mode_and_auto_events_record_experience_policy_version_epoch_traffic_bias_taxi_success_weather_memory_signals",
+        "feedback": "learned_state_affects_forecast_queue_pressure_vehicle_speed_factor_traffic_light_tags_and_client_learning_panel",
+        "truthfulness": "persistent_demo_adaptation_only_not_real_vllm_yolo_ppo_lstm_stt_training",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
+        "runpod": "direct_process_redeployed_health_learning_status_godmode_learning_smoke_passed_no_docker",
+        "client": "production_client_rebuilt_with_tunnel_envs_restarted_on_3000_AI_learning_panel_rendered",
+        "verification": "json_bash_gitdiff_pytest_ruff_mypy_pnpm_lint_typecheck_test_e2e_build_runpod_smoke_passed"
       }
     }
   ]

@@ -116,6 +116,7 @@ source infra/runpod/.env.runpod
 set +a
 
 curl -fsS "$RUNPOD_PUBLIC_ORCHESTRATOR_URL/api/v1/health"
+curl -fsS "$RUNPOD_PUBLIC_ORCHESTRATOR_URL/api/v1/learning/status"
 curl -fsS "$RUNPOD_PUBLIC_VISION_URL/health"
 python3 scripts/demo_smoke.py --orchestrator-url "$RUNPOD_PUBLIC_ORCHESTRATOR_URL"
 
@@ -171,6 +172,7 @@ In a second terminal:
 
 ```bash
 curl -fsS http://127.0.0.1:18080/api/v1/health
+curl -fsS http://127.0.0.1:18080/api/v1/learning/status
 curl -fsS http://127.0.0.1:18001/health
 python3 scripts/demo_smoke.py --orchestrator-url http://127.0.0.1:18080
 # Then run the Socket.IO polling smoke from section 3 with:
@@ -207,3 +209,13 @@ Open:
 - If voice/STT is unavailable: use God Mode text input or macro buttons.
 - If real YOLO/RL/LSTM/vLLM is unavailable: use deterministic stubs and explain
   the documented upgrade paths.
+
+## 7. AI learning truthfulness note
+
+- The visible `AI 학습 루프` panel is a persistent deterministic online
+  adaptation loop, not live neural-network training.
+- Keeping the direct-process server running accumulates event experience in
+  JSON state and feeds it back into traffic pressure, taxi policy metadata, and
+  UI tags.
+- Real vLLM/YOLO/PPO/LSTM/STT training still requires a separate explicit
+  opt-in with model names, storage, cost limits, and rollback plan.

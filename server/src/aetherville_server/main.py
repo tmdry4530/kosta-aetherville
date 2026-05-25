@@ -27,6 +27,7 @@ from aetherville_schemas import (
     GodCommand,
     GodCommandResponse,
     HealthResponse,
+    LearningStatusResponse,
     MemoryStreamResponse,
     ReflectionResponse,
     ServiceStatus,
@@ -143,7 +144,12 @@ def build_health_response() -> HealthResponse:
             name="simulation",
             status="ok",
             detail=f"deterministic tick loop configured at {TICK_RATE_HZ:g} Hz",
-        )
+        ),
+        ServiceStatus(
+            name="learning",
+            status="ok",
+            detail="deterministic online adaptation JSON persistence active",
+        ),
     ]
 
     if os.getenv("AETHERVILLE_PROBE_DEPENDENCIES") == "1":
@@ -219,6 +225,11 @@ async def sim_status() -> SimStatusResponse:
 @fastapi_app.get("/api/v1/sim/state", response_model=WorldStatePayload)
 async def sim_state() -> WorldStatePayload:
     return simulation.snapshot()
+
+
+@fastapi_app.get("/api/v1/learning/status", response_model=LearningStatusResponse)
+async def learning_status() -> LearningStatusResponse:
+    return simulation.learning_status()
 
 
 @fastapi_app.post("/api/v1/sim/start", response_model=SimStatusResponse)

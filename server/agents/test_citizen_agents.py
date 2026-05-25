@@ -9,6 +9,7 @@ def test_twenty_citizens_are_fixture_generated() -> None:
 
     assert len(citizens) == 20
     assert len({citizen.id for citizen in citizens}) == 20
+    assert [citizens[0].name, citizens[1].name] == ["민지", "민수"]
     assert citizens[0].daily_goal
 
 
@@ -39,3 +40,16 @@ def test_plan_tree_and_dialogue_events_exist() -> None:
         "memory_added",
         "dialog_ended",
     ]
+
+
+def test_meeting_state_tags_specific_people() -> None:
+    service = CitizenAgentService(count=7)
+    service.activate_meeting("c01", "c02")
+
+    states = service.world_states(tick=12, running=True)
+    minji = next(state for state in states if state.name == "민지")
+    minsu = next(state for state in states if state.name == "민수")
+
+    assert minji.talking_to == minsu.id
+    assert minsu.talking_to == minji.id
+    assert "만남" in minji.display_tags

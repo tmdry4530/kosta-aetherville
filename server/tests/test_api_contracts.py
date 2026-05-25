@@ -12,6 +12,7 @@ from aetherville_schemas import (
     Envelope,
     EnvelopeType,
     GodCommandResponse,
+    LearningStatusResponse,
     MemoryStreamResponse,
     ReflectionResponse,
     SimStatusResponse,
@@ -28,7 +29,9 @@ def test_sim_status_uses_shared_response_model() -> None:
     status = SimStatusResponse.model_validate(response.json())
     assert isinstance(status.running, bool)
     assert status.tick >= 0
-    assert status.citizen_count == 20
+    assert status.citizen_count == 7
+    assert status.vehicle_count == 3
+    assert status.traffic_light_count == 4
 
 
 def test_god_command_uses_shared_request_and_response_models() -> None:
@@ -81,10 +84,20 @@ def test_sim_control_and_snapshot_endpoints_use_shared_models() -> None:
     snapshot = client.get("/api/v1/sim/state")
     assert snapshot.status_code == 200
     assert snapshot.json()["world"]["weather"] in {"clear", "rain"}
+    assert "learning" in snapshot.json()
 
     stop = client.post("/api/v1/sim/stop")
     assert stop.status_code == 200
     assert SimStatusResponse.model_validate(stop.json()).running is False
+
+
+def test_learning_status_endpoint_uses_shared_model() -> None:
+    response = TestClient(fastapi_app).get("/api/v1/learning/status")
+
+    assert response.status_code == 200
+    status = LearningStatusResponse.model_validate(response.json())
+    assert status.learning.mode == "deterministic_online_adaptation"
+    assert status.explanation
 
 
 def test_timeline_endpoint_returns_events_after_god_command() -> None:
@@ -112,7 +125,8 @@ def test_citizen_rest_endpoints_use_shared_models() -> None:
     citizens = client.get("/api/v1/citizens")
     assert citizens.status_code == 200
     citizen_list = CitizenListResponse.model_validate(citizens.json())
-    assert len(citizen_list.citizens) == 20
+    assert len(citizen_list.citizens) == 7
+    assert [citizen.name for citizen in citizen_list.citizens[:2]] == ["민지", "민수"]
 
     detail = client.get("/api/v1/citizens/c01")
     assert detail.status_code == 200

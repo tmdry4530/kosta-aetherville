@@ -63,6 +63,7 @@ export interface CitizenState {
   anim: string;
   current_action: string;
   talking_to?: string | null;
+  display_tags: string[];
 }
 
 export interface CitizenPersona {
@@ -135,6 +136,7 @@ export interface VehicleState {
   passenger_id?: string | null;
   destination?: Vec3 | null;
   yolo_detections: YoloDetection[];
+  display_tags: string[];
 }
 
 export interface TripState {
@@ -160,12 +162,33 @@ export interface TrafficLightState {
   pos: Vec3;
   state: 'red' | 'yellow' | 'green';
   remaining_sec: number;
+  display_tags: string[];
 }
 
 export interface TrafficForecastPoint {
   minute_offset: number;
   expected_vehicle_count: number;
   congestion_index: number;
+}
+
+export interface LearningSnapshot {
+  mode: 'deterministic_online_adaptation';
+  storage: 'json_persistence' | 'memory';
+  experience_count: number;
+  adaptation_epoch: number;
+  policy_version: string;
+  traffic_bias: number;
+  taxi_success_rate: number;
+  citizen_memory_count: number;
+  weather_bias: number;
+  last_updated_tick: number;
+  insights: string[];
+}
+
+export interface LearningStatusResponse {
+  learning: LearningSnapshot;
+  explanation: string;
+  upgrade_path: string[];
 }
 
 export interface WorldStatePayload {
@@ -175,6 +198,7 @@ export interface WorldStatePayload {
   drones: DroneState[];
   traffic_lights: TrafficLightState[];
   traffic_forecast: TrafficForecastPoint[];
+  learning: LearningSnapshot;
 }
 
 export interface GodCommand {

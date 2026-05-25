@@ -14,13 +14,13 @@ interface GodModeMicPanelProps {
 
 const MACROS = [
   { label: '비 내리기', text: '도시에 비를 내려줘' },
-  { label: '차량 정체', text: '동쪽 도로에 정체 이벤트를 만들어줘' },
-  { label: '시민 기억', text: '민준에게 오늘 카페 손님을 기억시켜줘' },
-  { label: '관계 변화', text: '민준과 서연의 관계를 친구로 바꿔줘' }
+  { label: '민지·민수 만남', text: '민지랑 민수가 만난다' },
+  { label: '택시 호출', text: '민지가 택시를 불러줘' },
+  { label: '차량 정체', text: '동쪽 도로에 정체 이벤트를 만들어줘' }
 ];
 
 export function GodModeMicPanel({ mode, worldState }: GodModeMicPanelProps) {
-  const [text, setText] = useState('도시에 비를 내려줘');
+  const [text, setText] = useState('민지랑 민수가 만난다');
   const [lastResult, setLastResult] = useState<string>('text fallback ready');
 
   async function submitCommand(rawText = text) {

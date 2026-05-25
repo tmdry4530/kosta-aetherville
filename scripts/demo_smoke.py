@@ -19,6 +19,7 @@ def main() -> None:
 
     health = get_json(f"{args.orchestrator_url}/api/v1/health")
     state = get_json(f"{args.orchestrator_url}/api/v1/sim/state")
+    learning = get_json(f"{args.orchestrator_url}/api/v1/learning/status")
     print(
         json.dumps(
             {
@@ -26,6 +27,8 @@ def main() -> None:
                 "citizens": len(state["citizens"]),
                 "vehicles": len(state["vehicles"]),
                 "traffic_forecast": [p["minute_offset"] for p in state["traffic_forecast"]],
+                "learning_mode": learning["learning"]["mode"],
+                "learning_epoch": learning["learning"]["adaptation_epoch"],
             },
             ensure_ascii=False,
         )

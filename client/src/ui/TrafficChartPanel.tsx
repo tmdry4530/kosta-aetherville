@@ -8,11 +8,12 @@ interface TrafficChartPanelProps {
 
 export function TrafficChartPanel({ forecast }: TrafficChartPanelProps) {
   const maxVehicles = Math.max(...forecast.map((point) => point.expected_vehicle_count), 1);
+  const isSurging = forecast.some((point) => point.congestion_index >= 0.85);
 
   return (
-    <article className="sidePanel trafficPanel">
+    <article className={`sidePanel trafficPanel${isSurging ? ' trafficPanel-surge' : ''}`}>
       <div className="panelKicker">Traffic forecast</div>
-      <h2>혼잡 예측</h2>
+      <h2>{isSurging ? '혼잡 예측 · 정체 발생' : '혼잡 예측'}</h2>
       <div className="trafficBars" aria-label="Traffic forecast chart">
         {forecast.map((point) => (
           <div className="trafficBar" key={point.minute_offset}>

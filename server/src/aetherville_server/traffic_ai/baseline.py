@@ -28,16 +28,32 @@ class FixedCycleController:
         ew_state = self._state_for_axis(phase == "east_west", remaining)
         return [
             TrafficLightState(
-                id="tl_ns",
-                pos=[2.0, 0.0, 0.0],
+                id="tl_nw",
+                pos=[-3.0, 0.0, -3.0],
                 state=ns_state,
                 remaining_sec=remaining,
+                display_tags=["신호등", ns_state],
             ),
             TrafficLightState(
-                id="tl_ew",
-                pos=[0.0, 0.0, 2.0],
+                id="tl_ne",
+                pos=[3.0, 0.0, -3.0],
                 state=ew_state,
                 remaining_sec=remaining,
+                display_tags=["신호등", ew_state],
+            ),
+            TrafficLightState(
+                id="tl_sw",
+                pos=[-3.0, 0.0, 3.0],
+                state=ew_state,
+                remaining_sec=remaining,
+                display_tags=["신호등", ew_state],
+            ),
+            TrafficLightState(
+                id="tl_se",
+                pos=[3.0, 0.0, 3.0],
+                state=ns_state,
+                remaining_sec=remaining,
+                display_tags=["신호등", ns_state],
             ),
         ]
 

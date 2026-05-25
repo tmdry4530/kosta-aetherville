@@ -122,3 +122,16 @@ Consequences:
 - Docker remains out of the current RunPod execution path.
 
 Rejected: Enabling wildcard CORS for every origin by default, because explicit local demo origins are safer and enough for the approved presentation path.
+
+## ADR-011: Demo self-learning uses persistent deterministic online adaptation before real training
+
+- Status: accepted
+- Context: The live demo must answer whether the city improves while the server stays online, but starting real vLLM fine-tuning, YOLO training, PPO training, LSTM retraining, or STT workloads without explicit model/cost approval would create GPU cost, disk, latency, and rollback risk. The approved current runtime is direct-process only.
+- Decision: Add a JSON-backed deterministic online adaptation loop as the active demo self-learning layer. God Mode, 시민 기억, 택시, 날씨, and 교통 이벤트 are recorded as experience, persisted under the direct-process run directory, exposed through shared REST/state schemas, and fed back into traffic forecast pressure, vehicle speed factors, tags, and an AI learning panel.
+- Consequences:
+  - The demo can truthfully show persistent adaptation across long-running server sessions and process restarts without claiming real neural training.
+  - Keeping the server running improves accumulated demo policy state only through observed/commanded events; it does not automatically train new vLLM/YOLO/PPO/LSTM weights.
+  - Resetting the simulation does not clear the persisted learning snapshot unless the operator intentionally removes or changes the learning state path.
+  - Real autonomous learning remains an explicit upgrade path requiring approved storage, training jobs, checkpoints, model names, cost limits, and rollback.
+  - Docker remains excluded from the current RunPod execution path.
+- Revisit when: real training/inference workloads are explicitly approved with model/runtime parameters, or a production persistence backend replaces JSON state.

@@ -8,27 +8,78 @@ type Route2D = Array<readonly [number, number]>;
 
 const citizenRoutes: Route2D[] = [
   [
-    [-5.2, -2.7],
-    [-2.4, -2.7],
-    [-0.8, -0.9],
-    [1.6, -0.9],
-    [4.9, 0.8]
+    [-5.7, -3.72],
+    [-3.72, -3.72],
+    [-3.72, -0.72],
+    [-0.72, -0.72],
+    [-0.72, 2.28]
   ],
   [
-    [2.8, -5.1],
-    [2.8, -1.4],
-    [1.1, 0],
-    [-1.3, 0],
-    [-1.3, 4.8]
+    [-2.28, -5.7],
+    [-2.28, -3.72],
+    [0.72, -3.72],
+    [0.72, -0.72],
+    [3.72, -0.72]
+  ],
+  [
+    [2.28, -5.7],
+    [2.28, -3.72],
+    [5.7, -3.72],
+    [5.7, -0.72],
+    [2.28, -0.72]
+  ],
+  [
+    [-5.7, 0.72],
+    [-3.72, 0.72],
+    [-3.72, 3.72],
+    [-0.72, 3.72],
+    [-0.72, 5.7]
+  ],
+  [
+    [0.72, 5.7],
+    [0.72, 3.72],
+    [3.72, 3.72],
+    [3.72, 0.72],
+    [5.7, 0.72]
+  ],
+  [
+    [-5.7, 5.7],
+    [-5.7, 3.72],
+    [-2.28, 3.72],
+    [-2.28, 0.72],
+    [0.72, 0.72]
+  ],
+  [
+    [5.7, 5.7],
+    [3.72, 5.7],
+    [3.72, 2.28],
+    [0.72, 2.28],
+    [0.72, -2.28]
   ]
 ];
 
-const vehicleRoute: Route2D = [
-  [-4.4, -1.7],
-  [-1.2, -1.7],
-  [0, 0],
-  [1.4, 1.7],
-  [4.4, 1.7]
+const vehicleRoutes: Route2D[] = [
+  [
+    [-6, -3],
+    [-3, -3],
+    [0, -3],
+    [3, -3],
+    [6, -3]
+  ],
+  [
+    [-6, 0],
+    [-3, 0],
+    [0, 0],
+    [0, 3],
+    [0, 6]
+  ],
+  [
+    [3, -6],
+    [3, -3],
+    [3, 0],
+    [6, 0],
+    [6, 3]
+  ]
 ];
 
 const droneRoute: Route2D = [
@@ -68,9 +119,34 @@ function poseOnRoute(route: Route2D, progress: number) {
 
 export function createFallbackWorldState(tick = 0): WorldStatePayload {
   const trafficLightState = Math.floor(tick / 30) % 2 === 0 ? 'green' : 'red';
-  const citizenA = poseOnRoute(citizenRoutes[0], tick * 0.055);
-  const citizenB = poseOnRoute(citizenRoutes[1], tick * 0.048 + 3.4);
-  const vehicle = poseOnRoute(vehicleRoute, tick * 0.14);
+  const citizenNames = ['민지', '민수', '서연', '도윤', '하린', '지호', '민준'];
+  const citizens = citizenNames.map((name, index) => {
+    const pose = poseOnRoute(citizenRoutes[index], tick * (0.045 + (index % 4) * 0.006) + index * 1.35);
+    return {
+      id: `c${String(index + 1).padStart(2, '0')}`,
+      name,
+      pos: vec3(pose.x + ((index % 3) - 1) * 0.14, 0, pose.z),
+      rot: vec3(0, pose.yaw, 0),
+      anim: tick > 0 ? 'walk' : 'idle',
+      current_action: '인도 경로를 따라 이동 중',
+      talking_to: null,
+      display_tags: [name, '인도']
+    };
+  });
+  const vehicles = vehicleRoutes.map((route, index) => {
+    const pose = poseOnRoute(route, tick * (0.13 + index * 0.025) + index * 2.5);
+    return {
+      id: `v${String(index + 1).padStart(2, '0')}`,
+      type: index === 0 ? 'taxi' : 'shuttle',
+      pos: vec3(pose.x, 0, pose.z),
+      rot: vec3(0, pose.yaw, 0),
+      speed: tick > 0 ? 3.2 + index * 0.4 : 0,
+      passenger_id: null,
+      destination: vec3(route[route.length - 1][0], 0, route[route.length - 1][1]),
+      yolo_detections: [] as YoloDetection[],
+      display_tags: index === 0 ? ['TAXI', '차도', 'v01'] : ['차도', `v0${index + 1}`]
+    };
+  });
   const drone = poseOnRoute(droneRoute, tick * 0.07);
   const detections: YoloDetection[] = [
     {
@@ -90,44 +166,15 @@ export function createFallbackWorldState(tick = 0): WorldStatePayload {
       distance_m: 9.5
     });
   }
+  vehicles[0].yolo_detections = detections;
   return {
     world: {
       time_of_day: '09:30',
       weather: 'replay-clear',
       temperature: 21.5
     },
-    citizens: [
-      {
-        id: 'c01',
-        name: '민준',
-        pos: vec3(citizenA.x, 0, citizenA.z),
-        rot: vec3(0, citizenA.yaw, 0),
-        anim: tick > 0 ? 'walk' : 'idle',
-        current_action: tick > 0 ? 'walking toward cafe waypoint' : 'waiting for state',
-        talking_to: null
-      },
-      {
-        id: 'c02',
-        name: '서연',
-        pos: vec3(citizenB.x, 0, citizenB.z),
-        rot: vec3(0, citizenB.yaw, 0),
-        anim: 'talk',
-        current_action: 'checking memory kiosk',
-        talking_to: tick % 80 > 40 ? 'c01' : null
-      }
-    ],
-    vehicles: [
-      {
-        id: 'v01',
-        type: 'taxi',
-        pos: vec3(vehicle.x, 0, vehicle.z),
-        rot: vec3(0, vehicle.yaw, 0),
-        speed: tick > 0 ? 3.2 : 0,
-        passenger_id: null,
-        destination: vec3(4.4, 0, 1.7),
-        yolo_detections: detections
-      }
-    ],
+    citizens,
+    vehicles,
     drones: [
       {
         id: 'd01',
@@ -139,22 +186,51 @@ export function createFallbackWorldState(tick = 0): WorldStatePayload {
     ],
     traffic_lights: [
       {
-        id: 'tl_01',
-        pos: vec3(2, 0, 2),
+        id: 'tl_nw',
+        pos: vec3(-3, 0, -3),
         state: trafficLightState,
-        remaining_sec: Math.max(0, 30 - (tick % 30))
+        remaining_sec: Math.max(0, 30 - (tick % 30)),
+        display_tags: ['신호등', trafficLightState]
       },
       {
-        id: 'tl_02',
-        pos: vec3(-2, 0, -2),
+        id: 'tl_ne',
+        pos: vec3(3, 0, -3),
         state: Math.floor(tick / 30) % 2 === 0 ? 'red' : 'green',
-        remaining_sec: Math.max(0, 30 - (tick % 30))
+        remaining_sec: Math.max(0, 30 - (tick % 30)),
+        display_tags: ['신호등', Math.floor(tick / 30) % 2 === 0 ? 'red' : 'green']
+      },
+      {
+        id: 'tl_sw',
+        pos: vec3(-3, 0, 3),
+        state: Math.floor(tick / 30) % 2 === 0 ? 'red' : 'green',
+        remaining_sec: Math.max(0, 30 - (tick % 30)),
+        display_tags: ['신호등', Math.floor(tick / 30) % 2 === 0 ? 'red' : 'green']
+      },
+      {
+        id: 'tl_se',
+        pos: vec3(3, 0, 3),
+        state: trafficLightState,
+        remaining_sec: Math.max(0, 30 - (tick % 30)),
+        display_tags: ['신호등', trafficLightState]
       }
     ],
     traffic_forecast: [5, 10, 15].map((minute) => ({
       minute_offset: minute,
       expected_vehicle_count: 28 + minute * 2 + (tick % 7),
       congestion_index: Math.min(1, 0.22 + minute / 60 + (tick % 9) / 100)
-    }))
+    })),
+    learning: {
+      mode: 'deterministic_online_adaptation',
+      storage: 'memory',
+      experience_count: Math.floor(tick / 45),
+      adaptation_epoch: Math.floor(tick / 135),
+      policy_version: `adaptive-demo-v${Math.floor(tick / 135)}`,
+      traffic_bias: Math.min(1, Math.floor(tick / 45) * 0.04),
+      taxi_success_rate: Math.min(0.92, 0.5 + Math.floor(tick / 60) * 0.03),
+      citizen_memory_count: Math.floor(tick / 30),
+      weather_bias: Math.min(1, Math.floor(tick / 90) * 0.08),
+      last_updated_tick: tick,
+      insights: ['Replay fallback에서도 학습 패널 형태를 유지합니다.']
+    }
   };
 }

@@ -167,3 +167,96 @@ Continue demo operation with `docs/live-demo-runbook.md`; do not start real mode
 - `.shell` now stacks the hero/instructions on top and the live city scene plus panels underneath.
 - Hero typography was tightened for a top banner layout, endpoint cards are compact, and the city canvas expands full-width below.
 - Runtime services were not changed; this is a local client layout update only.
+
+## Tagged grid / live stage handoff — 2026-05-25T06:05:46+09:00
+
+Current demo state:
+
+- Local client dev server is running on `http://127.0.0.1:3000` with explicit tunnel envs:
+  - REST/socket: `http://127.0.0.1:18080`
+  - Socket transport: `polling`
+- RunPod direct-process services were redeployed and health-checked without Docker.
+- Simulation is running; latest verified REST status reported 7 citizens, 3 vehicles, and 4 traffic lights.
+- Live God Mode smoke passed for:
+  - `민지랑 민수가 만난다`
+  - `민지가 택시를 불러줘`
+- Live browser smoke passed after waiting for polling connection: `connected`, tick advanced, and visual tags appeared in the city scene.
+- Screenshot evidence: `/tmp/aetherville-live-grid-tags-connected.png`.
+
+Operational notes:
+
+- If the browser appears stale or styles do not change, kill the local Next dev process, remove `client/.next`, and restart `pnpm --filter @aetherville/client exec next dev -H 0.0.0.0 -p 3000` with the `NEXT_PUBLIC_*` tunnel envs. WSL/Next file watching did not always hot-reload CSS reliably.
+- Keep using direct-process runtime only. Do not run Docker, Docker Compose, or Docker-in-Docker on the current RunPod pod.
+- Current vision demo endpoint remains `18001`; `/api/v1/health` on vision returned 404 while `/health` returned ok.
+
+## God Mode event feedback handoff — 2026-05-25T07:29:15+09:00
+
+Current demo behavior after the latest patch:
+
+- Open the Windows-accessible WSL URL, currently `http://172.22.251.143:3000/`.
+- Use God Mode shortcuts:
+  - `비 내리기`: visible rain streak overlay plus `RAIN ACTIVE · 비 내리는 중`; weather stays rain for the demo window.
+  - `택시 호출`: taxi `v01` changes from a route loop into an active dispatch with tags like `민지에게 이동` / `민지 탑승`.
+  - `차량 정체`: red traffic-surge overlay appears, vehicles show `정체/저속`, and the forecast panel switches to high-congestion styling.
+- Latest browser evidence: `/tmp/aetherville-event-feedback-final.png`.
+- Latest runtime smoke after deploy: weather remained `rain` after delay, infrastructure status was `traffic congestion active`, `v01` tag included `택시 호출` and `민지 탑승`, `v02` tag included `정체/저속`, and forecast indices were near/at `1.0`.
+- Keep using direct-process runtime only. Do not run Docker, Docker Compose, or Docker-in-Docker on the current RunPod pod.
+
+## Mini-GTA live city polish handoff — 2026-05-25T08:44:38+09:00
+
+Current demo state:
+
+- RunPod direct-process services were redeployed after the traffic command classification fix; Docker was not used.
+- Local production client was rebuilt with current `NEXT_PUBLIC_*` tunnel endpoints and is running at the current WSL URL `http://172.22.251.143:3000/` while this session remains active.
+- Verified God Mode shortcut sequence for demo:
+  - `비 내려줘` -> rain badge/overlay plus in-scene rain streaks.
+  - `민지가 택시를 부르게 해줘` -> taxi dispatch tags and pulsing taxi ring.
+  - `교통량 증가시켜` -> infrastructure congestion, slow/queued vehicles, red traffic overlay, high forecast.
+- Latest screenshot evidence: `/tmp/aetherville-mini-gta-envbuild.png`.
+- If the local client is restarted in production mode, rebuild with the same `NEXT_PUBLIC_ORCHESTRATOR_URL`, `NEXT_PUBLIC_SOCKET_URL`, and `NEXT_PUBLIC_SOCKET_TRANSPORTS=polling` values first; for dev mode those envs can be provided at start.
+- Keep using direct-process runtime only. Do not run Docker, Docker Compose, or Docker-in-Docker on this RunPod pod.
+
+## Persistent AI learning handoff — 2026-05-25T11:47:49+09:00
+
+Current implementation state:
+
+- The city now includes a demo-safe persistent learning/adaptation loop.
+- Learning state is stored by default at `AETHERVILLE_RUN_DIR/learning_state.json` or `AETHERVILLE_LEARNING_PATH` if configured.
+- `/api/v1/learning/status` returns the current learning snapshot and explains the real upgrade path.
+- `WorldStatePayload.learning` is emitted through REST and Socket.IO state updates.
+- The browser shows `AI 학습 루프` under the city panels.
+- God Mode commands that visibly feed learning:
+  - `교통량 증가시켜` / `차량 정체` -> raises learned traffic pressure and slows future vehicles.
+  - `민지가 택시를 불러줘` -> raises taxi dispatch success signal.
+  - `도시에 비를 내려줘` -> raises weather adaptation signal.
+  - `민지랑 민수가 만난다` or memory commands -> raises citizen memory signal.
+
+Operational notes:
+
+- This is not real model self-training; do not claim new neural weights are being trained live.
+- Keeping the server running accumulates deterministic event experience and policy metadata; real PPO/LSTM/vLLM/YOLO/STT training remains opt-in.
+- Keep using direct-process runtime only. Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this RunPod pod.
+
+## Persistent AI learning deployed handoff — 2026-05-25T12:06:00+09:00
+
+Current demo runtime:
+
+- RunPod direct-process services are freshly redeployed and healthy.
+- Local tunnel endpoints currently verified:
+  - Orchestrator REST/Socket.IO: `http://127.0.0.1:18080`
+  - Vision: `http://127.0.0.1:18001`
+- Local production client is running on `http://127.0.0.1:3000/` / WSL network URL if needed, rebuilt with `NEXT_PUBLIC_ORCHESTRATOR_URL=http://127.0.0.1:18080`, `NEXT_PUBLIC_SOCKET_URL=http://127.0.0.1:18080`, and `NEXT_PUBLIC_SOCKET_TRANSPORTS=polling`.
+- Latest learning smoke after three God Mode commands:
+  - `experience_count=6`
+  - `adaptation_epoch=2`
+  - `policy_version=adaptive-demo-v2`
+  - `traffic_bias=0.12`
+  - `taxi_success_rate=0.59`
+- The presenter can now answer: the current demo improves via persistent deterministic event adaptation while the server stays up; it is not real model self-training.
+
+If restarting:
+
+1. Keep tunnel open or start Mode B from `docs/live-demo-runbook.md`.
+2. Rebuild/start client with the same `NEXT_PUBLIC_*` values if using production mode.
+3. Verify `curl http://127.0.0.1:18080/api/v1/learning/status` before presenting the AI learning panel.
+4. Do not run Docker, Docker Compose, Docker-in-Docker, or real model training without a separate explicit request.

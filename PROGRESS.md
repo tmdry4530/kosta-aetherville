@@ -682,3 +682,70 @@
 - `.shell` now stacks the hero/instructions on top and the live city scene plus panels underneath.
 - Hero typography was tightened for a top banner layout, endpoint cards are compact, and the city canvas expands full-width below.
 - Runtime services were not changed; this is a local client layout update only.
+
+## Tagged 4x4 city + larger live stage polish — 2026-05-25T06:05:46+09:00
+
+- Status: complete and deployed to the verified direct-process RunPod runtime.
+- Expanded the demo world contract to show a 4x4 street grid with 16 building blocks, 7 default citizens, 3 vehicles, and 4 visible traffic lights.
+- Added shared `display_tags` for citizens, vehicles, and traffic lights, then rendered those tags as billboard labels in the R3F city scene.
+- God Mode scenario support verified:
+  - `민지랑 민수가 만난다` tags `c01`/`c02` as meeting participants and updates `talking_to` state.
+  - `민지가 택시를 불러줘` tags taxi `v01` with `택시 호출` and emits a `trip_requested` event.
+- Increased demo city prominence by compacting the top hero banner and giving the city panel a larger responsive stage (`clamp(560px, 78vh, 880px)`).
+- Visual browser smoke: `/tmp/aetherville-live-grid-tags-connected.png`; live Socket.IO polling reached `connected`, city tick advanced, and tags were visible. Visual verdict persisted at `.omx/state/visual-grid-tags/ralph-progress.json` with score `94`.
+- RunPod direct-process redeploy passed using tar-over-SSH fallback; `uv` bootstrap was enabled because the pod lacked `uv` on PATH. Simulation was started after deploy.
+- Verified via local tunnel: orchestrator health, sim status `7/3/4`, vision `18001`, meeting command, taxi command, and world-state tag extraction.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## God Mode visible event feedback polish — 2026-05-25T07:29:15+09:00
+
+- Status: complete and deployed to the verified direct-process RunPod runtime.
+- Audit input: `Video Project 8.mp4` showed that the prior God Mode shortcuts could read as a short looping city clip because rain, taxi, and traffic commands did not create strong enough visual/behavioral consequences.
+- Rain command improvement:
+  - God Mode rain now locks weather for a demo window instead of being overwritten by the automatic weather toggle.
+  - Client renders a visible animated rain sheet and `RAIN ACTIVE · 비 내리는 중` badge.
+- Taxi command improvement:
+  - `민지가 택시를 불러줘` now dispatches taxi `v01` toward the passenger pickup point instead of only retagging a looping route.
+  - Taxi tags progress through movement/pickup/passenger phases such as `민지에게 이동`, `픽업 대기`, and `민지 탑승`.
+- Traffic surge improvement:
+  - `차량 정체` now activates a congestion window, slows vehicle route progress, adds `정체/저속` vehicle tags, raises forecast congestion, and displays a red `TRAFFIC SURGE · 차량 저속/정체` overlay.
+- Visual evidence: `/tmp/aetherville-event-feedback-final.png`; browser smoke confirmed `rainOverlay`, `trafficOverlay`, `trafficPanel`, and `taxiTag` all true while Socket.IO polling was connected.
+- RunPod direct-process redeploy passed using tar-over-SSH fallback and `AETHERVILLE_BOOTSTRAP_UV=1`; Docker was not used.
+
+## Mini-GTA live city motion polish — 2026-05-25T08:44:38+09:00
+
+- Status: complete and deployed to the verified direct-process RunPod runtime.
+- Audit input: `Video Project 8.mp4` and live browser checks showed the demo could still read as a short loop when God Mode events were subtle.
+- Client scene polish:
+  - Added a smooth R3F game camera that follows taxi/meeting/traffic focal points instead of a fixed static view.
+  - Added street lights, lane dashes, neon building windows, compact mini-map HUD, and denser traffic-jam queue vehicles.
+  - Replaced static citizen capsules with animated pedestrian rigs including bob, arm swing, and leg swing.
+  - Added wheel-spinning vehicles with headlights/brake lights, taxi/congestion pulse rings, and rotating drone rotors.
+  - Added in-scene 3D rain streaks on top of the existing rain overlay/badge.
+- God Mode behavior fix:
+  - `교통량 증가시켜` now classifies as infrastructure and triggers the same `traffic_jam` congestion path as explicit 정체/혼잡 commands.
+- Layout polish: the top hero now uses a compact two-column banner on wide viewports so the city appears sooner and larger in the first screen.
+- Runtime evidence after direct-process redeploy: weather `rain`, active event `traffic congestion`, infrastructure `traffic congestion active`, taxi tags include `택시 호출/민지에게 이동`, v02 tags include `정체/저속`, and forecast indices were `[1.0, 1.0, 1.0]`.
+- Browser evidence: `/tmp/aetherville-mini-gta-envbuild.png`; local production client showed `connected`, rain/traffic/taxi evidence true, canvas present, and 4 side panels present.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## Persistent demo AI learning loop — 2026-05-25T11:47:49+09:00
+
+- Status: complete locally; direct-process RunPod redeploy pending verification in this turn.
+- Added a shared `LearningSnapshot` / `LearningStatusResponse` contract and included `learning` in every `WorldStatePayload`.
+- Added `LearningStore`, a JSON-backed deterministic online adaptation layer that persists God Mode, 시민 기억, 택시, 날씨, and 교통 events without starting real GPU training.
+- Simulation feedback now reflects learned state in traffic queue pressure, vehicle learned-speed factor, traffic light tags, policy version, and forecast/panel state.
+- Added `/api/v1/learning/status` and health dependency evidence for the learning loop.
+- Client now has an `AI 학습 루프` panel showing experience count, epoch, policy version, traffic bias, taxi success rate, and latest insight.
+- Truthfulness note: this is persistent demo adaptation, not real vLLM/YOLO/PPO/LSTM/STT self-training. Keeping the server running improves the persisted adaptation state only as events are observed or commanded.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries remain excluded.
+
+## Persistent demo AI learning loop deployment — 2026-05-25T12:06:00+09:00
+
+- Status: complete and deployed to the verified direct-process RunPod runtime.
+- RunPod verify passed: SSH/GPU visible, NVIDIA GeForce RTX 4090 idle for compute, Docker commands skipped by policy.
+- Direct-process redeploy passed using tar-over-SSH fallback, `AETHERVILLE_BOOTSTRAP_UV=1`, mock vLLM, memory Redis, and vision port `18001`.
+- Runtime smoke passed through local tunnel: `/api/v1/health` reported `learning:ok`, `/api/v1/learning/status` returned `deterministic_online_adaptation`, and vision `/health` returned ok.
+- God Mode learning smoke passed: traffic, taxi, and rain commands raised experience count to 6, policy version to `adaptive-demo-v2`, traffic bias to `0.12`, taxi success rate to `0.59`, weather to `rain`, taxi tags to `택시 호출/민지에게 이동`, traffic light tags to `학습제어/v2`, and forecast indices to `[1.0, 1.0, 1.0]`.
+- Local production client was rebuilt with tunnel `NEXT_PUBLIC_*` values, restarted on port `3000`, and the rendered HTML contains `AI 학습 루프`.
+- Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.

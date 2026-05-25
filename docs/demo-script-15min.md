@@ -35,10 +35,14 @@
   payloads.
 - Mention that training jobs are intentionally not started during the live demo.
 
-## 11:00–13:30 — God Mode command demo
+## 11:00–13:30 — God Mode command demo + AI learning panel
 
 - Enter a text command such as “make it rainy” or use a macro button.
 - Confirm the visible world-state effect and event timeline update.
+- Show the `AI 학습 루프` panel and point out experience count, epoch, policy
+  version, traffic bias, and taxi success signal changing after commands.
+- State clearly that this is persistent deterministic adaptation for demo
+  safety, not live training of new vLLM/YOLO/PPO/LSTM weights.
 - If voice is unavailable, explain that text is the supported reliable path.
 
 ## 13:30–15:00 — Fallback and wrap-up

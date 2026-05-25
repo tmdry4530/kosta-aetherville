@@ -78,6 +78,7 @@ class CitizenState(StrictModel):
     anim: str = "idle"
     current_action: str = "observing"
     talking_to: str | None = None
+    display_tags: list[str] = Field(default_factory=list)
 
 
 class CitizenPersona(StrictModel):
@@ -150,6 +151,7 @@ class VehicleState(StrictModel):
     passenger_id: str | None = None
     destination: Vec3 | None = None
     yolo_detections: list[YoloDetection] = Field(default_factory=list)
+    display_tags: list[str] = Field(default_factory=list)
 
 
 class TripState(StrictModel):
@@ -175,12 +177,33 @@ class TrafficLightState(StrictModel):
     pos: Vec3
     state: Literal["red", "yellow", "green"]
     remaining_sec: float = Field(ge=0)
+    display_tags: list[str] = Field(default_factory=list)
 
 
 class TrafficForecastPoint(StrictModel):
     minute_offset: int = Field(ge=0)
     expected_vehicle_count: int = Field(ge=0)
     congestion_index: float = Field(ge=0, le=1)
+
+
+class LearningSnapshot(StrictModel):
+    mode: Literal["deterministic_online_adaptation"] = "deterministic_online_adaptation"
+    storage: Literal["json_persistence", "memory"] = "memory"
+    experience_count: int = Field(default=0, ge=0)
+    adaptation_epoch: int = Field(default=0, ge=0)
+    policy_version: str = "adaptive-demo-v0"
+    traffic_bias: float = Field(default=0.0, ge=0, le=1)
+    taxi_success_rate: float = Field(default=0.5, ge=0, le=1)
+    citizen_memory_count: int = Field(default=0, ge=0)
+    weather_bias: float = Field(default=0.0, ge=0, le=1)
+    last_updated_tick: int = Field(default=0, ge=0)
+    insights: list[str] = Field(default_factory=list)
+
+
+class LearningStatusResponse(StrictModel):
+    learning: LearningSnapshot
+    explanation: str
+    upgrade_path: list[str] = Field(default_factory=list)
 
 
 class WorldStatePayload(StrictModel):
@@ -190,6 +213,7 @@ class WorldStatePayload(StrictModel):
     drones: list[DroneState] = Field(default_factory=list)
     traffic_lights: list[TrafficLightState] = Field(default_factory=list)
     traffic_forecast: list[TrafficForecastPoint] = Field(default_factory=list)
+    learning: LearningSnapshot = Field(default_factory=LearningSnapshot)
 
 
 class EventPayload(StrictModel):

@@ -23,11 +23,13 @@ from aetherville_schemas import (
 from aetherville_server.llm import CachedLLMPlanner
 
 NAMES = [
-    "민준",
+    "민지",
+    "민수",
     "서연",
     "도윤",
     "하린",
     "지호",
+    "민준",
     "유나",
     "현우",
     "가은",
@@ -62,12 +64,19 @@ DISTRICTS = ["harbor", "midtown", "skyline", "garden", "old-town"]
 CitizenRoute = tuple[tuple[float, float], ...]
 
 CITIZEN_ROUTES: tuple[CitizenRoute, ...] = (
-    ((-5.2, -2.7), (-2.4, -2.7), (-0.8, -0.9), (1.6, -0.9), (4.9, 0.8)),
-    ((2.8, -5.1), (2.8, -1.4), (1.1, 0.0), (-1.3, 0.0), (-1.3, 4.8)),
-    ((-4.8, 2.9), (-2.0, 2.9), (-0.7, 1.0), (0.7, 1.0), (3.9, 3.6)),
-    ((4.9, -2.6), (2.1, -2.6), (0.9, -0.4), (-0.9, -0.4), (-4.7, -1.5)),
-    ((-5.1, 0.9), (-2.2, 0.9), (-0.6, 2.4), (1.3, 2.4), (4.7, 1.2)),
+    ((-5.7, -3.72), (-3.72, -3.72), (-3.72, -0.72), (-0.72, -0.72), (-0.72, 2.28)),
+    ((-2.28, -5.7), (-2.28, -3.72), (0.72, -3.72), (0.72, -0.72), (3.72, -0.72)),
+    ((2.28, -5.7), (2.28, -3.72), (5.7, -3.72), (5.7, -0.72), (2.28, -0.72)),
+    ((-5.7, 0.72), (-3.72, 0.72), (-3.72, 3.72), (-0.72, 3.72), (-0.72, 5.7)),
+    ((0.72, 5.7), (0.72, 3.72), (3.72, 3.72), (3.72, 0.72), (5.7, 0.72)),
+    ((-5.7, 5.7), (-5.7, 3.72), (-2.28, 3.72), (-2.28, 0.72), (0.72, 0.72)),
+    ((5.7, 5.7), (3.72, 5.7), (3.72, 2.28), (0.72, 2.28), (0.72, -2.28)),
 )
+MEETING_POINT = (-0.85, -0.85)
+MEETING_OFFSETS = {
+    "c01": (-0.28, -0.08),
+    "c02": (0.28, 0.08),
+}
 
 
 def generate_citizen_personas(count: int = 20, seed: int = 42) -> list[CitizenPersona]:
@@ -103,6 +112,7 @@ class CitizenAgentService:
         self._personas = generate_citizen_personas(count=count, seed=seed)
         self._plans: dict[str, PlanNode] = {}
         self._memories: dict[str, list[MemoryRecord]] = {}
+        self._active_meeting: tuple[str, str] | None = None
         for persona in self._personas:
             self._plans[persona.id] = self._planner.daily_plan(
                 persona.id, f"{persona.name} {persona.occupation} {persona.home_district}"
@@ -124,6 +134,22 @@ class CitizenAgentService:
 
     def list_personas(self) -> CitizenListResponse:
         return CitizenListResponse(citizens=list(self._personas))
+
+    def resolve_citizen_id(self, token: str, default: str = "c01") -> str:
+        """Resolve a Korean demo name or citizen id into the active fixture id."""
+
+        normalized = token.strip()
+        for persona in self._personas:
+            if normalized in {persona.id, persona.name}:
+                return persona.id
+        return default
+
+    def activate_meeting(self, citizen_id: str, target_citizen_id: str) -> None:
+        """Pin two demo citizens near the same sidewalk/crosswalk meeting point."""
+
+        self._get_persona(citizen_id)
+        self._get_persona(target_citizen_id)
+        self._active_meeting = (citizen_id, target_citizen_id)
 
     def detail(self, citizen_id: str) -> CitizenDetailResponse:
         persona = self._get_persona(citizen_id)
@@ -253,6 +279,23 @@ class CitizenAgentService:
             lane_offset = ((index % 3) - 1) * 0.14
             progress = tick * (0.045 + (index % 4) * 0.006) + index * 1.35
             x, z, yaw = _pose_on_route(route, progress)
+            talking_to: str | None = None
+            action = self._plans[persona.id].children[1].title
+            display_tags = [persona.name, "인도"]
+            if self._active_meeting is not None and persona.id in self._active_meeting:
+                other_id = (
+                    self._active_meeting[0]
+                    if persona.id == self._active_meeting[1]
+                    else self._active_meeting[1]
+                )
+                other = self._get_persona(other_id)
+                offset_x, offset_z = MEETING_OFFSETS.get(persona.id, (0.0, 0.0))
+                x = MEETING_POINT[0] + offset_x
+                z = MEETING_POINT[1] + offset_z
+                yaw = math.atan2(MEETING_POINT[0] - x, MEETING_POINT[1] - z)
+                talking_to = other.id
+                action = f"{other.name}와 만나는 중"
+                display_tags = [persona.name, "만남", f"{other.name}"]
             pos = [
                 round(x + lane_offset, 3),
                 0.0,
@@ -265,8 +308,9 @@ class CitizenAgentService:
                     pos=pos,
                     rot=[0.0, round(yaw, 3), 0.0],
                     anim="walk" if running else "idle",
-                    current_action=self._plans[persona.id].children[1].title,
-                    talking_to=None,
+                    current_action=action,
+                    talking_to=talking_to,
+                    display_tags=display_tags,
                 )
             )
         return states
