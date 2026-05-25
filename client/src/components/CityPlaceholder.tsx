@@ -834,12 +834,18 @@ function SceneLegend() {
   );
 }
 
-export function CityPlaceholder() {
+export function CityPlaceholder({ initialWorldState = null }: { initialWorldState?: WorldStatePayload | null }) {
   const lastTick = useConnectionStore((state) => state.lastTick);
   const liveWorldState = useConnectionStore((state) => state.lastWorldState);
   const connectionState = useConnectionStore((state) => state.state);
-  const worldState = liveWorldState ?? createFallbackWorldState(lastTick);
+  const worldState = liveWorldState ?? initialWorldState ?? createFallbackWorldState(lastTick);
   const isTrafficSurge = isTrafficSurgeActive(worldState);
+
+  useEffect(() => {
+    if (initialWorldState && !liveWorldState) {
+      useConnectionStore.getState().applyWorldState(lastTick, initialWorldState);
+    }
+  }, [initialWorldState, lastTick, liveWorldState]);
 
   return (
     <section className={`cityPanel${isTrafficSurge ? ' cityPanel-trafficSurge' : ''}`} aria-label="Aetherville city scene">

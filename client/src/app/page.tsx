@@ -3,11 +3,13 @@ import { CityPlaceholder } from '@/components/CityPlaceholder';
 import { ConnectionBridge } from '@/components/ConnectionBridge';
 import { SidePanels } from '@/components/SidePanels';
 import { getClientConfig } from '@/lib/config';
+import { fetchInitialWorldState } from '@/lib/serverWorldState';
 
 export const dynamic = 'force-dynamic';
 
-export default function HomePage() {
+export default async function HomePage() {
   const config = getClientConfig();
+  const initialWorldState = await fetchInitialWorldState(config.orchestratorUrl);
 
   return (
     <main className="shell">
@@ -35,7 +37,7 @@ export default function HomePage() {
       </section>
       <ConnectionBridge socketUrl={config.socketUrl} transports={config.socketTransports} />
       <section className="sceneColumn" aria-label="Live city state">
-        <CityPlaceholder />
+        <CityPlaceholder initialWorldState={initialWorldState} />
         <SidePanels orchestratorUrl={config.orchestratorUrl} />
       </section>
     </main>

@@ -938,3 +938,12 @@
 - Verified current local client screenshots through the RunPod tunnel: live PNG `942655` bytes with `1454` sampled colors and luma range `236`; replay PNG `946968` bytes with `1750` sampled colors and luma range `236`.
 - Screenshot artifacts are written under ignored `dogfood-output/visual-smoke/`; root one-off captures were removed before commit.
 - Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+
+## Before/after God Mode impact smoke — 2026-05-25T17:33:28+09:00
+
+- Status: complete locally against the active RunPod tunnel; this closes the “it looks like a looping video” demo-risk with measurable before/after evidence.
+- Live Next route now fetches the current RunPod `/api/v1/sim/state` server-side on first render, so headless screenshots and first paint reflect the real world state before Socket.IO hydration instead of only the replay fallback.
+- Added `scripts/browser_impact_smoke.py`, which resets the simulation to a clear baseline, captures a before screenshot, sends the combined God Mode command through the RunPod orchestrator, waits for rain/taxi/traffic/meeting effects, captures an after screenshot, and compares sampled pixels.
+- Integrated the impact smoke into `scripts/demo_rehearsal.py`; full rehearsal now runs it by default, with `--skip-impact-smoke` only for environments where screenshots cannot run.
+- Verification evidence: impact smoke passed with `ai_mode=vllm`, `ai_actions=[rain, traffic_jam, taxi_call, meeting]`, clear→rain world state, taxi dispatch, congestion tags, citizen meeting, mean RGB delta `11.036`, and changed sample ratio `0.4531`.
+- Screenshot artifacts are written under ignored `dogfood-output/impact-smoke/` and are not committed. Docker daemon setup, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.

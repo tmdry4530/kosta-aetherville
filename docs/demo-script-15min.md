@@ -10,10 +10,11 @@
 
 ## 2:00–5:00 — Normal city simulation
 
-- Before presenting, run `python3 scripts/demo_rehearsal.py --orchestrator-url http://127.0.0.1:18080 --client-url http://127.0.0.1:3000 --expected-client-endpoint http://127.0.0.1:18080` once against the selected Mode B tunnel or equivalent public endpoint. This also runs the screenshot visual smoke unless explicitly skipped.
+- Before presenting, run `python3 scripts/demo_rehearsal.py --orchestrator-url http://127.0.0.1:18080 --client-url http://127.0.0.1:3000 --expected-client-endpoint http://127.0.0.1:18080` once against the selected Mode B tunnel or equivalent public endpoint. This also runs the screenshot visual smoke and before/after impact smoke unless explicitly skipped.
 - Open the live city route.
 - Point out the `SCENE DIRECTOR · LIVE IMPACT` HUD first, then weather, tick count, citizens, vehicles, drones, traffic lights, and
   connection status.
+- If challenged that the scene looks like a loop, show the impact-smoke result: it reset to clear, sent the God Mode command, then measured a before/after pixel delta and verified rain/taxi/traffic/meeting state changes.
 - Explain that state arrives from the orchestrator REST/Socket.IO contract.
 
 ## 5:00–7:00 — Citizen and memory panel

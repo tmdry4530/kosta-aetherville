@@ -229,6 +229,21 @@ def validate_png(
 
 
 def decode_png_for_metrics(data: bytes) -> dict[str, int]:
+    sample = sample_png_rgb(data)
+    pixels = sample["pixels"]
+    lumas = [(299 * r + 587 * g + 114 * b) // 1000 for r, g, b in pixels]
+    return {
+        "width": sample["width"],
+        "height": sample["height"],
+        "bit_depth": sample["bit_depth"],
+        "color_type": sample["color_type"],
+        "sampled_pixels": len(pixels),
+        "unique_colors": len(set(pixels)),
+        "luma_range": max(lumas) - min(lumas) if lumas else 0,
+    }
+
+
+def sample_png_rgb(data: bytes, *, rows: int = 72, columns: int = 96) -> dict[str, Any]:
     if not data.startswith(PNG_SIGNATURE):
         raise SystemExit("screenshot is not a PNG")
 
@@ -267,10 +282,11 @@ def decode_png_for_metrics(data: bytes) -> dict[str, int]:
     prev = bytearray(stride)
     row_step = max(1, height // 72)
     col_step = max(1, width // 96)
-    unique_colors: set[tuple[int, int, int]] = set()
-    luma_min = 255
-    luma_max = 0
-    sampled_pixels = 0
+    if rows > 0:
+        row_step = max(1, height // rows)
+    if columns > 0:
+        col_step = max(1, width // columns)
+    pixels: list[tuple[int, int, int]] = []
 
     offset = 0
     for y in range(height):
@@ -285,11 +301,7 @@ def decode_png_for_metrics(data: bytes) -> dict[str, int]:
                     r = g = b = row[i]
                 else:
                     r, g, b = row[i], row[i + 1], row[i + 2]
-                unique_colors.add((r, g, b))
-                luma = (299 * r + 587 * g + 114 * b) // 1000
-                luma_min = min(luma_min, luma)
-                luma_max = max(luma_max, luma)
-                sampled_pixels += 1
+                pixels.append((r, g, b))
         prev = row
 
     return {
@@ -297,9 +309,7 @@ def decode_png_for_metrics(data: bytes) -> dict[str, int]:
         "height": height,
         "bit_depth": bit_depth,
         "color_type": color_type,
-        "sampled_pixels": sampled_pixels,
-        "unique_colors": len(unique_colors),
-        "luma_range": luma_max - luma_min,
+        "pixels": pixels,
     }
 
 

@@ -581,3 +581,29 @@ python3 scripts/browser_visual_smoke.py \
 Expected evidence: both live and replay screenshots are 1920x1080 PNGs, larger than 200 KB, visually diverse, and not blank. Artifacts go to ignored `dogfood-output/visual-smoke/` and must not be committed.
 
 Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.
+
+## Before/after impact smoke handoff — 2026-05-25T17:33:28+09:00
+
+Current anti-loop demo proof:
+
+- The live route server-fetches RunPod `/api/v1/sim/state` before first paint, so screenshots can reflect actual rain/taxi/traffic/meeting world state without waiting for a Socket.IO frame.
+- Run the full gate:
+
+```bash
+python3 scripts/demo_rehearsal.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --client-url http://127.0.0.1:3000 \
+  --expected-client-endpoint http://127.0.0.1:18080
+```
+
+- Or run only the before/after proof:
+
+```bash
+python3 scripts/browser_impact_smoke.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --client-url http://127.0.0.1:3000
+```
+
+Expected evidence: before weather is `clear`, after weather is `rain`, vLLM returns `rain + traffic_jam + taxi_call + meeting`, taxi/congestion/meeting state is present, and sampled screenshot pixel delta is nonzero. Latest verified run: mean RGB delta `11.036`, changed sample ratio `0.4531`.
+
+Do not commit `dogfood-output/impact-smoke/` screenshots. Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod.

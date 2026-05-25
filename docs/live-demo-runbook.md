@@ -280,9 +280,13 @@ python3 scripts/browser_visual_smoke.py \
   --mode both \
   --client-url http://127.0.0.1:3000 \
   --expected-endpoint "$RUNPOD_PUBLIC_ORCHESTRATOR_URL"
+python3 scripts/browser_impact_smoke.py \
+  --orchestrator-url "$RUNPOD_PUBLIC_ORCHESTRATOR_URL" \
+  --client-url http://127.0.0.1:3000
 ```
 
 The live route is dynamically server-rendered, so `next start` reads the selected endpoint values at process start and passes the runtime orchestrator URL into browser panels. The visual smoke writes screenshots to ignored `dogfood-output/visual-smoke/` and fails if the rendered PNG is the wrong viewport, too small, visually low-diversity, or missing the DOM demo markers.
+The impact smoke resets to a clear baseline, captures a before screenshot, sends the combined God Mode command, captures an after screenshot, and fails if RunPod state effects or sampled pixels do not change enough to prove this is not just a static/looping clip.
 
 Open:
 
@@ -357,9 +361,13 @@ python3 scripts/browser_visual_smoke.py \
   --mode both \
   --client-url http://127.0.0.1:3000 \
   --expected-endpoint http://127.0.0.1:18080
+python3 scripts/browser_impact_smoke.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --client-url http://127.0.0.1:3000
 ```
 
 The live route is dynamically server-rendered, so `next start` reads the selected tunnel values at process start and passes the runtime orchestrator URL into browser panels. The visual smoke writes screenshots to ignored `dogfood-output/visual-smoke/` and verifies the 1920x1080 city render is not blank or visually collapsed.
+The impact smoke writes before/after screenshots to ignored `dogfood-output/impact-smoke/` and verifies both semantic RunPod state changes and screenshot pixel delta.
 
 Full presenter rehearsal smoke after the client is running:
 
@@ -371,7 +379,7 @@ python3 scripts/demo_rehearsal.py \
 ```
 
 This one command verifies orchestrator dependencies, 4090 traffic policy and LSTM evidence, real vehicle camera mode, learning status, vLLM multi-action God Mode effects, live/replay browser smoke, and the `SCENE DIRECTOR · LIVE IMPACT` / `Live impact board` markers.
-By default it also runs the screenshot-based visual smoke. Use `--skip-visual-smoke` only when Chromium screenshots are impossible in the rehearsal environment, and record that as a skipped visual check.
+By default it also runs the screenshot-based visual smoke and before/after impact smoke. Use `--skip-visual-smoke` or `--skip-impact-smoke` only when Chromium screenshots are impossible in the rehearsal environment, and record that as a skipped visual check.
 
 Open:
 
