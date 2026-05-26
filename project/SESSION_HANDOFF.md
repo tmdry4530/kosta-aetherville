@@ -1130,3 +1130,28 @@ AETHERVILLE_APPROVE_MODEL_TRAINING=1 uv run python scripts/model_training_cycle.
 ```
 
 Do not claim vLLM/YOLO/PPO/LSTM weights changed until a non-dry-run cycle has produced a promoted checkpoint and the runtime has been reloaded/restarted against that checkpoint. Do not run Docker/Compose/DinD. Do not print `.env.runpod`, SSH key paths, tokens, or model credentials.
+
+## New H100 account migration handoff — 2026-05-27T01:01:17+09:00
+
+Current branch: `master`.
+
+Use `project/NEW_H100_ACCOUNT_HANDOFF.md` as the next-session source of truth. Summary:
+
+```text
+1. Fill infra/runpod/.env.runpod with the NEW H100 SSH values only locally.
+2. Run read-only SSH/GPU/disk/Python verification.
+3. Deploy safe-smoke direct-process runtime.
+4. Opt into real-demo vLLM/YOLO only after credits/model access are ready.
+5. Open local tunnels 18080/18001/18000 and run health/smoke/browser checks.
+6. Run model-training dry-run before any non-dry-run H100 training.
+```
+
+Backup state:
+
+```text
+- Existing remote handoff backup: .omx/backups/runpod-remote-handoff-*/
+- Local final backup should be created after the final documentation commit/push.
+- Backups intentionally exclude .env.runpod, SSH keys, tokens, model caches, and large model weights.
+```
+
+Do not claim actual weight fine-tuning until a non-dry-run training cycle produces a promoted checkpoint and runtime reload/restart is verified. Do not run Docker/Compose/DinD.

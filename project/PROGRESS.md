@@ -1153,3 +1153,11 @@ Verification update — 2026-05-25T18:04:10+09:00:
 - Added local scripts for the training cycle plus guarded vLLM LoRA and YOLO self-training entrypoints. PPO/LSTM reuse existing traffic checkpoint trainers behind the same promotion gate.
 - Final local verification passed: `uv run pytest -q` (57 passed), `uv run ruff check server packages scripts`, `uv run mypy server packages scripts/model_training_cycle.py scripts/train_vllm_lora.py scripts/train_yolo_self_training.py`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `pnpm --filter @aetherville/client build`, dry-run training cycle smoke, `python3 -m json.tool project/TASKS.json`, `bash -n infra/runpod/*.sh`, and `git diff --check`.
 - Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not run.
+
+## OPS-H100-004 — New-account H100 handoff docs and backup prep — 2026-05-27T01:01:17+09:00
+
+- Status: prepared on `master`; final commit/push follows.
+- Existing RunPod remote handoff backup was created under `.omx/backups/` using `infra/runpod/create_remote_handoff_backup.sh`. The script captured a read-only manifest first, then a workspace/runtime tarball excluding env files, keys, model caches, dependency caches, and large model artifacts. Secret-like path scan passed.
+- Added `project/NEW_H100_ACCOUNT_HANDOFF.md` with the new H100 account migration sequence, direct-process deploy commands, tunnel/health checks, browser verification, model-training dry-run/non-dry-run path, and remaining risk resolution plan.
+- Documented that model cache/weights are not included in the default backup, so a new H100 account must either redownload models through real-demo or separately approve model-cache backup/restore.
+- Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not run.
