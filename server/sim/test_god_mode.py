@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from aetherville_schemas import GodCommand, WorldStatePayload
+from aetherville_schemas import (
+    CityAiAction,
+    CityAiPlan,
+    CityWorldContext,
+    GodCommand,
+    WorldStatePayload,
+)
 from aetherville_server.orchestrator import GodCommandDispatcher
 from aetherville_server.orchestrator.vllm_command import GodCommandInterpretation
 from aetherville_server.sim import SimulationEngine
@@ -204,3 +210,167 @@ def test_named_taxi_meeting_moves_before_relationship_activation() -> None:
     assert jiho.talking_to == harin.id
     assert harin.talking_to == jiho.id
     assert any(event.metadata.get("via") == "taxi_arrival" for event in engine.timeline)
+
+
+def test_complex_scenario_directive_executes_visible_actor_chain() -> None:
+    engine = SimulationEngine()
+    engine.running = True
+
+    response = engine.execute_god_command(
+        make_command(
+            "민수가 하린이를 만난 뒤 택시를 불러 민지에게 가고, "
+            "드론은 서연에게 이동한 뒤 서연은 민지와 민수를 만나러 간다"
+        )
+    )
+    initial_state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+
+    assert response.scenario is not None
+    assert response.event.kind == "scenario_directive_created"
+    assert "scenario_directive" in response.ai_actions
+    assert [step.type for step in response.scenario.steps] == [
+        "move_actor_to_actor",
+        "meet",
+        "call_taxi",
+        "taxi_drive_to_actor",
+        "drone_move_to_actor",
+        "move_actor_to_group",
+    ]
+    assert initial_state.scenario is not None
+    assert initial_state.scenario.status == "running"
+
+    observed_running_steps: set[str] = set()
+    drone_positions = []
+    taxi_positions = []
+    seoyeon_positions = []
+    for _ in range(700):
+        state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+        if state.scenario is not None:
+            observed_running_steps.update(
+                step.id for step in state.scenario.steps if step.status == "running"
+            )
+        drone_positions.append(tuple(state.drones[0].pos))
+        taxi_positions.append(tuple(state.vehicles[0].pos))
+        seoyeon = next(citizen for citizen in state.citizens if citizen.id == "c03")
+        seoyeon_positions.append(tuple(seoyeon.pos))
+        engine.step()
+
+    final_state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+    assert final_state.scenario is not None
+    assert final_state.scenario.status == "completed"
+    assert all(step.status == "completed" for step in final_state.scenario.steps)
+    assert {"c02_to_c05", "taxi_drive_c02_to_c01", "drone_to_c03", "c03_to_group"}.issubset(
+        observed_running_steps
+    )
+    assert len(set(drone_positions[:140])) > 10
+    assert len(set(taxi_positions[140:430])) > 10
+    assert len(set(seoyeon_positions[360:520])) > 8
+    assert any(event.kind == "scenario_completed" for event in engine.timeline)
+
+
+class FakeCityPlanner:
+    source = "vllm"
+
+    def plan(self, context: CityWorldContext) -> CityAiPlan:
+        assert context.citizens
+        return CityAiPlan(
+            plan_id="city_vllm_test",
+            source="vllm",
+            confidence=0.91,
+            summary="서연이 민지에게 자율 이동",
+            actions=[
+                CityAiAction(
+                    type="move_citizen",
+                    actor_id="c03",
+                    destination_actor_id="c01",
+                    label="민지에게 자율 이동",
+                    reason="vLLM chose a social movement objective",
+                ),
+                CityAiAction(
+                    type="remember",
+                    actor_id="c03",
+                    memory="서연은 AI 도시 운영자의 판단으로 민지에게 이동했다.",
+                    reason="movement intent should persist as memory",
+                ),
+            ],
+        )
+
+
+def test_city_ai_planner_moves_citizen_and_records_plan() -> None:
+    engine = SimulationEngine(city_planner=FakeCityPlanner())
+
+    plan = engine.run_city_planner_once()
+    state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+    seoyeon = next(citizen for citizen in state.citizens if citizen.id == "c03")
+
+    assert plan is not None
+    assert state.city_ai.mode == "vllm"
+    assert state.city_ai.plan_id == "city_vllm_test"
+    assert "AI계획" in seoyeon.display_tags
+    assert any(event.kind == "city_ai_plan" for event in engine.timeline)
+    assert any(
+        event.kind == "memory_added" and event.entity_id == "c03"
+        for event in engine.timeline
+    )
+
+    engine.running = True
+    positions = []
+    for _ in range(40):
+        positions.append(tuple(engine.snapshot().citizens[2].pos))
+        engine.step()
+
+    assert len(set(positions)) > 8
+
+
+class FakeTaxiCityPlanner:
+    source = "vllm"
+
+    def plan(self, context: CityWorldContext) -> CityAiPlan:
+        del context
+        return CityAiPlan(
+            plan_id="city_vllm_taxi",
+            source="vllm",
+            confidence=0.94,
+            summary="지호 택시 이동 후 하린 만남",
+            actions=[
+                CityAiAction(
+                    type="call_taxi",
+                    actor_id="c06",
+                    vehicle_id="v01",
+                    destination_actor_id="c05",
+                    label="하린에게 이동",
+                    reason="vLLM planned a taxi trip",
+                ),
+                CityAiAction(
+                    type="meet",
+                    actor_id="c06",
+                    target_id="c05",
+                    after="taxi_arrival",
+                    reason="relationship starts after arrival",
+                ),
+            ],
+        )
+
+
+def test_city_ai_taxi_plan_executes_until_arrival() -> None:
+    engine = SimulationEngine(city_planner=FakeTaxiCityPlanner())
+
+    plan = engine.run_city_planner_once()
+    state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+
+    assert plan is not None
+    assert state.vehicles[0].passenger_id == "c06"
+    assert state.city_ai.actions[0].type == "call_taxi"
+    assert any(
+        event.metadata.get("deferred_until") == "taxi_arrival"
+        for event in engine.timeline
+    )
+
+    engine.running = True
+    for _ in range(280):
+        engine.step()
+    arrived_state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+    jiho = next(citizen for citizen in arrived_state.citizens if citizen.id == "c06")
+    harin = next(citizen for citizen in arrived_state.citizens if citizen.id == "c05")
+
+    assert jiho.talking_to == "c05"
+    assert harin.talking_to == "c06"

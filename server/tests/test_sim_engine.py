@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from aetherville_schemas import Envelope, EnvelopeType, WorldStatePayload
+from aetherville_schemas import Envelope, EnvelopeType, GodCommand, WorldStatePayload
 from aetherville_server.sim import SimulationConfig, SimulationEngine
 
 
@@ -89,6 +89,31 @@ def test_simulation_loads_traffic_policy_checkpoint(
     assert state.traffic_ai.trained_on_gpu is True
     assert state.traffic_ai.last_action in (0, 1)
     assert any("AI정책:checkpoint" in tag for tag in state.traffic_lights[0].display_tags)
+
+
+def test_forced_taxi_unavailable_command_replans_immediately() -> None:
+    engine = SimulationEngine(SimulationConfig(seed=7))
+    response = engine.execute_god_command(
+        GodCommand(
+            input_modality="text",
+            raw_text="택시 없음 상황에서 민수가 택시를 불러 민지에게 간다",
+            user_id="test",
+        )
+    )
+
+    assert response.accepted is True
+    assert response.scenario is not None
+    assert response.scenario.steps[0].actor_id == "c02"
+    assert response.scenario.steps[0].target_actor_id == "c01"
+
+    state = engine.step()
+    payload = WorldStatePayload.model_validate(state.payload)
+
+    assert any(
+        replan.blocker_type == "taxi_unavailable" and replan.status == "recovered"
+        for replan in payload.replans
+    )
+    assert any(event.kind == "task_replanned" for event in engine.timeline)
 
 
 def test_async_run_broadcasts_sequential_ticks() -> None:

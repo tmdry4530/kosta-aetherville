@@ -4,11 +4,13 @@ import { useMemo } from 'react';
 import type { WorldStatePayload } from '@aetherville/shared-schemas';
 import { createFallbackWorldState } from '@/lib/mockWorld';
 import { useConnectionStore } from '@/store/connection';
+import { AiOperationsPanel } from '@/ui/AiOperationsPanel';
 import { GodModeMicPanel } from '@/ui/GodModeMicPanel';
 import { LearningPanel } from '@/ui/LearningPanel';
 import { MemoryPanel } from '@/ui/MemoryPanel';
 import { RunPodProofPanel } from '@/ui/RunPodProofPanel';
 import { SceneImpactPanel } from '@/ui/SceneImpactPanel';
+import { ScenarioDirectorPanel } from '@/ui/ScenarioDirectorPanel';
 import { TrafficChartPanel } from '@/ui/TrafficChartPanel';
 import { VehicleCamPanel } from '@/ui/VehicleCamPanel';
 
@@ -43,6 +45,8 @@ export function SidePanels({
   return (
     <section className="panelDeck" aria-label="Aetherville side panels">
       <SceneImpactPanel worldState={worldState} />
+      <ScenarioDirectorPanel worldState={worldState} />
+      <AiOperationsPanel worldState={worldState} />
       <RunPodProofPanel worldState={worldState} orchestratorUrl={orchestratorUrl} />
       <MemoryPanel citizen={primaryCitizen} tick={tick} worldState={worldState} />
       <VehicleCamPanel vehicle={primaryVehicle} orchestratorUrl={orchestratorUrl} />

@@ -199,6 +199,94 @@ export interface TrafficForecastAiSnapshot {
   detail: string;
 }
 
+export interface TrajectoryEvent {
+  id: string;
+  tick: number;
+  event_kind: string;
+  entity_id?: string | null;
+  action?: string | null;
+  summary: string;
+}
+
+export interface TaskOutcomeScore {
+  id: string;
+  task_id: string;
+  success: boolean;
+  duration_ticks: number;
+  replan_count: number;
+  score: number;
+  reason: string;
+}
+
+export interface LearningSignal {
+  id: string;
+  tick: number;
+  kind:
+    | 'scenario_success'
+    | 'scenario_failure'
+    | 'task_duration'
+    | 'replan_count'
+    | 'taxi_pickup'
+    | 'weather_delay'
+    | 'traffic_delay'
+    | 'citizen_meeting'
+    | 'actor_memory'
+    | 'fallback_path'
+    | 'policy_candidate'
+    | 'policy_promoted'
+    | 'policy_rejected';
+  value: number;
+  entity_id?: string | null;
+  description: string;
+}
+
+export interface PolicyBiasSnapshot {
+  taxi_caution: number;
+  walking_bias: number;
+  traffic_caution: number;
+  rain_delay_expectation: number;
+  drone_caution: number;
+  safer_timeout_bias: number;
+}
+
+export interface EvolutionSnapshot {
+  version: string;
+  storage: 'json_persistence' | 'memory';
+  persistence_path?: string | null;
+  scenario_success_count: number;
+  scenario_failure_count: number;
+  replan_count: number;
+  fallback_path_usage: number;
+  taxi_pickup_success_rate: number;
+  weather_delay_impact: number;
+  traffic_delay_impact: number;
+  citizen_meeting_success_count: number;
+  repeated_actor_memory_count: number;
+  last_signal?: string | null;
+}
+
+export interface PolicyCandidateSnapshot {
+  id: string;
+  tick: number;
+  candidate_version: string;
+  source_signal: string;
+  score_before: number;
+  score_after: number;
+  promoted: boolean;
+  reason: string;
+}
+
+export interface PolicyPromotionSnapshot {
+  active_policy_version: string;
+  evaluator: string;
+  candidate_count: number;
+  promoted_count: number;
+  rejected_count: number;
+  last_decision: 'none' | 'promoted' | 'rejected';
+  last_promoted_version?: string | null;
+  rollback_available: boolean;
+}
+
 export interface LearningSnapshot {
   mode: 'deterministic_online_adaptation';
   storage: 'json_persistence' | 'memory';
@@ -211,12 +299,315 @@ export interface LearningSnapshot {
   weather_bias: number;
   last_updated_tick: number;
   insights: string[];
+  trajectory_events: TrajectoryEvent[];
+  outcome_scores: TaskOutcomeScore[];
+  signals: LearningSignal[];
+  policy_bias: PolicyBiasSnapshot;
+  evolution: EvolutionSnapshot;
+  policy_candidates: PolicyCandidateSnapshot[];
+  promotion_gate: PolicyPromotionSnapshot;
 }
 
 export interface LearningStatusResponse {
   learning: LearningSnapshot;
   explanation: string;
   upgrade_path: string[];
+}
+
+export interface CityActorContext {
+  id: string;
+  kind: 'citizen' | 'vehicle' | 'drone' | 'traffic_light';
+  name?: string | null;
+  pos: Vec3;
+  status: string;
+  tags: string[];
+}
+
+export interface CityTrafficContext {
+  total_queue: number;
+  congestion_active: boolean;
+  policy_mode: string;
+  forecast_pressure: number;
+}
+
+export interface CityWorldContext {
+  tick: number;
+  time_of_day: string;
+  weather: string;
+  active_event?: string | null;
+  infrastructure_status?: string | null;
+  citizens: CityActorContext[];
+  vehicles: CityActorContext[];
+  traffic: CityTrafficContext;
+  recent_events: string[];
+  learning: LearningSnapshot;
+}
+
+export interface CityAiAction {
+  type:
+    | 'move_citizen'
+    | 'call_taxi'
+    | 'meet'
+    | 'remember'
+    | 'traffic_surge'
+    | 'set_weather'
+    | 'no_op';
+  actor_id?: string | null;
+  target_id?: string | null;
+  vehicle_id?: string | null;
+  destination_actor_id?: string | null;
+  destination?: Vec3 | null;
+  weather?: 'clear' | 'rain' | 'snow' | null;
+  memory?: string | null;
+  label?: string | null;
+  after?: 'taxi_arrival' | null;
+  reason: string;
+}
+
+export interface CityAiPlan {
+  plan_id: string;
+  source: 'rules' | 'vllm';
+  confidence: number;
+  summary: string;
+  actions: CityAiAction[];
+}
+
+export interface CityAiSnapshot {
+  mode: 'disabled' | 'rules' | 'vllm';
+  status: 'idle' | 'planning' | 'applied' | 'fallback' | 'error';
+  plan_id?: string | null;
+  last_planned_tick: number;
+  next_plan_tick: number;
+  summary: string;
+  actions: CityAiAction[];
+  reason?: string | null;
+}
+
+
+export interface EntityGoal {
+  id: string;
+  title: string;
+  target_id?: string | null;
+  source: 'task_graph' | 'city_ai' | 'god_mode' | 'routine' | 'fallback';
+}
+
+export interface EntityConstraint {
+  kind: 'deadline' | 'route' | 'weather' | 'traffic' | 'dependency' | 'battery' | 'safety';
+  description: string;
+  severity: 'info' | 'warning' | 'critical';
+}
+
+export interface EntityProgress {
+  progress_pct: number;
+  current_step_id?: string | null;
+  eta_ticks?: number | null;
+}
+
+export interface EntityBlocker {
+  blocker_type:
+    | 'stuck_actor'
+    | 'stuck_vehicle'
+    | 'target_unreachable'
+    | 'taxi_unavailable'
+    | 'pickup_timeout'
+    | 'group_timeout'
+    | 'drone_delay'
+    | 'low_battery'
+    | 'traffic_delay'
+    | 'dependency_deadlock'
+    | 'none';
+  reason?: string | null;
+  replan_attempt: number;
+  fallback_action?: string | null;
+}
+
+export interface EntityBrainState {
+  entity_id: string;
+  entity_type: 'citizen' | 'vehicle' | 'taxi' | 'drone' | 'traffic_light';
+  current_goal: EntityGoal;
+  next_action: string;
+  reason: string;
+  source: 'task_graph' | 'city_ai' | 'god_mode' | 'routine' | 'fallback';
+  progress: EntityProgress;
+  constraints: EntityConstraint[];
+  blocker?: EntityBlocker | null;
+  status:
+    | 'idle'
+    | 'planning'
+    | 'moving'
+    | 'waiting'
+    | 'interacting'
+    | 'blocked'
+    | 'complete'
+    | 'fallback';
+  blocked_reason?: string | null;
+  updated_tick: number;
+}
+
+export interface ReplanRecord {
+  id: string;
+  tick: number;
+  task_node_id?: string | null;
+  entity_id?: string | null;
+  blocker_type: string;
+  reason: string;
+  attempt: number;
+  fallback_action: string;
+  status: 'blocked' | 'replanned' | 'recovered';
+}
+
+export type TaskActionType =
+  | 'move_actor_to_actor'
+  | 'move_actor_to_location'
+  | 'meet'
+  | 'call_taxi'
+  | 'taxi_pickup'
+  | 'taxi_drive_to_actor'
+  | 'drone_move_to_actor'
+  | 'drone_deliver'
+  | 'group_rendezvous'
+  | 'set_weather'
+  | 'traffic_surge'
+  | 'remember'
+  | 'wait'
+  | 'no_op';
+
+export type TaskStatus = 'pending' | 'running' | 'completed' | 'failed' | 'skipped' | 'rejected';
+
+export type TaskGraphStatus =
+  | 'accepted'
+  | 'clarification_needed'
+  | 'rejected'
+  | 'running'
+  | 'completed'
+  | 'failed';
+
+export interface TaskCondition {
+  kind:
+    | 'entity_exists'
+    | 'dependency_completed'
+    | 'distance_less_than'
+    | 'duration_elapsed'
+    | 'weather_applied'
+    | 'traffic_applied'
+    | 'memory_recorded'
+    | 'manual_review'
+    | 'none';
+  description: string;
+  entity_id?: string | null;
+  target_id?: string | null;
+  threshold?: number | null;
+  timeout_ticks?: number | null;
+  metadata: Record<string, unknown>;
+}
+
+export interface TaskEdge {
+  from_node_id: string;
+  to_node_id: string;
+  relation: 'blocks' | 'enables' | 'after' | 'parallel';
+  description: string;
+}
+
+export interface TaskNode {
+  id: string;
+  action_type: TaskActionType;
+  status: TaskStatus;
+  actor_id?: string | null;
+  actor_selector?: string | null;
+  target_actor_id?: string | null;
+  target_actor_ids: string[];
+  target_entity_id?: string | null;
+  target_selector?: string | null;
+  vehicle_id?: string | null;
+  drone_id?: string | null;
+  location?: Vec3 | null;
+  depends_on: string[];
+  success_condition: TaskCondition;
+  failure_condition: TaskCondition;
+  timeout_ticks: number;
+  retry_limit: number;
+  reason: string;
+  visible_label: string;
+  metadata: Record<string, unknown>;
+}
+
+export interface TaskGraph {
+  id: string;
+  raw_text: string;
+  title: string;
+  status: TaskGraphStatus;
+  nodes: TaskNode[];
+  edges: TaskEdge[];
+  actors: string[];
+  assumptions: string[];
+  rejection_reason?: string | null;
+  summary: string;
+}
+
+export interface TaskGraphPlan {
+  plan_id: string;
+  source: 'rules' | 'vllm';
+  confidence: number;
+  graph: TaskGraph;
+  executor_step_ids: string[];
+  created_tick: number;
+}
+
+export interface TaskGraphExecutionSnapshot {
+  graph_id: string;
+  plan_id: string;
+  status: TaskGraphStatus;
+  current_node_id?: string | null;
+  nodes: TaskNode[];
+  completed_count: number;
+  total_count: number;
+  assumptions: string[];
+  rejection_reason?: string | null;
+  updated_tick: number;
+}
+
+export interface ScenarioStep {
+  id: string;
+  type:
+    | 'move_actor_to_actor'
+    | 'move_actor_to_location'
+    | 'meet'
+    | 'call_taxi'
+    | 'taxi_pickup'
+    | 'taxi_drive_to_actor'
+    | 'drone_move_to_actor'
+    | 'drone_deliver'
+    | 'move_actor_to_group'
+    | 'group_rendezvous'
+    | 'remember'
+    | 'set_weather'
+    | 'traffic_surge'
+    | 'wait';
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'skipped';
+  actor_id?: string | null;
+  target_actor_id?: string | null;
+  target_actor_ids: string[];
+  vehicle_id?: string | null;
+  drone_id?: string | null;
+  depends_on: string[];
+  started_tick?: number | null;
+  completed_tick?: number | null;
+  visible_label: string;
+  evidence?: string | null;
+  metadata: Record<string, unknown>;
+}
+
+export interface ScenarioDirective {
+  id: string;
+  raw_text: string;
+  title: string;
+  status: 'idle' | 'running' | 'completed' | 'failed';
+  created_tick: number;
+  updated_tick: number;
+  current_step_id?: string | null;
+  actors: string[];
+  steps: ScenarioStep[];
+  summary: string;
 }
 
 export interface WorldStatePayload {
@@ -229,6 +620,11 @@ export interface WorldStatePayload {
   traffic_ai: TrafficAiSnapshot;
   traffic_forecast_ai: TrafficForecastAiSnapshot;
   learning: LearningSnapshot;
+  city_ai: CityAiSnapshot;
+  scenario?: ScenarioDirective | null;
+  task_graph?: TaskGraphExecutionSnapshot | null;
+  entity_brains: EntityBrainState[];
+  replans: ReplanRecord[];
 }
 
 export interface GodCommand {
@@ -266,6 +662,18 @@ export interface EventPayload {
     | 'god_command_executed'
     | 'weather_changed'
     | 'event_injected'
+    | 'city_ai_plan'
+    | 'scenario_directive_created'
+    | 'scenario_step_started'
+    | 'scenario_step_completed'
+    | 'scenario_completed'
+    | 'task_graph_planned'
+    | 'task_graph_rejected'
+    | 'task_blocked'
+    | 'task_replanned'
+    | 'task_recovered'
+    | 'learning_signal'
+    | 'evolution_updated'
     | 'person_updated'
     | 'infrastructure_changed'
     | 'relationship_changed';
@@ -312,6 +720,9 @@ export interface GodCommandResponse {
   ai_confidence?: number | null;
   ai_reason?: string | null;
   ai_actions: string[];
+  scenario?: ScenarioDirective | null;
+  task_graph?: TaskGraphPlan | null;
+  task_graph_rejection_reason?: string | null;
 }
 
 export interface VoiceCommandRequest {

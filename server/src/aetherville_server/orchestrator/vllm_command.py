@@ -131,7 +131,8 @@ class VllmGodCommandInterpreter:
                     "role": "system",
                     "content": (
                         "You are Project Aetherville's God Mode command classifier. "
-                        "Return only compact JSON. Do not invent new actions."
+                        "Return only compact JSON. Do not invent new actions. "
+                        "Use Korean for the reason field so presenter UI stays audience-ready."
                     ),
                 },
                 {"role": "user", "content": prompt},
@@ -167,6 +168,7 @@ class VllmGodCommandInterpreter:
             "- memory/person_update means a citizen receives a remembered intervention.\n"
             "- If several effects are requested, include them in actions in execution order.\n"
             "- Keep actions to at most four items and only use the allowed action strings.\n"
+            "- Write reason in concise Korean, not raw English schema commentary.\n"
             "Return exactly JSON with keys: category, action, actions, target, "
             "confidence, reason.\n"
             f"Command: {raw_text}"

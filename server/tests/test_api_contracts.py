@@ -113,6 +113,7 @@ def test_sim_control_and_snapshot_endpoints_use_shared_models() -> None:
     assert snapshot.status_code == 200
     assert snapshot.json()["world"]["weather"] in {"clear", "rain"}
     assert "learning" in snapshot.json()
+    assert "city_ai" in snapshot.json()
 
     stop = client.post("/api/v1/sim/stop")
     assert stop.status_code == 200

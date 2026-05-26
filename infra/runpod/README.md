@@ -37,3 +37,19 @@ downloads start only when explicitly configured with
 `AETHERVILLE_VLLM_INSTALL_PACKAGE="vllm==0.10.2"` plus
 `AETHERVILLE_VLLM_COMPAT_PACKAGE="transformers==4.55.4"`, and model cache
 should live under `/workspace`.
+
+5090 migration helpers:
+
+```bash
+# Before stopping the old pod, capture a remote workspace/runtime handoff archive.
+bash infra/runpod/create_remote_handoff_backup.sh
+
+# On the new 5090 pod, first bring up a no-download smoke runtime.
+bash infra/runpod/deploy_5090_direct.sh --profile safe-smoke --dry-run
+bash infra/runpod/deploy_5090_direct.sh --profile safe-smoke
+
+# Then opt into real vLLM/YOLO only after credits and model access are ready.
+AETHERVILLE_APPROVE_REAL_AI=1 bash infra/runpod/deploy_5090_direct.sh --profile real-demo
+```
+
+Detailed checklist: `project/RTX5090_MIGRATION_RUNBOOK.md`.

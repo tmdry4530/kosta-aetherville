@@ -214,6 +214,95 @@ class TrafficForecastAiSnapshot(StrictModel):
     detail: str = "deterministic forecast fallback"
 
 
+class TrajectoryEvent(StrictModel):
+    id: str
+    tick: int = Field(ge=0)
+    event_kind: str
+    entity_id: str | None = None
+    action: str | None = None
+    summary: str
+
+
+class TaskOutcomeScore(StrictModel):
+    id: str
+    task_id: str
+    success: bool
+    duration_ticks: int = Field(default=0, ge=0)
+    replan_count: int = Field(default=0, ge=0)
+    score: float = Field(default=0.0, ge=0, le=1)
+    reason: str
+
+
+class LearningSignal(StrictModel):
+    id: str
+    tick: int = Field(ge=0)
+    kind: Literal[
+        "scenario_success",
+        "scenario_failure",
+        "task_duration",
+        "replan_count",
+        "taxi_pickup",
+        "weather_delay",
+        "traffic_delay",
+        "citizen_meeting",
+        "actor_memory",
+        "fallback_path",
+        "policy_candidate",
+        "policy_promoted",
+        "policy_rejected",
+    ]
+    value: float = 0.0
+    entity_id: str | None = None
+    description: str
+
+
+class PolicyBiasSnapshot(StrictModel):
+    taxi_caution: float = Field(default=0.0, ge=0, le=1)
+    walking_bias: float = Field(default=0.0, ge=0, le=1)
+    traffic_caution: float = Field(default=0.0, ge=0, le=1)
+    rain_delay_expectation: float = Field(default=0.0, ge=0, le=1)
+    drone_caution: float = Field(default=0.0, ge=0, le=1)
+    safer_timeout_bias: float = Field(default=0.0, ge=0, le=1)
+
+
+class EvolutionSnapshot(StrictModel):
+    version: str = "evolution-v0"
+    storage: Literal["json_persistence", "memory"] = "memory"
+    persistence_path: str | None = None
+    scenario_success_count: int = Field(default=0, ge=0)
+    scenario_failure_count: int = Field(default=0, ge=0)
+    replan_count: int = Field(default=0, ge=0)
+    fallback_path_usage: int = Field(default=0, ge=0)
+    taxi_pickup_success_rate: float = Field(default=0.5, ge=0, le=1)
+    weather_delay_impact: float = Field(default=0.0, ge=0, le=1)
+    traffic_delay_impact: float = Field(default=0.0, ge=0, le=1)
+    citizen_meeting_success_count: int = Field(default=0, ge=0)
+    repeated_actor_memory_count: int = Field(default=0, ge=0)
+    last_signal: str | None = None
+
+
+class PolicyCandidateSnapshot(StrictModel):
+    id: str
+    tick: int = Field(ge=0)
+    candidate_version: str
+    source_signal: str
+    score_before: float = Field(ge=0, le=1)
+    score_after: float = Field(ge=0, le=1)
+    promoted: bool = False
+    reason: str
+
+
+class PolicyPromotionSnapshot(StrictModel):
+    active_policy_version: str = "adaptive-demo-v0"
+    evaluator: str = "deterministic_reward_gate"
+    candidate_count: int = Field(default=0, ge=0)
+    promoted_count: int = Field(default=0, ge=0)
+    rejected_count: int = Field(default=0, ge=0)
+    last_decision: Literal["none", "promoted", "rejected"] = "none"
+    last_promoted_version: str | None = None
+    rollback_available: bool = False
+
+
 class LearningSnapshot(StrictModel):
     mode: Literal["deterministic_online_adaptation"] = "deterministic_online_adaptation"
     storage: Literal["json_persistence", "memory"] = "memory"
@@ -226,12 +315,327 @@ class LearningSnapshot(StrictModel):
     weather_bias: float = Field(default=0.0, ge=0, le=1)
     last_updated_tick: int = Field(default=0, ge=0)
     insights: list[str] = Field(default_factory=list)
+    trajectory_events: list[TrajectoryEvent] = Field(default_factory=list)
+    outcome_scores: list[TaskOutcomeScore] = Field(default_factory=list)
+    signals: list[LearningSignal] = Field(default_factory=list)
+    policy_bias: PolicyBiasSnapshot = Field(default_factory=PolicyBiasSnapshot)
+    evolution: EvolutionSnapshot = Field(default_factory=EvolutionSnapshot)
+    policy_candidates: list[PolicyCandidateSnapshot] = Field(default_factory=list)
+    promotion_gate: PolicyPromotionSnapshot = Field(default_factory=PolicyPromotionSnapshot)
 
 
 class LearningStatusResponse(StrictModel):
     learning: LearningSnapshot
     explanation: str
     upgrade_path: list[str] = Field(default_factory=list)
+
+
+class CityActorContext(StrictModel):
+    id: str
+    kind: Literal["citizen", "vehicle", "drone", "traffic_light"]
+    name: str | None = None
+    pos: Vec3
+    status: str
+    tags: list[str] = Field(default_factory=list)
+
+
+class CityTrafficContext(StrictModel):
+    total_queue: int = Field(default=0, ge=0)
+    congestion_active: bool = False
+    policy_mode: str = "fixed_cycle"
+    forecast_pressure: float = Field(default=0.0, ge=0, le=1)
+
+
+class CityWorldContext(StrictModel):
+    tick: int = Field(ge=0)
+    time_of_day: str = Field(pattern=r"^\d{2}:\d{2}$")
+    weather: str
+    active_event: str | None = None
+    infrastructure_status: str | None = None
+    citizens: list[CityActorContext] = Field(default_factory=list)
+    vehicles: list[CityActorContext] = Field(default_factory=list)
+    traffic: CityTrafficContext = Field(default_factory=CityTrafficContext)
+    recent_events: list[str] = Field(default_factory=list)
+    learning: LearningSnapshot = Field(default_factory=LearningSnapshot)
+
+
+class CityAiAction(StrictModel):
+    type: Literal[
+        "move_citizen",
+        "call_taxi",
+        "meet",
+        "remember",
+        "traffic_surge",
+        "set_weather",
+        "no_op",
+    ]
+    actor_id: str | None = None
+    target_id: str | None = None
+    vehicle_id: str | None = None
+    destination_actor_id: str | None = None
+    destination: Vec3 | None = None
+    weather: Literal["clear", "rain", "snow"] | None = None
+    memory: str | None = None
+    label: str | None = None
+    after: Literal["taxi_arrival"] | None = None
+    reason: str = "city AI selected this action"
+
+
+class CityAiPlan(StrictModel):
+    plan_id: str
+    source: Literal["rules", "vllm"] = "rules"
+    confidence: float = Field(default=0.5, ge=0, le=1)
+    summary: str
+    actions: list[CityAiAction] = Field(default_factory=list)
+
+
+class CityAiSnapshot(StrictModel):
+    mode: Literal["disabled", "rules", "vllm"] = "disabled"
+    status: Literal["idle", "planning", "applied", "fallback", "error"] = "idle"
+    plan_id: str | None = None
+    last_planned_tick: int = Field(default=0, ge=0)
+    next_plan_tick: int = Field(default=0, ge=0)
+    summary: str = "city AI planner disabled"
+    actions: list[CityAiAction] = Field(default_factory=list)
+    reason: str | None = None
+
+
+class EntityGoal(StrictModel):
+    id: str
+    title: str
+    target_id: str | None = None
+    source: Literal["task_graph", "city_ai", "god_mode", "routine", "fallback"] = "routine"
+
+
+class EntityConstraint(StrictModel):
+    kind: Literal["deadline", "route", "weather", "traffic", "dependency", "battery", "safety"]
+    description: str
+    severity: Literal["info", "warning", "critical"] = "info"
+
+
+class EntityProgress(StrictModel):
+    progress_pct: float = Field(default=0.0, ge=0, le=1)
+    current_step_id: str | None = None
+    eta_ticks: int | None = Field(default=None, ge=0)
+
+
+class EntityBlocker(StrictModel):
+    blocker_type: Literal[
+        "stuck_actor",
+        "stuck_vehicle",
+        "target_unreachable",
+        "taxi_unavailable",
+        "pickup_timeout",
+        "group_timeout",
+        "drone_delay",
+        "low_battery",
+        "traffic_delay",
+        "dependency_deadlock",
+        "none",
+    ] = "none"
+    reason: str | None = None
+    replan_attempt: int = Field(default=0, ge=0)
+    fallback_action: str | None = None
+
+
+class EntityBrainState(StrictModel):
+    entity_id: str
+    entity_type: Literal["citizen", "vehicle", "taxi", "drone", "traffic_light"]
+    current_goal: EntityGoal
+    next_action: str
+    reason: str
+    source: Literal["task_graph", "city_ai", "god_mode", "routine", "fallback"] = "routine"
+    progress: EntityProgress = Field(default_factory=EntityProgress)
+    constraints: list[EntityConstraint] = Field(default_factory=list)
+    blocker: EntityBlocker | None = None
+    status: Literal[
+        "idle",
+        "planning",
+        "moving",
+        "waiting",
+        "interacting",
+        "blocked",
+        "complete",
+        "fallback",
+    ] = "idle"
+    blocked_reason: str | None = None
+    updated_tick: int = Field(ge=0)
+
+
+class ReplanRecord(StrictModel):
+    id: str
+    tick: int = Field(ge=0)
+    task_node_id: str | None = None
+    entity_id: str | None = None
+    blocker_type: str
+    reason: str
+    attempt: int = Field(default=0, ge=0)
+    fallback_action: str
+    status: Literal["blocked", "replanned", "recovered"] = "blocked"
+
+
+
+TaskActionType: TypeAlias = Literal[
+    "move_actor_to_actor",
+    "move_actor_to_location",
+    "meet",
+    "call_taxi",
+    "taxi_pickup",
+    "taxi_drive_to_actor",
+    "drone_move_to_actor",
+    "drone_deliver",
+    "group_rendezvous",
+    "set_weather",
+    "traffic_surge",
+    "remember",
+    "wait",
+    "no_op",
+]
+TaskStatus: TypeAlias = Literal[
+    "pending",
+    "running",
+    "completed",
+    "failed",
+    "skipped",
+    "rejected",
+]
+TaskGraphStatus: TypeAlias = Literal[
+    "accepted",
+    "clarification_needed",
+    "rejected",
+    "running",
+    "completed",
+    "failed",
+]
+
+
+class TaskCondition(StrictModel):
+    kind: Literal[
+        "entity_exists",
+        "dependency_completed",
+        "distance_less_than",
+        "duration_elapsed",
+        "weather_applied",
+        "traffic_applied",
+        "memory_recorded",
+        "manual_review",
+        "none",
+    ] = "none"
+    description: str
+    entity_id: str | None = None
+    target_id: str | None = None
+    threshold: float | None = Field(default=None, ge=0)
+    timeout_ticks: int | None = Field(default=None, ge=0)
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class TaskEdge(StrictModel):
+    from_node_id: str
+    to_node_id: str
+    relation: Literal["blocks", "enables", "after", "parallel"] = "enables"
+    description: str = "dependency edge"
+
+
+class TaskNode(StrictModel):
+    id: str
+    action_type: TaskActionType
+    status: TaskStatus = "pending"
+    actor_id: str | None = None
+    actor_selector: str | None = None
+    target_actor_id: str | None = None
+    target_actor_ids: list[str] = Field(default_factory=list)
+    target_entity_id: str | None = None
+    target_selector: str | None = None
+    vehicle_id: str | None = None
+    drone_id: str | None = None
+    location: Vec3 | None = None
+    depends_on: list[str] = Field(default_factory=list)
+    success_condition: TaskCondition
+    failure_condition: TaskCondition
+    timeout_ticks: int = Field(default=300, ge=0)
+    retry_limit: int = Field(default=1, ge=0, le=5)
+    reason: str
+    visible_label: str
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class TaskGraph(StrictModel):
+    id: str
+    raw_text: str
+    title: str
+    status: TaskGraphStatus = "accepted"
+    nodes: list[TaskNode] = Field(default_factory=list)
+    edges: list[TaskEdge] = Field(default_factory=list)
+    actors: list[str] = Field(default_factory=list)
+    assumptions: list[str] = Field(default_factory=list)
+    rejection_reason: str | None = None
+    summary: str
+
+
+class TaskGraphPlan(StrictModel):
+    plan_id: str
+    source: Literal["rules", "vllm"] = "rules"
+    confidence: float = Field(default=0.72, ge=0, le=1)
+    graph: TaskGraph
+    executor_step_ids: list[str] = Field(default_factory=list)
+    created_tick: int = Field(ge=0)
+
+
+class TaskGraphExecutionSnapshot(StrictModel):
+    graph_id: str
+    plan_id: str
+    status: TaskGraphStatus
+    current_node_id: str | None = None
+    nodes: list[TaskNode] = Field(default_factory=list)
+    completed_count: int = Field(default=0, ge=0)
+    total_count: int = Field(default=0, ge=0)
+    assumptions: list[str] = Field(default_factory=list)
+    rejection_reason: str | None = None
+    updated_tick: int = Field(ge=0)
+
+class ScenarioStep(StrictModel):
+    id: str
+    type: Literal[
+        "move_actor_to_actor",
+        "move_actor_to_location",
+        "meet",
+        "call_taxi",
+        "taxi_pickup",
+        "taxi_drive_to_actor",
+        "drone_move_to_actor",
+        "drone_deliver",
+        "move_actor_to_group",
+        "group_rendezvous",
+        "remember",
+        "set_weather",
+        "traffic_surge",
+        "wait",
+    ]
+    status: Literal["pending", "running", "completed", "failed", "skipped"] = "pending"
+    actor_id: str | None = None
+    target_actor_id: str | None = None
+    target_actor_ids: list[str] = Field(default_factory=list)
+    vehicle_id: str | None = None
+    drone_id: str | None = None
+    depends_on: list[str] = Field(default_factory=list)
+    started_tick: int | None = Field(default=None, ge=0)
+    completed_tick: int | None = Field(default=None, ge=0)
+    visible_label: str
+    evidence: str | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ScenarioDirective(StrictModel):
+    id: str
+    raw_text: str
+    title: str
+    status: Literal["idle", "running", "completed", "failed"] = "idle"
+    created_tick: int = Field(ge=0)
+    updated_tick: int = Field(ge=0)
+    current_step_id: str | None = None
+    actors: list[str] = Field(default_factory=list)
+    steps: list[ScenarioStep] = Field(default_factory=list)
+    summary: str
 
 
 class WorldStatePayload(StrictModel):
@@ -246,6 +650,11 @@ class WorldStatePayload(StrictModel):
         default_factory=TrafficForecastAiSnapshot
     )
     learning: LearningSnapshot = Field(default_factory=LearningSnapshot)
+    city_ai: CityAiSnapshot = Field(default_factory=CityAiSnapshot)
+    scenario: ScenarioDirective | None = None
+    task_graph: TaskGraphExecutionSnapshot | None = None
+    entity_brains: list[EntityBrainState] = Field(default_factory=list)
+    replans: list[ReplanRecord] = Field(default_factory=list)
 
 
 class EventPayload(StrictModel):
@@ -261,6 +670,18 @@ class EventPayload(StrictModel):
         "god_command_executed",
         "weather_changed",
         "event_injected",
+        "city_ai_plan",
+        "scenario_directive_created",
+        "scenario_step_started",
+        "scenario_step_completed",
+        "scenario_completed",
+        "task_graph_planned",
+        "task_graph_rejected",
+        "task_blocked",
+        "task_replanned",
+        "task_recovered",
+        "learning_signal",
+        "evolution_updated",
         "person_updated",
         "infrastructure_changed",
         "relationship_changed",
@@ -340,6 +761,9 @@ class GodCommandResponse(StrictModel):
     ai_confidence: float | None = Field(default=None, ge=0, le=1)
     ai_reason: str | None = None
     ai_actions: list[str] = Field(default_factory=list)
+    scenario: ScenarioDirective | None = None
+    task_graph: TaskGraphPlan | None = None
+    task_graph_rejection_reason: str | None = None
 
 
 class VoiceCommandResponse(StrictModel):

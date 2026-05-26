@@ -21,19 +21,37 @@ interface CommandHistoryItem {
   command: string;
   result: string;
   actions: string[];
-  status: 'ok' | 'fallback' | 'error';
+  status: 'pending' | 'ok' | 'fallback' | 'error';
+}
+
+interface LastResult {
+  status: CommandHistoryItem['status'] | 'idle';
+  title: string;
+  detail: string;
+  command: string;
+  actions: string[];
 }
 
 const MACROS = [
   { label: '비 내리기', text: '도시에 비를 내려줘' },
   { label: '민지·민수 만남', text: '민지랑 민수가 만난다' },
   { label: '택시 호출', text: '민지가 택시를 불러줘' },
-  { label: '차량 정체', text: '동쪽 도로에 정체 이벤트를 만들어줘' }
+  { label: '차량 정체', text: '동쪽 도로에 정체 이벤트를 만들어줘' },
+  {
+    label: '연쇄 상황',
+    text: '민수가 하린이를 만난 뒤 택시를 불러 민지에게 가고, 드론은 서연에게 이동한 뒤 서연은 민지와 민수를 만나러 간다'
+  }
 ];
 
 export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMicPanelProps) {
   const [text, setText] = useState('민지랑 민수가 만난다');
-  const [lastResult, setLastResult] = useState<string>('text fallback ready');
+  const [lastResult, setLastResult] = useState<LastResult>({
+    status: 'idle',
+    title: '명령 대기',
+    detail: '자연어 상황을 입력하면 vLLM 해석과 도시 반응을 여기 고정합니다.',
+    command: '',
+    actions: []
+  });
   const [history, setHistory] = useState<CommandHistoryItem[]>([]);
   const [recorder, setRecorder] = useState<MediaRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -44,14 +62,27 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
   }
 
   async function submitCommand(rawText = text) {
-    setText(rawText);
-    setLastResult('sending command...');
+    const commandText = rawText.trim() || text.trim() || '도시 상황을 바꿔줘';
+    setText(commandText);
+    setLastResult({
+      status: 'pending',
+      title: '명령 접수 중',
+      detail: 'RunPod orchestrator에 명령을 보내고 있습니다.',
+      command: commandText,
+      actions: []
+    });
     try {
       if (!orchestratorUrl) {
-        setLastResult('live orchestrator unavailable; use replay fallback');
+        setLastResult({
+          status: 'fallback',
+          title: '리플레이 폴백',
+          detail: 'live orchestrator unavailable; replay fallback',
+          command: commandText,
+          actions: []
+        });
         pushHistory({
           source: 'fallback',
-          command: rawText,
+          command: commandText,
           result: 'live orchestrator unavailable; replay fallback',
           actions: [],
           status: 'fallback'
@@ -62,7 +93,7 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
       const commandPayload: GodCommand = {
         kind: 'god_command',
         input_modality: 'text',
-        raw_text: rawText,
+        raw_text: commandText,
         audio_blob_b64: null,
         user_id: 'presenter'
       };
@@ -72,39 +103,60 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
         body: JSON.stringify(commandPayload)
       });
       if (!response.ok) {
-        setLastResult(`command rejected: HTTP ${response.status}`);
+        const detail = `command rejected: HTTP ${response.status}`;
+        setLastResult({
+          status: 'error',
+          title: '명령 실패',
+          detail,
+          command: commandText,
+          actions: []
+        });
         pushHistory({
           source: 'text',
-          command: rawText,
-          result: `command rejected: HTTP ${response.status}`,
+          command: commandText,
+          result: detail,
           actions: [],
           status: 'error'
         });
         return;
       }
       const responsePayload = (await response.json()) as GodCommandResponse;
-      const aiBadge =
-        responsePayload.ai_mode === 'vllm'
-          ? `vLLM ${Math.round((responsePayload.ai_confidence ?? 0) * 100)}%`
-          : 'rules fallback';
-      const aiReason = responsePayload.ai_reason ? ` · ${responsePayload.ai_reason}` : '';
       const aiActions = responsePayload.ai_actions ?? [];
-      const actionBadge = aiActions.length ? ` · actions: ${aiActions.join(' + ')}` : '';
-      const resultText = `${aiBadge}${actionBadge} · ${responsePayload.category}: ${responsePayload.event.message}${aiReason}`;
-      setLastResult(resultText);
+      const actionText = formatActionList(aiActions);
+      const title = responsePayload.ai_mode === 'vllm' ? 'vLLM이 상황을 적용함' : '규칙 폴백으로 상황 적용';
+      const scenarioText = responsePayload.scenario
+        ? ` · ${responsePayload.scenario.title} ${responsePayload.scenario.steps.length}단계`
+        : '';
+      const resultText = actionText
+        ? `${actionText} · ${categoryLabel(responsePayload.category)}${scenarioText}`
+        : responsePayload.event.message;
+      setLastResult({
+        status: responsePayload.ai_mode === 'vllm' ? 'ok' : 'fallback',
+        title,
+        detail: resultText,
+        command: commandText,
+        actions: aiActions
+      });
       pushHistory({
         source: 'text',
-        command: rawText,
+        command: commandText,
         result: resultText,
         actions: aiActions,
         status: responsePayload.ai_mode === 'vllm' ? 'ok' : 'fallback'
       });
     } catch {
-      setLastResult('offline fallback: command queued for replay/demo');
+      const detail = 'offline fallback: command queued for replay/demo';
+      setLastResult({
+        status: 'fallback',
+        title: '오프라인 폴백',
+        detail,
+        command: commandText,
+        actions: []
+      });
       pushHistory({
         source: 'fallback',
-        command: rawText,
-        result: 'offline fallback: command queued for replay/demo',
+        command: commandText,
+        result: detail,
         actions: [],
         status: 'fallback'
       });
@@ -112,10 +164,22 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
   }
 
   async function submitVoiceCommand(audioBlobB64: string, mimeType: string) {
-    setLastResult('transcribing voice command...');
+    setLastResult({
+      status: 'pending',
+      title: '음성 인식 중',
+      detail: 'STT 결과를 God Mode 명령으로 변환합니다.',
+      command: text,
+      actions: []
+    });
     try {
       if (!orchestratorUrl) {
-        setLastResult('live orchestrator unavailable; use replay fallback');
+        setLastResult({
+          status: 'fallback',
+          title: '리플레이 폴백',
+          detail: 'live orchestrator unavailable; replay fallback',
+          command: text,
+          actions: []
+        });
         pushHistory({
           source: 'fallback',
           command: text,
@@ -140,11 +204,18 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
         body: JSON.stringify(voicePayload)
       });
       if (!response.ok) {
-        setLastResult(`voice command rejected: HTTP ${response.status}`);
+        const detail = `voice command rejected: HTTP ${response.status}`;
+        setLastResult({
+          status: 'error',
+          title: '음성 명령 실패',
+          detail,
+          command: text,
+          actions: []
+        });
         pushHistory({
           source: 'voice',
           command: text,
-          result: `voice command rejected: HTTP ${response.status}`,
+          result: detail,
           actions: [],
           status: 'error'
         });
@@ -153,9 +224,14 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
       const responsePayload = (await response.json()) as VoiceCommandResponse;
       setText(responsePayload.transcript);
       const aiActions = responsePayload.command.ai_actions ?? [];
-      const actionBadge = aiActions.length ? ` · actions: ${aiActions.join(' + ')}` : '';
-      const resultText = `voice ${responsePayload.stt_status}/${responsePayload.stt_mode}${actionBadge} · ${responsePayload.transcript}`;
-      setLastResult(resultText);
+      const resultText = `${formatActionList(aiActions) || '도시 명령'} · ${responsePayload.transcript}`;
+      setLastResult({
+        status: responsePayload.stt_status === 'ok' ? 'ok' : 'fallback',
+        title: `음성 명령 적용 · ${sttLabel(responsePayload.stt_mode)}`,
+        detail: resultText,
+        command: responsePayload.transcript,
+        actions: aiActions
+      });
       pushHistory({
         source: 'voice',
         command: responsePayload.transcript,
@@ -164,11 +240,18 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
         status: responsePayload.stt_status === 'ok' ? 'ok' : 'fallback'
       });
     } catch {
-      setLastResult('voice offline fallback: use text command');
+      const detail = 'voice offline fallback: use text command';
+      setLastResult({
+        status: 'fallback',
+        title: '음성 폴백',
+        detail,
+        command: text,
+        actions: []
+      });
       pushHistory({
         source: 'fallback',
         command: text,
-        result: 'voice offline fallback: use text command',
+        result: detail,
         actions: [],
         status: 'fallback'
       });
@@ -182,7 +265,13 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
       return;
     }
     if (!navigator.mediaDevices || typeof MediaRecorder === 'undefined') {
-      setLastResult('voice unavailable in this browser; use text command');
+      setLastResult({
+        status: 'fallback',
+        title: '음성 사용 불가',
+        detail: '이 브라우저에서는 텍스트 명령을 사용하세요.',
+        command: text,
+        actions: []
+      });
       return;
     }
     try {
@@ -204,9 +293,21 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
       nextRecorder.start();
       setRecorder(nextRecorder);
       setIsRecording(true);
-      setLastResult('recording voice... click again to stop');
+      setLastResult({
+        status: 'pending',
+        title: '녹음 중',
+        detail: '다시 누르면 녹음을 멈추고 STT로 명령을 실행합니다.',
+        command: text,
+        actions: []
+      });
     } catch {
-      setLastResult('microphone permission denied; use text command');
+      setLastResult({
+        status: 'fallback',
+        title: '마이크 권한 없음',
+        detail: '텍스트 명령으로 동일한 God Mode 동작을 실행할 수 있습니다.',
+        command: text,
+        actions: []
+      });
     }
   }
 
@@ -222,6 +323,18 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
         <span>Text command</span>
         <textarea suppressHydrationWarning value={text} onChange={(event) => setText(event.target.value)} />
       </label>
+      <div className={`godResult godResult-${lastResult.status}`} aria-live="polite">
+        <strong>{lastResult.title}</strong>
+        {lastResult.command ? <span>“{lastResult.command}”</span> : null}
+        <small>{lastResult.detail}</small>
+        {lastResult.actions.length ? (
+          <div className="godActionChips" aria-label="Applied God Mode actions">
+            {lastResult.actions.map((action) => (
+              <em key={action}>{actionLabel(action)}</em>
+            ))}
+          </div>
+        ) : null}
+      </div>
       <div className="macroGrid" aria-label="God Mode fallback macros">
         {MACROS.map((macro) => (
           <button type="button" key={macro.label} onClick={() => void submitCommand(macro.text)}>
@@ -235,9 +348,6 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
       <button className="godVoice" type="button" onClick={() => void toggleVoiceRecording()}>
         {isRecording ? 'Stop voice command' : 'Voice STT'}
       </button>
-      <small className="godResult" aria-live="polite">
-        {lastResult}
-      </small>
       <div className="godHistory" aria-label="God Mode command history">
         <strong>Command history</strong>
         <ol>
@@ -252,9 +362,9 @@ export function GodModeMicPanel({ mode, worldState, orchestratorUrl }: GodModeMi
             }
           ]).map((item) => (
             <li className={`godHistoryItem godHistoryItem-${item.status}`} key={item.id}>
-              <span>{item.source}</span>
+              <span>{sourceLabel(item.source)}</span>
               <b>{item.command}</b>
-              <small>{item.actions.length ? item.actions.join(' + ') : item.result}</small>
+              <small>{item.actions.length ? `${formatActionList(item.actions)} · ${item.result}` : item.result}</small>
             </li>
           ))}
         </ol>
@@ -277,4 +387,66 @@ function blobToBase64(blob: Blob): Promise<string> {
     reader.onerror = () => reject(reader.error ?? new Error('failed to read audio blob'));
     reader.readAsDataURL(blob);
   });
+}
+
+function actionLabel(action: string): string {
+  const labels: Record<string, string> = {
+    rain: '비 내림',
+    clear: '맑음 전환',
+    snow: '눈 내림',
+    traffic_jam: '교통량 증가',
+    taxi_call: '택시 호출',
+    meeting: '만남 조율',
+    memory: '시민 기억',
+    person_update: '시민 상태',
+    relationship: '관계 변화',
+    scenario_directive: '상황 디렉터',
+    move_actor_to_actor: '대상 이동',
+    taxi_drive_to_actor: '택시 이동',
+    drone_move_to_actor: '드론 이동',
+    move_actor_to_group: '그룹 합류',
+    move_citizen: '시민 이동',
+    call_taxi: '택시 배차',
+    meet: '만남',
+    remember: '기억 추가',
+    traffic_surge: '정체 유도',
+    set_weather: '날씨 변경',
+    no_op: '관찰'
+  };
+  return labels[action] ?? action.replaceAll('_', ' ');
+}
+
+function formatActionList(actions: string[]): string {
+  return actions.map(actionLabel).join(' → ');
+}
+
+function categoryLabel(category: GodCommandResponse['category']): string {
+  const labels: Record<GodCommandResponse['category'], string> = {
+    environment: '환경 변화',
+    event: '도시 이벤트',
+    person: '시민 상태',
+    infrastructure: '인프라 제어',
+    relationship: '관계/만남'
+  };
+  return labels[category];
+}
+
+function sourceLabel(source: CommandHistoryItem['source']): string {
+  if (source === 'text') {
+    return 'TEXT';
+  }
+  if (source === 'voice') {
+    return 'VOICE';
+  }
+  return 'FALLBACK';
+}
+
+function sttLabel(mode: VoiceCommandResponse['stt_mode']): string {
+  if (mode === 'faster_whisper') {
+    return 'faster-whisper';
+  }
+  if (mode === 'stub') {
+    return 'stub';
+  }
+  return 'fallback';
 }

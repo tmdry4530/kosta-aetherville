@@ -35,3 +35,28 @@ def test_god_mode_events_persist_and_affect_learning_snapshot(tmp_path: Path) ->
     reloaded = LearningStore(learning_path)
     assert reloaded.snapshot().experience_count == state.learning.experience_count
     assert reloaded.learned_queue_boost() > 0
+
+
+def test_learning_promotes_reward_gated_policy_candidates(tmp_path: Path) -> None:
+    learning_path = tmp_path / "learning_state.json"
+    engine = SimulationEngine(learning_store=LearningStore(learning_path))
+
+    for command in (
+        "교통량 증가시켜",
+        "민지가 택시를 불러줘",
+        "도시에 비를 내려줘",
+        "민수와 하린이 만나게 해줘",
+        "교통 지연 때문에 민수가 택시를 불러 민지에게 가게 해줘",
+    ):
+        engine.execute_god_command(make_command(command))
+
+    learning = engine.learning_status().learning
+
+    assert learning.policy_candidates
+    assert learning.promotion_gate.candidate_count >= 1
+    assert learning.promotion_gate.last_decision in {"promoted", "rejected"}
+    assert learning.policy_candidates[-1].score_after >= 0
+    assert any(signal.kind in {"policy_promoted", "policy_rejected"} for signal in learning.signals)
+
+    reloaded = LearningStore(learning_path).snapshot()
+    assert reloaded.promotion_gate.candidate_count == learning.promotion_gate.candidate_count
