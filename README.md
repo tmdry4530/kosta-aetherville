@@ -2,6 +2,8 @@
 
 > RunPod H100 direct-process 기반 AI 도시 시뮬레이터
 
+맥북 시연자는 레포 클론 후 [`MACBOOK_DEMO_QUICKSTART.md`](MACBOOK_DEMO_QUICKSTART.md)를 먼저 따르면 됩니다. 실제 endpoint/SSH 값은 git에 넣지 말고 MacBook 로컬 ignored env 파일에만 저장합니다.
+
 Project Aetherville는 브라우저에서 보이는 3D 도시와 RunPod GPU 서버의 AI 백엔드를 연결한 데모 프로젝트입니다. 사용자는 God Mode 명령으로 날씨, 교통, 택시, 시민 관계를 바꾸고, 화면은 그 변화가 도시 상태·시민 기억·차량 카메라·교통 AI 패널에 동시에 반영되는 모습을 보여줍니다.
 
 이 프로젝트는 단순히 “AI API를 호출했다”가 아니라, **AI가 도시 시스템 안에서 어떤 역할을 맡고, 그 결과가 사용자가 보는 화면에 어떻게 드러나는지**를 보여주는 데 초점을 둡니다.
