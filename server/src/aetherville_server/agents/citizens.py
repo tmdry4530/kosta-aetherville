@@ -90,6 +90,13 @@ class CitizenDirective:
     hold_until_tick: int
 
 
+@dataclass(frozen=True)
+class ActiveMeeting:
+    citizen_id: str
+    target_citizen_id: str
+    point_xz: tuple[float, float]
+
+
 def generate_citizen_personas(count: int = 20, seed: int = 42) -> list[CitizenPersona]:
     """Generate deterministic demo personas without touching an external LLM."""
 
@@ -123,7 +130,7 @@ class CitizenAgentService:
         self._personas = generate_citizen_personas(count=count, seed=seed)
         self._plans: dict[str, PlanNode] = {}
         self._memories: dict[str, list[MemoryRecord]] = {}
-        self._active_meeting: tuple[str, str] | None = None
+        self._active_meeting: ActiveMeeting | None = None
         self._directives: dict[str, CitizenDirective] = {}
         for persona in self._personas:
             self._plans[persona.id] = self._planner.daily_plan(
@@ -156,12 +163,34 @@ class CitizenAgentService:
                 return persona.id
         return default
 
-    def activate_meeting(self, citizen_id: str, target_citizen_id: str) -> None:
+    def activate_meeting(
+        self,
+        citizen_id: str,
+        target_citizen_id: str,
+        *,
+        point_xz: tuple[float, float] | None = None,
+    ) -> None:
         """Pin two demo citizens near the same sidewalk/crosswalk meeting point."""
 
         self._get_persona(citizen_id)
         self._get_persona(target_citizen_id)
-        self._active_meeting = (citizen_id, target_citizen_id)
+        self._active_meeting = ActiveMeeting(
+            citizen_id=citizen_id,
+            target_citizen_id=target_citizen_id,
+            point_xz=point_xz or MEETING_POINT,
+        )
+
+    def clear_meeting_for(self, *citizen_ids: str) -> None:
+        """Release an active meeting when a participant receives a new directive."""
+
+        if self._active_meeting is None:
+            return
+        participants = {
+            self._active_meeting.citizen_id,
+            self._active_meeting.target_citizen_id,
+        }
+        if participants.intersection(citizen_ids):
+            self._active_meeting = None
 
     def move_citizen(
         self,
@@ -176,6 +205,7 @@ class CitizenAgentService:
         """Set an event-scoped autonomous movement directive for a citizen."""
 
         self._get_persona(citizen_id)
+        self.clear_meeting_for(citizen_id)
         self._directives[citizen_id] = CitizenDirective(
             citizen_id=citizen_id,
             start_xz=start_xz,
@@ -326,17 +356,24 @@ class CitizenAgentService:
                 anim = "walk" if running and directive_moving else "idle"
             elif directive is not None:
                 expired_directives.append(persona.id)
-            if self._active_meeting is not None and persona.id in self._active_meeting:
+            if self._active_meeting is not None and persona.id in {
+                self._active_meeting.citizen_id,
+                self._active_meeting.target_citizen_id,
+            }:
                 other_id = (
-                    self._active_meeting[0]
-                    if persona.id == self._active_meeting[1]
-                    else self._active_meeting[1]
+                    self._active_meeting.citizen_id
+                    if persona.id == self._active_meeting.target_citizen_id
+                    else self._active_meeting.target_citizen_id
                 )
                 other = self._get_persona(other_id)
-                offset_x, offset_z = MEETING_OFFSETS.get(persona.id, (0.0, 0.0))
-                x = MEETING_POINT[0] + offset_x
-                z = MEETING_POINT[1] + offset_z
-                yaw = math.atan2(MEETING_POINT[0] - x, MEETING_POINT[1] - z)
+                offset_x, offset_z = _meeting_offset(
+                    persona.id,
+                    source_id=self._active_meeting.citizen_id,
+                )
+                meeting_x, meeting_z = self._active_meeting.point_xz
+                x = meeting_x + offset_x
+                z = meeting_z + offset_z
+                yaw = math.atan2(meeting_x - x, meeting_z - z)
                 talking_to = other.id
                 action = f"{other.name}와 만나는 중"
                 display_tags = [persona.name, "만남", f"{other.name}"]
@@ -413,6 +450,12 @@ def _pose_on_route(route: CitizenRoute, progress: float) -> tuple[float, float, 
     start, end, _ = segments[-1]
     yaw = math.atan2(end[0] - start[0], end[1] - start[1])
     return end[0], end[1], yaw
+
+
+def _meeting_offset(citizen_id: str, *, source_id: str) -> tuple[float, float]:
+    if citizen_id in MEETING_OFFSETS:
+        return MEETING_OFFSETS[citizen_id]
+    return (-0.22, -0.06) if citizen_id == source_id else (0.22, 0.06)
 
 
 def _directive_pose(

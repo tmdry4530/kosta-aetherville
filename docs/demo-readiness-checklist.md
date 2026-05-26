@@ -5,7 +5,7 @@
 - [ ] Run `bash infra/runpod/verify_runpod.sh`.
 - [ ] Confirm direct-process runtime is active and no Docker command is needed.
 - [ ] Run `bash infra/runpod/health_check_direct.sh` inside the synced workspace or through the deployment helper.
-- [ ] Start local client with `pnpm dev`.
+- [ ] Start local client with `pnpm --filter @aetherville/client exec next dev -H 0.0.0.0 -p 3000` and the selected `NEXT_PUBLIC_*` endpoint values.
 - [ ] Open the live route `/` and confirm connection/tick status.
 - [ ] Open `/replay` in a second tab for fallback.
 
@@ -73,3 +73,22 @@
 - [ ] At least one actor shows `AI계획` or the taxi dispatch marker after the City AI plan.
 - [ ] Presenter says “vLLM chooses bounded city plans; Python simulation executes them,” not “the model animates every frame.”
 - [ ] Presenter does not claim new model-weight self-training unless a separate training job has been verified.
+
+## Scenario Director addendum — 2026-05-26
+
+- [ ] `python3 scripts/scenario_directive_smoke.py --orchestrator-url http://127.0.0.1:18080 --wait-seconds 45` passes.
+- [ ] Browser shows the `Scenario Director` / `상황 실행 타임라인` panel.
+- [ ] Complex story command visibly advances at least one citizen movement, taxi movement, and drone movement step.
+- [ ] For the remote demo, confirm `/` renders `REST http://127.0.0.1:18080` after Next warmup and `scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18080` passes.
+- [ ] Warm `/replay` once before presenting; WSL/Next dev cold compile can take several minutes after cache removal.
+- [ ] Presenter says “복합 자연어 상황은 bounded ScenarioDirective 단계로 실행된다,” not “LLM이 임의 좌표를 직접 조작한다.”
+
+## Autonomous City Evolution addendum — 2026-05-26
+
+- [ ] Browser shows `AI operations`, `Entity intent`, `Replan feed`, `Causal event chain`, and `Evolution state` markers.
+- [ ] `/api/v1/sim/state` contains `entity_brains` for citizens, taxi/vehicles, drones, and traffic lights.
+- [ ] `python3 scripts/replanner_resilience_smoke.py --orchestrator-url http://127.0.0.1:18080 --wait-seconds 60` passes after the selected backend is updated.
+- [ ] `python3 scripts/learning_evolution_smoke.py --orchestrator-url http://127.0.0.1:18080 --repeat 2` passes and reports JSON persistence.
+- [ ] `python3 scripts/autonomous_city_dogfood_smoke.py --orchestrator-url http://127.0.0.1:18080 --wait-seconds 12` passes all ten dogfood scenarios.
+- [ ] Presenter says “entity brains + bounded replanner + JSON learning/evolution” rather than “unbounded self-evolving AGI.”
+- [ ] If the RunPod tunnel still occupies `18080` with an older process, redeploy/restart direct-process services before claiming remote Goal 13–17 evidence.

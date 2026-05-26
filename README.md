@@ -149,6 +149,7 @@ Simulation tick
 - 신호등과 교통 흐름이 변함
 - 날씨와 이벤트가 도시 분위기를 바꿈
 - 현재 상태가 여러 UI 패널에 동시에 표시됨
+- 복합 상황 명령은 `Scenario Director`가 단계별로 실행함
 
 목표는 보는 사람이 “그냥 10초짜리 반복 영상 아닌가?”라고 느끼지 않도록, 명령과 상태 변화가 명확하게 이어지는 도시를 만드는 것입니다.
 
@@ -168,6 +169,15 @@ Simulation tick
 - 시민 만남/대화 상태가 생김
 - 화면의 Scene Director와 각 패널이 변화를 설명함
 
+복합 스토리도 한 번에 지시할 수 있습니다.
+
+```text
+민수가 하린을 만난 뒤 택시를 불러 민지에게 가고,
+드론은 서연에게 이동한 뒤 서연은 민지와 민수를 만나러 간다
+```
+
+이 경우 `Scenario Director`가 시민 이동 → 만남 → 택시 이동 → 드론 이동 → 합류 이동을 단계별로 표시하고, 3D 카메라는 현재 실행 중인 대상에 포커스를 둡니다.
+
 즉, 이 프로젝트의 핵심 데모는 **사람의 자연어 지시가 도시 전체의 상황 변화로 번역되는 장면**입니다.
 
 ### 3. AI가 어디에 쓰였는지 화면에서 보이는 것
@@ -175,6 +185,7 @@ Simulation tick
 AI 기능이 내부에 숨어 있으면 데모에서 설득력이 약합니다. 그래서 Aetherville는 AI 사용 지점을 화면에 노출합니다.
 
 - **RunPod AI proof panel**: 현재 연결된 AI 서비스와 GPU 기반 기능 표시
+- **Scenario Director panel**: 복합 상황을 단계별 실행 타임라인으로 표시
 - **Citizen memory panel**: 시민이 본 것과 반응 기록
 - **Vehicle camera panel**: 차량 시점의 vision detection 표시
 - **Traffic panel**: 교통 정책과 forecast 결과 표시
@@ -251,6 +262,7 @@ AI 기능이 내부에 숨어 있으면 데모에서 설득력이 약합니다. 
 - traffic AI / forecast 표시
 - God Mode natural-language command
 - multi-action city effect
+- Scenario Director complex story timeline
 - voice/STT endpoint와 typed fallback
 - RunPod AI proof panel
 - replay fallback
@@ -268,7 +280,7 @@ uv sync
 ### 2. 로컬 화면 실행
 
 ```bash
-pnpm dev
+pnpm --filter @aetherville/client exec next dev -H 0.0.0.0 -p 3000
 ```
 
 브라우저:
@@ -307,8 +319,13 @@ ssh -N \
 NEXT_PUBLIC_ORCHESTRATOR_URL=http://127.0.0.1:18080 \
 NEXT_PUBLIC_SOCKET_URL=http://127.0.0.1:18080 \
 NEXT_PUBLIC_SOCKET_TRANSPORTS=polling \
-pnpm dev
+pnpm --filter @aetherville/client exec next dev -H 0.0.0.0 -p 3000
 ```
+
+2026-05-26 기준 원격 데모는 이 tunnel 모드로 검증되어 있으며, `/`는
+`REST http://127.0.0.1:18080`을 렌더링하고 `Scenario Director` 패널이 RunPod
+orchestrator의 복합 상황 실행 상태를 표시합니다. WSL/Next dev는 cold start가
+느릴 수 있으므로 발표 전에 `/`와 `/replay`를 한 번씩 열어 warmup합니다.
 
 맥북 발표 세팅은 아래 문서를 먼저 보면 됩니다.
 

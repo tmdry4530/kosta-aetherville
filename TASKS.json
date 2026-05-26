@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "llm_city_loop_verified_pushed",
+  "status": "goals13_17_autonomous_city_evolution_verified_backup_ready_to_push",
   "source_prd": "source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -932,6 +932,190 @@
         "runpod_runtime": "targeted sync deployed changes; orchestrator restarted direct-process only with AETHERVILLE_CITY_AI_MODE=vllm and existing real vLLM/YOLO/STT/traffic paths preserved",
         "smoke": "RunPod city_ai_smoke passed mode_vllm status_applied actions_call_taxi_meet_then_local_tunnel_passed actions_move_citizen_call_taxi with movement markers",
         "verification": "uv_run_pytest_47_passed ruff_passed mypy_passed pnpm_lint_passed pnpm_typecheck_passed pnpm_test_passed pnpm_test_e2e_passed client_build_passed browser_live_smoke_passed git_diff_check_passed",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+      }
+    },
+    {
+      "id": "M11-002",
+      "title": "Add bounded Scenario Director for complex audience story commands",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "active-thread-goal: scenario-director-dogfood",
+      "depends_on": [
+        "M11-001"
+      ],
+      "unblocked_by": "user_required_any_situation_to_show_visible_actor_taxi_drone_movement",
+      "last_checked_at": "2026-05-26T03:18:28+09:00",
+      "completed_at": "2026-05-26T03:18:28+09:00",
+      "diagnostics": {
+        "schemas": "ScenarioDirective and ScenarioStep added to shared Pydantic source and generated TypeScript; WorldStatePayload.scenario and GodCommandResponse.scenario expose active/completed scenario state.",
+        "backend": "God Mode complex Korean story commands compile to bounded steps for citizen movement, meeting, taxi call/drive, drone movement, and group rendezvous; SimulationEngine advances steps over ticks without raw LLM coordinate mutation.",
+        "client": "ScenarioDirectorPanel shows current step timeline; 3D scene HUD/camera focus ScenarioDirective progress and God Mode macro/result exposes 연쇄 상황.",
+        "docs": "README, live demo runbook, demo script, readiness checklist, DECISIONS, PROGRESS, and handoff updated with Scenario Director truthfulness constraints.",
+        "dogfood": "agent-browser dogfood passed against local browser http://127.0.0.1:3000 connected to local orchestrator http://127.0.0.1:18088; report at dogfood-output/scenario-director-dogfood/report.md; no reproducible issues found.",
+        "verification": "uv_run_pytest_48_passed ruff_passed mypy_passed pnpm_lint_passed pnpm_typecheck_passed pnpm_test_passed pnpm_test_e2e_passed scenario_directive_smoke_passed browser_demo_smoke_passed git_diff_check_passed; next_build_attempt_SIGTERM_after_WSL_hang_documented",
+        "runpod_runtime": "RunPod SSH/GPU verified and targeted backend/schema/script sync completed; Docker skipped; remote orchestrator restart not required for local dogfood and not performed via Docker.",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+      }
+    },
+    {
+      "id": "M11-003",
+      "title": "Reflect Scenario Director changes into RunPod remote demo runtime",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "active-thread-goal: runpod-remote-demo-reflect",
+      "depends_on": [
+        "M11-002"
+      ],
+      "unblocked_by": "scenario_director_local_dogfood_passed_and_user_requested_runpod_remote_demo_reflection",
+      "last_checked_at": "2026-05-26T03:58:00+09:00",
+      "completed_at": "2026-05-26T03:58:00+09:00",
+      "diagnostics": {
+        "sync": "targeted tar-over-SSH sync of shared schemas, generated TypeScript, server package, and smoke scripts completed; full repo sync avoided because remote rsync is unavailable and full tar can hang",
+        "runpod_runtime": "remote orchestrator direct process restarted only; existing real vLLM, real YOLO vision on 18001, faster-whisper STT, and memory Redis fallback preserved",
+        "health": "local tunnel health passed for orchestrator, sim status, vision 18001, and vLLM models endpoint; remote orchestrator in-pod health passed immediately after restart",
+        "scenario_smoke": "scripts/scenario_directive_smoke.py passed against http://127.0.0.1:18080 with six scenario step types and visible running/completed movement states",
+        "client_runtime": "local Next dev restarted on 0.0.0.0:3000 with NEXT_PUBLIC_ORCHESTRATOR_URL and NEXT_PUBLIC_SOCKET_URL set to http://127.0.0.1:18080; first compile was slow on WSL but route served the tunnel endpoint after warmup",
+        "browser_smoke": "scripts/browser_demo_smoke.py passed for live route against http://127.0.0.1:3000 with expected endpoint http://127.0.0.1:18080; replay route curl marker passed after compile warmup",
+        "truthfulness": "scenario execution is bounded Python simulation driven by ScenarioDirective and vLLM high-level plans; no claim of direct frame-by-frame LLM animation or model-weight self-training",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+      }
+    },
+    {
+      "id": "M12-001",
+      "title": "Implement TaskGraph Planner for arbitrary Korean multi-actor situations",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/12-taskgraph-planner.md",
+      "depends_on": [
+        "M11-003"
+      ],
+      "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
+      "last_checked_at": "2026-05-26T04:50:58+09:00",
+      "diagnostics": {
+        "schemas": "TaskGraph TaskNode TaskEdge TaskCondition TaskGraphPlan TaskGraphExecutionSnapshot added to Pydantic source and generated TypeScript.",
+        "backend": "God Mode text compiles through deterministic TaskGraph fallback; complex accepted graphs drive ScenarioDirective steps; hard unknown/circular graphs reject safely.",
+        "fixtures": "10 Korean fixture families cover meeting, taxi, group rendezvous, drone delivery plus movement, rain, traffic surge, unknown actor, ambiguous actor, circular ordering, and long 6-step chain.",
+        "client": "ScenarioDirectorPanel reads worldState.task_graph and shows status, current node, assumptions, and rejection reason while preserving ScenarioDirective display.",
+        "verification": "pytest_goal12_56_passed ruff_passed mypy_passed pnpm_typecheck_passed pnpm_test_3_passed json_tool_passed git_diff_check_passed",
+        "backup": "local archive created at .omx/backups/aetherville-goal12-taskgraph-20260526-045058.tar.gz; sha256 at .omx/backups/aetherville-goal12-taskgraph-20260526-045058.tar.gz.sha256; secrets/env files excluded",
+        "runpod_runtime": "RunPod not touched for this local Goal 12 implementation turn.",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+      },
+      "completed_at": "2026-05-26T04:50:58+09:00"
+    },
+    {
+      "id": "M13-001",
+      "title": "Implement inspectable Entity Brain Runtime for citizens vehicles taxis and drones",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/13-entity-brain-runtime.md",
+      "depends_on": [
+        "M12-001"
+      ],
+      "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
+      "last_checked_at": "2026-05-26T09:56:20+09:00",
+      "diagnostics": {
+        "shared_contracts": "EntityBrainState_EntityGoal_EntityConstraint_EntityProgress_EntityBlocker_added_and_generated_typescript",
+        "world_state": "WorldStatePayload_entity_brains_added_for_citizens_taxi_vehicles_drones_traffic_lights",
+        "ui": "AiOperationsPanel_entity_intent_inspector_added_replay_fallback_includes_brains",
+        "tests": "packages_shared_schema_and_server_sim_tests_passed"
+      },
+      "completed_at": "2026-05-26T09:56:20+09:00"
+    },
+    {
+      "id": "M14-001",
+      "title": "Implement bounded Replanner and Resilience Runtime for stuck or impossible tasks",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/14-replanner-resilience-runtime.md",
+      "depends_on": [
+        "M13-001"
+      ],
+      "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
+      "last_checked_at": "2026-05-26T09:56:20+09:00",
+      "diagnostics": {
+        "blockers": "stuck_actor_stuck_vehicle_target_unreachable_taxi_unavailable_pickup_timeout_group_timeout_drone_delay_low_battery_traffic_delay_dependency_deadlock_forced_tests",
+        "events": "task_blocked_task_replanned_task_recovered_and_ReplanRecord_feed",
+        "smoke": "replanner_resilience_smoke_passed_local_direct_process_18081",
+        "max_attempts": "bounded_two_attempts_then_fallback_complete_no_infinite_loop"
+      },
+      "completed_at": "2026-05-26T09:56:20+09:00"
+    },
+    {
+      "id": "M15-001",
+      "title": "Implement Persistent Learning and Evolution Loop without overclaiming model-weight self-training",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/15-memory-learning-evolution-loop.md",
+      "depends_on": [
+        "M14-001"
+      ],
+      "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
+      "last_checked_at": "2026-05-26T09:56:20+09:00",
+      "diagnostics": {
+        "contracts": "TrajectoryEvent_TaskOutcomeScore_LearningSignal_PolicyBiasSnapshot_EvolutionSnapshot_added",
+        "persistence": "JSON_learning_state_with_reset_endpoint_and_policy_bias_snapshot",
+        "truthfulness": "deterministic_online_adaptation_only_no_model_weight_self_training_claim",
+        "smoke": "learning_evolution_smoke_passed_experience_0_to_8_json_persistence"
+      },
+      "completed_at": "2026-05-26T09:56:20+09:00"
+    },
+    {
+      "id": "M16-001",
+      "title": "Implement Causal AI UI and observability for graph intent replan learning and proof states",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/16-causal-ai-ui-observability.md",
+      "depends_on": [
+        "M15-001"
+      ],
+      "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
+      "last_checked_at": "2026-05-26T09:56:20+09:00",
+      "diagnostics": {
+        "ui_surfaces": "AI_operations_entity_intent_replan_feed_causal_chain_evolution_state_learning_truthfulness",
+        "replay": "mockWorld_includes_task_graph_entity_brains_replans_learning_evolution_samples",
+        "browser_contract": "browser_demo_smoke_markers_and_client_contract_tests_require_new_panels",
+        "copy": "model_weight_self_training_not_verified_wording_added"
+      },
+      "completed_at": "2026-05-26T09:56:20+09:00"
+    },
+    {
+      "id": "M17-001",
+      "title": "Run autonomous city dogfood audit and final truthfulness gate",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/17-autonomous-city-dogfood-audit.md",
+      "depends_on": [
+        "M16-001"
+      ],
+      "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
+      "last_checked_at": "2026-05-26T09:56:20+09:00",
+      "diagnostics": {
+        "audit_doc": "docs/autonomous-city-evolution-audit.md",
+        "dogfood": "autonomous_city_dogfood_smoke_passed_10_scenarios_local_direct_process_18081",
+        "runpod_health": "current_18080_tunnel_health_reachable_but_goal13_17_remote_redeploy_still_recommended_before_demo",
+        "portability": "docs/rtx-5090-autonomous-evolution-portability.md_and_final_backup_required"
+      },
+      "completed_at": "2026-05-26T09:56:20+09:00"
+    },
+    {
+      "id": "M17-002",
+      "title": "Finalize autonomous city evolution verification backup and push readiness",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": ".codex/goals/17-autonomous-city-dogfood-audit.md",
+      "depends_on": [
+        "M17-001"
+      ],
+      "unblocked_by": "goal13_17_smokes_browser_checks_and_production_build_passed",
+      "last_checked_at": "2026-05-26T10:19:15+09:00",
+      "completed_at": "2026-05-26T10:19:15+09:00",
+      "diagnostics": {
+        "final_build": "pnpm_filter_aetherville_client_build_passed",
+        "browser": "live_replay_browser_demo_smoke_visual_smoke_and_pnpm_test_e2e_passed",
+        "backup": ".omx/backups/aetherville-goals13-17-autonomous-city-20260526-101816.tar.gz sha256 a628885b3b6729114069a6d8c5040584147f5aa100d57abf9e02a79fc03cbe1c secret_path_scan_passed_env_example_whitelisted",
+        "runpod_runtime": "current_18080_tunnel_reachable_but_goal13_17_remote_redeploy_recommended_before_demo_claims",
         "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
       }
     }

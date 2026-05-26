@@ -19,6 +19,43 @@ function tagText(worldState: WorldStatePayload): string {
   ].join(' ');
 }
 
+function cityAiActionLabel(action: string): string {
+  const labels: Record<string, string> = {
+    move_citizen: '시민 이동',
+    call_taxi: '택시 배차',
+    meet: '만남 조율',
+    remember: '기억 추가',
+    traffic_surge: '정체 유도',
+    set_weather: '날씨 변경',
+    no_op: '관찰',
+    rain: '비 내림',
+    clear: '맑음 전환',
+    snow: '눈 내림',
+    traffic_jam: '교통량 증가',
+    taxi_call: '택시 호출',
+    meeting: '만남',
+    memory: '시민 기억',
+    person_update: '시민 상태',
+    relationship: '관계 변화'
+  };
+  return labels[action] ?? action.replaceAll('_', ' ');
+}
+
+function cityAiStatusLabel(worldState: WorldStatePayload): string {
+  const mode = worldState.city_ai.mode === 'vllm' ? 'vLLM 판단' : worldState.city_ai.mode === 'rules' ? '규칙 판단' : '비활성';
+  const status =
+    worldState.city_ai.status === 'applied'
+      ? '적용됨'
+      : worldState.city_ai.status === 'planning'
+        ? '계획 중'
+        : worldState.city_ai.status === 'fallback'
+          ? '폴백'
+          : worldState.city_ai.status === 'error'
+            ? '오류'
+            : '대기';
+  return `${mode}/${status}`;
+}
+
 export function buildImpactItems(worldState: WorldStatePayload): ImpactItem[] {
   const tags = tagText(worldState);
   const infrastructure = worldState.world.infrastructure_status ?? '';
@@ -26,7 +63,8 @@ export function buildImpactItems(worldState: WorldStatePayload): ImpactItem[] {
   const taxi = worldState.vehicles.find((vehicle) => vehicle.id === 'v01');
   const minji = worldState.citizens.find((citizen) => citizen.id === 'c01' || citizen.name === '민지');
   const minsu = worldState.citizens.find((citizen) => citizen.id === 'c02' || citizen.name === '민수');
-  const cityAiActions = worldState.city_ai.actions.map((action) => action.type).join(', ');
+  const cityAiActions = worldState.city_ai.actions.map((action) => cityAiActionLabel(action.type)).join(' → ');
+  const scenario = worldState.scenario;
 
   return [
     {
@@ -63,9 +101,17 @@ export function buildImpactItems(worldState: WorldStatePayload): ImpactItem[] {
         activeEvent.includes('relationship')
     },
     {
+      key: 'scenario',
+      label: 'SCENARIO',
+      detail: scenario
+        ? `${scenario.status} · ${scenario.steps.filter((step) => step.status === 'completed').length}/${scenario.steps.length} 단계`
+        : '복합 상황 대기',
+      active: scenario?.status === 'running' || scenario?.status === 'completed'
+    },
+    {
       key: 'city-ai',
       label: 'CITY AI',
-      detail: `${worldState.city_ai.mode}/${worldState.city_ai.status} · ${cityAiActions || worldState.city_ai.summary}`,
+      detail: `${cityAiStatusLabel(worldState)} · ${cityAiActions || worldState.city_ai.summary}`,
       active: worldState.city_ai.mode !== 'disabled' && worldState.city_ai.status === 'applied'
     },
     {
@@ -107,9 +153,8 @@ export function SceneImpactPanel({ worldState }: SceneImpactPanelProps) {
         ))}
       </div>
       <small className="impactLearning">
-        AI 학습 루프: {learning.policy_version} · 경험 {learning.experience_count} · taxi{' '}
-        {Math.round(learning.taxi_success_rate * 100)}% · 도시 AI {worldState.city_ai.mode}/
-        {worldState.city_ai.status}
+        AI 학습 루프: 누적 이벤트 {learning.experience_count} · 적응 {learning.adaptation_epoch} · 도시 AI{' '}
+        {cityAiStatusLabel(worldState)}
       </small>
     </article>
   );

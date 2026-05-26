@@ -29,8 +29,27 @@ def test_generated_typescript_contract_exists() -> None:
     assert "export interface CityAiAction" in text
     assert "export interface CityAiPlan" in text
     assert "export interface CityAiSnapshot" in text
+    assert "export interface ScenarioStep" in text
+    assert "export interface ScenarioDirective" in text
+    assert "export type TaskActionType" in text
+    assert "export interface TaskCondition" in text
+    assert "export interface TaskNode" in text
+    assert "export interface TaskEdge" in text
+    assert "export interface TaskGraph" in text
+    assert "export interface TaskGraphPlan" in text
+    assert "export interface TaskGraphExecutionSnapshot" in text
     assert "traffic_ai: TrafficAiSnapshot" in text
     assert "traffic_forecast_ai: TrafficForecastAiSnapshot" in text
     assert "learning: LearningSnapshot" in text
     assert "city_ai: CityAiSnapshot" in text
+    assert "scenario?: ScenarioDirective | null" in text
+    assert "task_graph?: TaskGraphExecutionSnapshot | null" in text
     assert "display_tags: string[]" in text
+    assert "policy_bias: PolicyBiasSnapshot" in text
+    assert "trajectory_events: TrajectoryEvent[]" in text
+    assert "replans: ReplanRecord[]" in text
+    assert "entity_brains: EntityBrainState[]" in text
+    assert "export interface EvolutionSnapshot" in text
+    assert "export interface ReplanRecord" in text
+    assert "export interface EntityGoal" in text
+    assert "export interface EntityBrainState" in text

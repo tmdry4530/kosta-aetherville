@@ -255,7 +255,61 @@ export function createFallbackWorldState(tick = 0): WorldStatePayload {
       citizen_memory_count: Math.floor(tick / 30),
       weather_bias: Math.min(1, Math.floor(tick / 90) * 0.08),
       last_updated_tick: tick,
-      insights: ['Replay fallback에서도 학습 패널 형태를 유지합니다.']
+      insights: ['Replay fallback에서도 학습 패널 형태를 유지합니다.'],
+      trajectory_events: [
+        {
+          id: `replay_traj_${tick}`,
+          tick,
+          event_kind: 'scenario_step_started',
+          entity_id: 'c02',
+          action: 'taxi_drive_to_actor',
+          summary: 'Replay trajectory: 민수 택시 이동과 드론 이동을 causal chain에 표시합니다.'
+        }
+      ],
+      outcome_scores: [
+        {
+          id: `replay_outcome_${tick}`,
+          task_id: 'replay_scenario',
+          success: true,
+          duration_ticks: 180,
+          replan_count: 1,
+          score: 0.84,
+          reason: 'Replay fallback scenario completed with visible observability.'
+        }
+      ],
+      signals: [
+        {
+          id: `replay_signal_${tick}`,
+          tick,
+          kind: 'fallback_path',
+          value: 1,
+          entity_id: 'v01',
+          description: 'Replay fallback path keeps demo explainability when live backend is absent.'
+        }
+      ],
+      policy_bias: {
+        taxi_caution: 0.18,
+        walking_bias: 0.12,
+        traffic_caution: Math.min(1, Math.floor(tick / 45) * 0.04),
+        rain_delay_expectation: Math.min(1, Math.floor(tick / 90) * 0.08),
+        drone_caution: 0.1,
+        safer_timeout_bias: 0.16
+      },
+      evolution: {
+        version: `evolution-v${Math.floor(tick / 135)}`,
+        storage: 'memory',
+        persistence_path: null,
+        scenario_success_count: Math.floor(tick / 180),
+        scenario_failure_count: 0,
+        replan_count: tick > 120 ? 1 : 0,
+        fallback_path_usage: tick > 120 ? 1 : 0,
+        taxi_pickup_success_rate: Math.min(0.92, 0.5 + Math.floor(tick / 60) * 0.03),
+        weather_delay_impact: Math.min(1, Math.floor(tick / 90) * 0.08),
+        traffic_delay_impact: Math.min(1, Math.floor(tick / 45) * 0.04),
+        citizen_meeting_success_count: Math.floor(tick / 220),
+        repeated_actor_memory_count: Math.floor(tick / 30),
+        last_signal: 'Replay mode shows deterministic evolution sample; model weights are not self-trained.'
+      }
     },
     city_ai: {
       mode: 'rules',
@@ -280,6 +334,165 @@ export function createFallbackWorldState(tick = 0): WorldStatePayload {
         }
       ],
       reason: 'replay fallback city planner'
-    }
+    },
+    scenario: tick > 90 ? {
+      id: `replay_scenario_${Math.floor(tick / 180)}`,
+      raw_text: 'Replay fallback 복합 상황',
+      title: 'Replay 연쇄 상황',
+      status: tick % 360 > 300 ? 'completed' : 'running',
+      created_tick: Math.max(0, tick - (tick % 180)),
+      updated_tick: tick,
+      current_step_id: tick % 180 < 80 ? 'replay_drone' : 'replay_taxi',
+      actors: ['c01', 'c02', 'c03'],
+      summary: 'Replay fallback에서도 상황 디렉터 패널과 HUD를 유지합니다.',
+      steps: [
+        {
+          id: 'replay_drone',
+          type: 'drone_move_to_actor',
+          status: tick % 180 < 80 ? 'running' : 'completed',
+          actor_id: null,
+          target_actor_id: 'c03',
+          target_actor_ids: [],
+          vehicle_id: null,
+          drone_id: 'd01',
+          depends_on: [],
+          started_tick: Math.max(0, tick - (tick % 180)),
+          completed_tick: tick % 180 < 80 ? null : tick - 20,
+          visible_label: '드론 → 서연 이동',
+          evidence: tick % 180 < 80 ? null : 'replay drone arrived',
+          metadata: { task_node_id: 'replay_drone', timeout_ticks: 360 }
+        },
+        {
+          id: 'replay_taxi',
+          type: 'taxi_drive_to_actor',
+          status: tick % 180 < 80 ? 'pending' : 'running',
+          actor_id: 'c02',
+          target_actor_id: 'c01',
+          target_actor_ids: [],
+          vehicle_id: 'v01',
+          drone_id: null,
+          depends_on: ['replay_drone'],
+          started_tick: tick % 180 < 80 ? null : tick - 10,
+          completed_tick: null,
+          visible_label: '택시가 민수를 민지에게 이동',
+          evidence: null,
+          metadata: { task_node_id: 'replay_taxi', timeout_ticks: 360 }
+        }
+      ]
+    } : null,
+    task_graph: {
+      graph_id: 'replay_graph',
+      plan_id: 'replay_plan',
+      status: tick % 360 > 300 ? 'completed' : 'running',
+      current_node_id: tick % 180 < 80 ? 'replay_drone' : 'replay_taxi',
+      nodes: [
+        {
+          id: 'replay_drone',
+          action_type: 'drone_move_to_actor',
+          status: tick % 180 < 80 ? 'running' : 'completed',
+          actor_id: null,
+          actor_selector: null,
+          target_actor_id: 'c03',
+          target_actor_ids: [],
+          target_entity_id: 'd01',
+          target_selector: null,
+          vehicle_id: null,
+          drone_id: 'd01',
+          location: null,
+          depends_on: [],
+          success_condition: { kind: 'distance_less_than', description: '드론이 서연 근처 도착', entity_id: 'd01', target_id: 'c03', threshold: 0.55, timeout_ticks: 360, metadata: {} },
+          failure_condition: { kind: 'manual_review', description: '드론 지연 시 재계획', entity_id: 'd01', target_id: 'c03', threshold: null, timeout_ticks: 360, metadata: {} },
+          timeout_ticks: 360,
+          retry_limit: 1,
+          reason: 'Replay drone demonstrates visible autonomous delivery intent.',
+          visible_label: '드론 → 서연 이동',
+          metadata: {}
+        },
+        {
+          id: 'replay_taxi',
+          action_type: 'taxi_drive_to_actor',
+          status: tick % 180 < 80 ? 'pending' : 'running',
+          actor_id: 'c02',
+          actor_selector: null,
+          target_actor_id: 'c01',
+          target_actor_ids: [],
+          target_entity_id: 'v01',
+          target_selector: null,
+          vehicle_id: 'v01',
+          drone_id: null,
+          location: null,
+          depends_on: ['replay_drone'],
+          success_condition: { kind: 'distance_less_than', description: '민수가 민지 근처 도착', entity_id: 'c02', target_id: 'c01', threshold: 0.55, timeout_ticks: 360, metadata: {} },
+          failure_condition: { kind: 'manual_review', description: '택시 지연 시 fallback', entity_id: 'v01', target_id: 'c01', threshold: null, timeout_ticks: 360, metadata: {} },
+          timeout_ticks: 360,
+          retry_limit: 1,
+          reason: 'Replay taxi shows pickup/dropoff intent with fallback-safe status.',
+          visible_label: '택시가 민수를 민지에게 이동',
+          metadata: {}
+        }
+      ],
+      completed_count: tick % 180 < 80 ? 0 : 1,
+      total_count: 2,
+      assumptions: ['Replay fallback uses deterministic causal chain.'],
+      rejection_reason: null,
+      updated_tick: tick
+    },
+    entity_brains: [
+      {
+        entity_id: 'c02',
+        entity_type: 'citizen',
+        current_goal: { id: 'replay_taxi', title: '민수가 택시로 민지에게 이동', target_id: 'c01', source: 'task_graph' },
+        next_action: 'taxi_drive_to_actor',
+        reason: 'TaskGraph가 민수의 이동 목표와 택시 의존성을 설명합니다.',
+        source: 'task_graph',
+        progress: { progress_pct: tick % 180 < 80 ? 0.18 : 0.58, current_step_id: 'replay_taxi', eta_ticks: 120 },
+        constraints: [{ kind: 'dependency', description: '드론 단계 이후 실행', severity: 'info' }],
+        blocker: null,
+        status: tick % 180 < 80 ? 'waiting' : 'moving',
+        blocked_reason: null,
+        updated_tick: tick
+      },
+      {
+        entity_id: 'v01',
+        entity_type: 'taxi',
+        current_goal: { id: 'replay_taxi_route', title: '택시 pickup/dropoff route', target_id: 'c02', source: 'god_mode' },
+        next_action: 'follow_route_or_dispatch',
+        reason: '택시는 시민 호출, 교통, YOLO hazard를 반영해 이동합니다.',
+        source: 'god_mode',
+        progress: { progress_pct: 0.62, current_step_id: 'replay_taxi', eta_ticks: 90 },
+        constraints: [{ kind: 'traffic', description: 'replay traffic pressure visible', severity: 'info' }],
+        blocker: null,
+        status: 'moving',
+        blocked_reason: null,
+        updated_tick: tick
+      },
+      {
+        entity_id: 'd01',
+        entity_type: 'drone',
+        current_goal: { id: 'replay_drone', title: '드론 → 서연 이동', target_id: 'c03', source: 'task_graph' },
+        next_action: 'drone_move_to_actor',
+        reason: '드론 이동과 목적지를 entity brain으로 노출합니다.',
+        source: 'task_graph',
+        progress: { progress_pct: 0.72, current_step_id: 'replay_drone', eta_ticks: 60 },
+        constraints: [{ kind: 'battery', description: 'battery 94%', severity: 'info' }],
+        blocker: null,
+        status: 'moving',
+        blocked_reason: null,
+        updated_tick: tick
+      }
+    ],
+    replans: tick > 120 ? [
+      {
+        id: `replay_replan_${tick}`,
+        tick,
+        task_node_id: 'replay_taxi',
+        entity_id: 'v01',
+        blocker_type: 'traffic_delay',
+        reason: 'Replay traffic delay selected a bounded fallback route.',
+        attempt: 1,
+        fallback_action: 'taxi_to_walking_safe_arrival',
+        status: 'recovered'
+      }
+    ] : []
   };
 }

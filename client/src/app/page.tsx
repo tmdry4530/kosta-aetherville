@@ -24,8 +24,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <p className="eyebrow">Project Aetherville · Live City Shell</p>
         <h1>RunPod 월드 상태를 렌더링하는 네온 도시 관제실</h1>
         <p className="lede">
-          이 클라이언트는 Next.js App Router와 React Three Fiber 기반으로 동작하며,
-          기본 상태에서는 mock/replay 친화적인 placeholder city를 렌더링합니다.
+          vLLM이 해석한 God Mode 명령, 시민 기억, 택시·교통 상태, RunPod GPU 추론 증거를
+          하나의 실시간 3D 도시 장면으로 보여줍니다.
         </p>
         <nav className="demoNav" aria-label="Demo fallback routes">
           <Link href="/replay">Replay fallback 열기</Link>

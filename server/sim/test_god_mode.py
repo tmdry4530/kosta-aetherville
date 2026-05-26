@@ -212,6 +212,61 @@ def test_named_taxi_meeting_moves_before_relationship_activation() -> None:
     assert any(event.metadata.get("via") == "taxi_arrival" for event in engine.timeline)
 
 
+def test_complex_scenario_directive_executes_visible_actor_chain() -> None:
+    engine = SimulationEngine()
+    engine.running = True
+
+    response = engine.execute_god_command(
+        make_command(
+            "민수가 하린이를 만난 뒤 택시를 불러 민지에게 가고, "
+            "드론은 서연에게 이동한 뒤 서연은 민지와 민수를 만나러 간다"
+        )
+    )
+    initial_state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+
+    assert response.scenario is not None
+    assert response.event.kind == "scenario_directive_created"
+    assert "scenario_directive" in response.ai_actions
+    assert [step.type for step in response.scenario.steps] == [
+        "move_actor_to_actor",
+        "meet",
+        "call_taxi",
+        "taxi_drive_to_actor",
+        "drone_move_to_actor",
+        "move_actor_to_group",
+    ]
+    assert initial_state.scenario is not None
+    assert initial_state.scenario.status == "running"
+
+    observed_running_steps: set[str] = set()
+    drone_positions = []
+    taxi_positions = []
+    seoyeon_positions = []
+    for _ in range(700):
+        state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+        if state.scenario is not None:
+            observed_running_steps.update(
+                step.id for step in state.scenario.steps if step.status == "running"
+            )
+        drone_positions.append(tuple(state.drones[0].pos))
+        taxi_positions.append(tuple(state.vehicles[0].pos))
+        seoyeon = next(citizen for citizen in state.citizens if citizen.id == "c03")
+        seoyeon_positions.append(tuple(seoyeon.pos))
+        engine.step()
+
+    final_state = WorldStatePayload.model_validate(engine.snapshot().model_dump())
+    assert final_state.scenario is not None
+    assert final_state.scenario.status == "completed"
+    assert all(step.status == "completed" for step in final_state.scenario.steps)
+    assert {"c02_to_c05", "taxi_drive_c02_to_c01", "drone_to_c03", "c03_to_group"}.issubset(
+        observed_running_steps
+    )
+    assert len(set(drone_positions[:140])) > 10
+    assert len(set(taxi_positions[140:430])) > 10
+    assert len(set(seoyeon_positions[360:520])) > 8
+    assert any(event.kind == "scenario_completed" for event in engine.timeline)
+
+
 class FakeCityPlanner:
     source = "vllm"
 

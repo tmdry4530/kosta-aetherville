@@ -149,6 +149,16 @@ python3 scripts/city_ai_smoke.py \
 
 Expected marker when enabled: `city_ai.mode="vllm"`, `city_ai.status="applied"`, a non-empty `city_ai.actions[]` list, `city_ai_plan` in `/api/v1/timeline`, and either observed actor movement or a visible execution marker such as `AI계획`, taxi dispatch, traffic surge, or weather change.
 
+Scenario Director smoke for complex audience stories:
+
+```bash
+python3 scripts/scenario_directive_smoke.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --wait-seconds 45
+```
+
+Expected marker: `GodCommandResponse.scenario` exists, required steps include citizen movement, meeting, taxi drive, drone movement, and group rendezvous, and at least one movement step visibly advances in world state.
+
 
 ### Voice/STT smokes
 
@@ -300,6 +310,9 @@ python3 scripts/browser_visual_smoke.py \
 python3 scripts/browser_impact_smoke.py \
   --orchestrator-url "$RUNPOD_PUBLIC_ORCHESTRATOR_URL" \
   --client-url http://127.0.0.1:3000
+python3 scripts/scenario_directive_smoke.py \
+  --orchestrator-url "$RUNPOD_PUBLIC_ORCHESTRATOR_URL" \
+  --wait-seconds 45
 ```
 
 The live route is dynamically server-rendered, so `next start` reads the selected endpoint values at process start and passes the runtime orchestrator URL into browser panels. The visual smoke writes screenshots to ignored `dogfood-output/visual-smoke/` and fails if the rendered PNG is the wrong viewport, too small, visually low-diversity, or missing the DOM demo markers.
@@ -348,8 +361,19 @@ Start the local client against the tunnel:
 NEXT_PUBLIC_ORCHESTRATOR_URL=http://127.0.0.1:18080 \
 NEXT_PUBLIC_SOCKET_URL=http://127.0.0.1:18080 \
 NEXT_PUBLIC_SOCKET_TRANSPORTS=polling \
-pnpm dev
+pnpm --filter @aetherville/client exec next dev -H 0.0.0.0 -p 3000
 ```
+
+Current verified remote demo state (2026-05-26):
+
+- The local browser route `http://127.0.0.1:3000/` was warmed against the
+  RunPod tunnel endpoint `http://127.0.0.1:18080`.
+- The Scenario Director backend changes were synced to RunPod by targeted
+  tar-over-SSH sync, then only the orchestrator direct process was restarted.
+- Existing real vLLM, real YOLO vision on `18001`, faster-whisper STT, and
+  memory Redis fallback were preserved.
+- WSL/Next dev cold start can take several minutes after clearing `.next`.
+  Warm `/` and `/replay` before presenting, then keep the dev server alive.
 
 
 Production-style browser smoke after `next build && next start`:
@@ -381,6 +405,9 @@ python3 scripts/browser_visual_smoke.py \
 python3 scripts/browser_impact_smoke.py \
   --orchestrator-url http://127.0.0.1:18080 \
   --client-url http://127.0.0.1:3000
+python3 scripts/scenario_directive_smoke.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --wait-seconds 45
 ```
 
 The live route is dynamically server-rendered, so `next start` reads the selected tunnel values at process start and passes the runtime orchestrator URL into browser panels. The visual smoke writes screenshots to ignored `dogfood-output/visual-smoke/` and verifies the 1920x1080 city render is not blank or visually collapsed.
@@ -395,7 +422,7 @@ python3 scripts/demo_rehearsal.py \
   --expected-client-endpoint http://127.0.0.1:18080
 ```
 
-This one command verifies orchestrator dependencies, 4090 traffic policy and LSTM evidence, real vehicle camera mode, learning status, vLLM multi-action God Mode effects, live/replay browser smoke, and the `SCENE DIRECTOR · LIVE IMPACT` / `Live impact board` markers.
+This one command verifies orchestrator dependencies, 4090 traffic policy and LSTM evidence, real vehicle camera mode, learning status, vLLM multi-action God Mode effects, live/replay browser smoke, and the `SCENE DIRECTOR · LIVE IMPACT` / `Live impact board` markers. Run `scripts/scenario_directive_smoke.py` in addition when the demo includes the complex audience-story Scenario Director path.
 It also verifies the browser contains the `RunPod AI proof` / `4090 실행 증거` panel. By default it runs the screenshot-based visual smoke and before/after impact smoke. Use `--skip-visual-smoke` or `--skip-impact-smoke` only when Chromium screenshots are impossible in the rehearsal environment, and record that as a skipped visual check.
 
 Open:

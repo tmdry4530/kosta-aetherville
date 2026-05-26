@@ -997,3 +997,71 @@ Verification update — 2026-05-25T18:04:10+09:00:
   - `git diff --check` — pass.
   - `scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18080` — pass.
 - Operational note: vLLM can plan and direct city actions, but this is not model weight self-training. Persistent improvement still comes from the existing learning/memory state unless a separate approved training job is run.
+
+## M11-002 — Scenario Director complex story execution — 2026-05-26T03:18:28+09:00
+
+- Status: complete locally on branch `feat/llm-driven-city-loop`; focused dogfood passed.
+- Added a bounded `ScenarioDirective` / `ScenarioStep` shared contract and generated TypeScript output. `WorldStatePayload.scenario` and `GodCommandResponse.scenario` now expose active/completed complex-story execution.
+- Added a deterministic scenario compiler/executor for Korean audience-story commands such as “민수가 하린을 만난 뒤 택시를 불러 민지에게 가고, 드론은 서연에게 이동한 뒤 서연은 민지와 민수를 만나러 간다.” The engine advances visible citizen movement, meeting, taxi call/drive, drone movement, and group rendezvous steps over ticks.
+- Updated citizens to support dynamic meeting points and release meetings when a participant receives a new movement/taxi directive, reducing teleport/stuck behavior.
+- Added `ScenarioDirectorPanel`, `SCENARIO RUNNING/COMPLETE` HUD labels, scenario camera focus, drone target labels, and a God Mode `연쇄 상황` macro/result display.
+- Added `scripts/scenario_directive_smoke.py`; local smoke passed against `http://127.0.0.1:18088` with required step types and visible movement progress.
+- Dogfood used `agent-browser` against `http://127.0.0.1:3000` connected to local orchestrator `http://127.0.0.1:18088`; report saved at `dogfood-output/scenario-director-dogfood/report.md`. No reproducible issues were found. Console had React DevTools info plus WebGL ReadPixels performance warnings only.
+- RunPod state touched: SSH/GPU verification passed; Docker was not run. A targeted backend/schema/script sync to the remote workspace completed using tar-over-SSH. The earlier full sync attempt was stopped because full tar sync can hang; no Docker/Compose path was attempted.
+- Verification passed: `uv run pytest` (48 passed), `uv run ruff check server packages scripts`, `uv run mypy server packages`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `python3 -m json.tool TASKS.json`, `bash -n infra/runpod/*.sh`, `git diff --check`, `python3 scripts/scenario_directive_smoke.py --orchestrator-url http://127.0.0.1:18088 --wait-seconds 12`, and `python3 scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18088`.
+- Verification caveat: `pnpm --filter @aetherville/client build` was attempted but manually terminated after the known WSL/Next production build hang at “Creating an optimized production build ...”. Dev server was restarted cleanly and browser smoke/dogfood passed.
+- Truthfulness: this makes complex natural-language situations visible and inspectable, but does not mean an LLM directly animates every frame or self-trains model weights.
+
+## M11-003 — RunPod remote demo reflection for Scenario Director — 2026-05-26T03:58:00+09:00
+
+- Status: complete against the active direct-process RunPod demo runtime.
+- Targeted tar-over-SSH sync reflected the Scenario Director/shared-schema/server/smoke-script changes into the remote workspace. Full repo sync was avoided because remote `rsync` is unavailable and full tar sync can hang.
+- Remote orchestrator was restarted only. Existing real vLLM, real YOLO vision on verified port `18001`, faster-whisper STT, traffic paths, and Redis memory fallback were preserved. Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+- Remote/tunnel health evidence: orchestrator health ok, `/api/v1/sim/status` reachable, vision `18001` health ok with real YOLO mode, and vLLM `/v1/models` reachable through the local tunnel.
+- Scenario smoke passed against `http://127.0.0.1:18080`: six-step story compiled/executed with `move_actor_to_actor`, `meet`, `call_taxi`, `taxi_drive_to_actor`, `drone_move_to_actor`, and `move_actor_to_group`; movement states were observed.
+- Local Next dev was restarted on `0.0.0.0:3000` with `NEXT_PUBLIC_ORCHESTRATOR_URL=http://127.0.0.1:18080` and `NEXT_PUBLIC_SOCKET_URL=http://127.0.0.1:18080`. First compile was slow on WSL, but live route warmed successfully and rendered the RunPod tunnel endpoint.
+- Browser smoke passed for live route with expected endpoint `http://127.0.0.1:18080`; replay route marker curl passed after compile warmup.
+- Truthfulness: this is now a RunPod-backed live demo of bounded ScenarioDirective execution plus vLLM high-level city planning. It is not direct frame-by-frame LLM animation or autonomous model-weight self-training.
+
+## Autonomous City Evolution goal split — 2026-05-26
+
+- Status: planning complete; implementation was not reopened in this step.
+- Added a master autonomous-city evolution goal and six dependent phase goals under `.codex/goals/`.
+- The goal set defines “완전히 진화한 AI 도시” as a measurable bounded runtime: TaskGraph planning, inspectable entity brains, replanning/resilience, persistent learning/evolution state, causal AI UI observability, and final dogfood audit.
+- Truthfulness guard: the plan explicitly forbids claiming model-weight self-training or unbounded AGI unless a separate verified training/checkpoint promotion path exists.
+- Docker policy remains unchanged: direct-process runtime only for the verified RunPod path; no Docker/Compose/DinD/blind retries.
+
+## M12-001 — TaskGraph Planner — 2026-05-26T04:50:58+09:00
+
+- Status: complete locally for Goal 12 on branch `feat/llm-driven-city-loop`.
+- Added shared TaskGraph contracts: `TaskGraph`, `TaskNode`, `TaskEdge`, `TaskCondition`, `TaskGraphPlan`, and `TaskGraphExecutionSnapshot`, plus generated TypeScript output.
+- Implemented deterministic Korean TaskGraph compilation in `server/src/aetherville_server/scenario.py` for bounded actions: citizen movement, location movement, meetings, taxi call/pickup/drive, drone move/deliver, group rendezvous, rain/weather, traffic surge, remember, wait, and no-op.
+- Integrated TaskGraph into `SimulationEngine.execute_god_command`: hard unknown/circular commands reject safely with `task_graph_rejected`; accepted complex graphs drive ScenarioDirective execution; simple commands keep old effects while exposing a completed graph.
+- `WorldStatePayload.task_graph` now streams accepted/running/completed/rejected graph execution snapshots, synced to ScenarioDirective step status when applicable.
+- `ScenarioDirectorPanel` now shows TaskGraph status, current node, assumptions, and rejection reason in addition to the scenario step timeline.
+- Added Goal 12 tests for 10 Korean fixture families and runtime response/snapshot exposure.
+- Verification passed: `uv run pytest packages/shared-schemas/tests server/orchestrator server/sim` — 56 passed; `uv run ruff check server packages scripts` — pass; `uv run mypy server packages` — pass; `pnpm typecheck` — pass; `pnpm test` — 3 passed; `python3 -m json.tool TASKS.json` — pass; `git diff --check` — pass.
+- 5090 portability note added at `docs/rtx-5090-taskgraph-portability.md`; local backup created at `.omx/backups/aetherville-goal12-taskgraph-20260526-045058.tar.gz` with checksum `.omx/backups/aetherville-goal12-taskgraph-20260526-045058.tar.gz.sha256`. Secrets/env files are excluded.
+- RunPod state: not touched in this turn. Docker/Compose/DinD were not run.
+
+
+## M13–M17 — Autonomous City Evolution runtime — 2026-05-26T09:56:20+09:00
+
+- Status: complete locally on branch `feat/llm-driven-city-loop`; final broad verification/backup/push follows.
+- Goal 13: Added inspectable entity brains to shared schemas and `WorldStatePayload.entity_brains`. Citizens, taxi/vehicles, drones, and traffic lights now expose goal, next action, reason, source, constraints, progress, blocker/fallback, and updated tick. Replay fallback includes representative brain states.
+- Goal 14: Added bounded deterministic replanner records and events. Synthetic tests cover actor/vehicle stuck, unreachable target, taxi unavailable, pickup timeout, group timeout, drone delay, low battery, traffic delay, and dependency deadlock. Replanner emits `task_blocked`, `task_replanned`, `task_recovered` and cannot loop indefinitely.
+- Goal 15: Extended learning with trajectory events, outcome scores, learning signals, policy bias, and evolution snapshot. Persistence remains JSON-backed deterministic adaptation with `/api/v1/learning/reset`; no model-weight self-training is claimed.
+- Goal 16: Added `AI operations` panel with `Entity intent`, `Replan feed`, and `Causal event chain`; strengthened `LearningPanel` with `Evolution state` and truthful “model-weight self-training: not verified” copy.
+- Goal 17: Added `docs/autonomous-city-evolution-audit.md` and `scripts/autonomous_city_dogfood_smoke.py`; ten dogfood scenarios passed against a current local direct-process orchestrator on `18081`.
+- Verification evidence so far: schema/server sim tests passed (61), ruff passed, mypy passed, pnpm lint/typecheck/test passed, replanner smoke passed, learning/evolution smoke passed, dogfood smoke passed, JSON/diff checks passed.
+- RunPod state: current tunnel `http://127.0.0.1:18080` health is reachable; current-branch Goal 13–17 runtime was verified locally on `18081` because `18080` is occupied by the SSH tunnel. Redeploy remote direct-process services before claiming remote Goal 13–17 evidence.
+- Docker/Compose/DinD were not run.
+
+## M13–M17 final verification, backup, and push readiness — 2026-05-26T10:19:15+09:00
+
+- Status: complete locally and ready to push on branch `feat/llm-driven-city-loop`.
+- Final production client build passed: `pnpm --filter @aetherville/client build`.
+- Browser live/replay smoke, visual smoke, and `pnpm test:e2e` passed after the AI operations/evolution UI changes.
+- Local 5090 portability backup created at `.omx/backups/aetherville-goals13-17-autonomous-city-20260526-101816.tar.gz` with checksum `a628885b3b6729114069a6d8c5040584147f5aa100d57abf9e02a79fc03cbe1c`; backup path scan passed for secret/env/key filenames, with only the tracked env example file whitelisted.
+- Current RunPod tunnel health remains reachable, but Goal 13–17 current-branch code was not redeployed remotely in this final local pass; sync/restart RunPod before presenting remote entity-brain/replan/evolution evidence.
+- Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not run.

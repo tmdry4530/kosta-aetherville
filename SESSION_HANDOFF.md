@@ -679,3 +679,246 @@ Truthfulness constraints:
 - Do not say vLLM is directly animating every frame; Python simulation executors apply the model's high-level actions.
 - Do not say the model is self-training just because the server stays on; separate approved training jobs are still required for new model weights.
 - Keep using direct-process runtime only. Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on the current pod.
+
+## Scenario Director handoff — 2026-05-26T03:18:28+09:00
+
+Current branch: `feat/llm-driven-city-loop`.
+
+What changed:
+
+- Shared schemas now include `ScenarioStep` and `ScenarioDirective`.
+- `GodCommandResponse.scenario` returns the compiled scenario immediately for complex God Mode commands.
+- `WorldStatePayload.scenario` streams current step status to the browser.
+- `SimulationEngine` executes bounded scenario steps for citizen movement, meeting, taxi call/drive, drone movement, and group rendezvous.
+- Browser UI includes `Scenario Director` / `상황 실행 타임라인`, `연쇄 상황` macro, scenario HUD labels, and scenario camera focus.
+- `scripts/scenario_directive_smoke.py` verifies the complex-story path without Docker.
+
+Current local demo runtime:
+
+- Local orchestrator: `http://127.0.0.1:18088` running with memory/cache/rules direct process for dogfood.
+- Local browser: `http://127.0.0.1:3000` running via Next dev and connected to `18088`.
+- Focused dogfood artifacts: `dogfood-output/scenario-director-dogfood/` (ignored; do not commit).
+
+Quick recheck:
+
+```bash
+python3 scripts/scenario_directive_smoke.py \
+  --orchestrator-url http://127.0.0.1:18088 \
+  --wait-seconds 12
+
+python3 scripts/browser_demo_smoke.py \
+  --mode live \
+  --url http://127.0.0.1:3000/ \
+  --expected-endpoint http://127.0.0.1:18088
+```
+
+RunPod note:
+
+- SSH/GPU verification passed; GPU remains RTX 4090.
+- Docker/Compose/DinD were not used.
+- Targeted backend/schema/script sync completed via tar-over-SSH. Full repo sync can hang and should be avoided unless necessary.
+- If deploying this to the remote orchestrator process, restart only the orchestrator direct process and preserve existing vLLM/vision/STT processes; do not run Docker.
+
+Presenter truthfulness:
+
+- Say: “복합 자연어 상황은 bounded ScenarioDirective 단계로 실행되고, Python simulation이 각 단계를 안전하게 적용한다.”
+- Do not say: “LLM이 임의 좌표를 직접 조작한다” or “서버를 켜두면 모델 가중치가 스스로 학습된다.”
+
+## RunPod remote Scenario Director demo handoff — 2026-05-26T03:58:00+09:00
+
+Current branch: `feat/llm-driven-city-loop`.
+
+Current verified runtime:
+
+- RunPod direct-process backend is active through the local tunnel at `http://127.0.0.1:18080`.
+- Orchestrator was restarted after targeted sync and is running with vLLM-backed God Mode/City AI, real vision on `18001`, faster-whisper STT, and memory Redis fallback.
+- Local browser client is running at `http://127.0.0.1:3000` and is configured to render `http://127.0.0.1:18080` for both REST and Socket.IO polling.
+- The Scenario Director complex-story smoke passed through the tunnel. Browser smoke for the live route passed; `/replay` marker curl passed after Next dev warmup.
+- WSL/Next dev cold start is slow: after clearing `.next`, startup plus first route compile can take several minutes. Keep the server warm before presenting.
+
+Quick recheck commands:
+
+```bash
+curl -fsS http://127.0.0.1:18080/api/v1/health | python3 -m json.tool
+curl -fsS http://127.0.0.1:18001/health | python3 -m json.tool
+python3 scripts/scenario_directive_smoke.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --wait-seconds 45
+python3 scripts/browser_demo_smoke.py \
+  --mode live \
+  --url http://127.0.0.1:3000/ \
+  --expected-endpoint http://127.0.0.1:18080
+```
+
+Client start command for a fresh local browser demo:
+
+```bash
+NEXT_PUBLIC_ORCHESTRATOR_URL=http://127.0.0.1:18080 \
+NEXT_PUBLIC_SOCKET_URL=http://127.0.0.1:18080 \
+NEXT_PUBLIC_SOCKET_TRANSPORTS=polling \
+pnpm --filter @aetherville/client exec next dev -H 0.0.0.0 -p 3000
+```
+
+Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries on this pod. Do not claim that the model self-trains by staying on; persistent adaptation is JSON-state learning/memory unless a separate approved training job is run.
+
+## Autonomous City Evolution goal handoff — 2026-05-26
+
+Current branch: `feat/llm-driven-city-loop`.
+
+Goal planning added, but implementation is not started:
+
+1. `.codex/goals/MASTER_AETHERVILLE_AUTONOMOUS_CITY_EVOLUTION.md`
+2. `.codex/goals/12-taskgraph-planner.md`
+3. `.codex/goals/13-entity-brain-runtime.md`
+4. `.codex/goals/14-replanner-resilience-runtime.md`
+5. `.codex/goals/15-memory-learning-evolution-loop.md`
+6. `.codex/goals/16-causal-ai-ui-observability.md`
+7. `.codex/goals/17-autonomous-city-dogfood-audit.md`
+
+Next recommended action when implementation is explicitly requested:
+
+```bash
+# read the master first, then start Goal 12 only
+sed -n '1,220p' .codex/goals/MASTER_AETHERVILLE_AUTONOMOUS_CITY_EVOLUTION.md
+sed -n '1,220p' .codex/goals/12-taskgraph-planner.md
+```
+
+Operational constraints to preserve:
+
+- Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries.
+- Do not print or commit RunPod secrets, `.env.runpod`, SSH key paths, tokens, or generated runtime artifacts.
+- Keep replay fallback working while adding live autonomy features.
+- Do not claim self-training model weights; the planned learning loop is persistent experience/policy-bias adaptation unless separate training artifacts are implemented and verified.
+
+## Goal 12 TaskGraph Planner handoff — 2026-05-26T04:50:58+09:00
+
+Current branch: `feat/llm-driven-city-loop`.
+
+Goal 12 is complete locally and ready to carry to a future 5090 direct-process machine.
+
+Key files:
+
+- `.codex/goals/12-taskgraph-planner.md`
+- `packages/shared-schemas/src/python/aetherville_schemas/models.py`
+- `packages/shared-schemas/src/typescript/index.ts`
+- `server/src/aetherville_server/scenario.py`
+- `server/src/aetherville_server/sim/engine.py`
+- `server/sim/test_taskgraph_planner.py`
+- `client/src/ui/ScenarioDirectorPanel.tsx`
+- `docs/rtx-5090-taskgraph-portability.md`
+
+What is now true:
+
+- Ten Korean scenario fixture families compile to `TaskGraphPlan` objects or explicit rejected/clarification-needed graphs.
+- Unknown actors and circular/contradictory ordering are rejected without crashing runtime.
+- Ambiguous prompts choose safe defaults and record graph assumptions.
+- Existing Scenario Director complex commands execute through graph-backed bounded steps.
+- God Mode responses expose `task_graph` or `task_graph_rejection_reason`.
+- World state exposes `task_graph` execution snapshots.
+
+Verified commands:
+
+```bash
+uv run pytest packages/shared-schemas/tests server/orchestrator server/sim  # 56 passed
+uv run ruff check server packages scripts                                  # pass
+uv run mypy server packages                                                # pass
+pnpm typecheck                                                             # pass
+pnpm test                                                                  # 3 passed
+python3 -m json.tool TASKS.json                                            # pass
+git diff --check                                                           # pass
+```
+
+5090 backup:
+
+```text
+.omx/backups/aetherville-goal12-taskgraph-20260526-045058.tar.gz
+.omx/backups/aetherville-goal12-taskgraph-20260526-045058.tar.gz.sha256
+```
+
+Restore notes are in `docs/rtx-5090-taskgraph-portability.md`. The backup excludes `.env`, `.env.*`, `infra/runpod/.env.runpod`, `.git/`, `.omx/`, dependency folders, caches, and dogfood output. Recreate credentials on the 5090 machine from the secure source only.
+
+RunPod state:
+
+- Not touched for this Goal 12 local implementation turn.
+- Preserve direct-process runtime only.
+- Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries.
+
+Next recommended goal:
+
+```text
+.codex/goals/13-entity-brain-runtime.md
+```
+
+
+## Goals 13–17 autonomous-city evolution handoff — 2026-05-26T09:56:20+09:00
+
+Current branch: `feat/llm-driven-city-loop`.
+
+New runtime capabilities:
+
+- `WorldStatePayload.entity_brains`: inspectable brain state for citizens, taxi/vehicles, drones, and traffic lights.
+- `WorldStatePayload.replans`: bounded replan feed with blocker reason, attempt, fallback action, and recovered status.
+- Learning/evolution state: `trajectory_events`, `outcome_scores`, `signals`, `policy_bias`, and `evolution` snapshot with JSON persistence.
+- UI: `AI operations` panel, entity intent inspector, replan feed, causal event chain, and strengthened evolution/learning panel.
+- Goal 17 audit: `docs/autonomous-city-evolution-audit.md` plus ten-scenario API dogfood smoke.
+
+Current local verification evidence:
+
+```bash
+uv run pytest packages/shared-schemas/tests server/sim -q  # 61 passed
+uv run ruff check server packages scripts                  # pass
+uv run mypy server packages                                # pass
+pnpm lint                                                  # pass
+pnpm typecheck                                             # pass
+pnpm test                                                  # 3 passed
+python3 scripts/replanner_resilience_smoke.py --orchestrator-url http://127.0.0.1:18081 --wait-seconds 25  # pass
+python3 scripts/learning_evolution_smoke.py --orchestrator-url http://127.0.0.1:18081 --repeat 2 --wait-seconds 25  # pass
+python3 scripts/autonomous_city_dogfood_smoke.py --orchestrator-url http://127.0.0.1:18081 --wait-seconds 8  # pass, 10 scenarios
+```
+
+Operational notes:
+
+- `18080` is currently an SSH tunnel to the RunPod direct-process runtime and health is reachable, but the new Goal 13–17 code was verified on local port `18081` in this turn.
+- Before a live remote demo that depends on entity brains/replans/evolution, sync/restart the RunPod orchestrator direct-process path, then rerun the new smokes against `18080`.
+- Keep wording truthful: vLLM may choose bounded plans when enabled; Python executes validated actions; learning/evolution is JSON-backed policy-bias adaptation, not model-weight self-training.
+- Do not run Docker, Docker Compose, Docker-in-Docker, or blind Docker retries.
+
+Next recommended goal file:
+
+```text
+.codex/goals/17-autonomous-city-dogfood-audit.md is complete locally; next step is final verification, backup, commit, and push.
+```
+
+## Goals 13–17 final push handoff — 2026-05-26T10:19:15+09:00
+
+Current branch: `feat/llm-driven-city-loop`.
+
+Final local verification is complete for the autonomous-city evolution slice:
+
+```bash
+uv run pytest
+uv run ruff check server packages scripts
+uv run mypy server packages
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:e2e
+pnpm --filter @aetherville/client build
+python3 scripts/replanner_resilience_smoke.py --orchestrator-url http://127.0.0.1:18081 --wait-seconds 25
+python3 scripts/learning_evolution_smoke.py --orchestrator-url http://127.0.0.1:18081 --repeat 2 --wait-seconds 25
+python3 scripts/autonomous_city_dogfood_smoke.py --orchestrator-url http://127.0.0.1:18081 --wait-seconds 8
+python3 scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18080 --timeout-seconds 45
+python3 scripts/browser_demo_smoke.py --mode replay --url http://127.0.0.1:3000/replay --timeout-seconds 45
+python3 scripts/browser_visual_smoke.py --mode both --client-url http://127.0.0.1:3000 --expected-endpoint http://127.0.0.1:18080
+```
+
+Local backup for a future 5090 machine:
+
+```text
+.omx/backups/aetherville-goals13-17-autonomous-city-20260526-101816.tar.gz
+sha256: a628885b3b6729114069a6d8c5040584147f5aa100d57abf9e02a79fc03cbe1c
+```
+
+Caveat: remote RunPod direct-process services are reachable through the existing tunnel, but this final Goal 13–17 code slice was verified locally on `18081`. Redeploy/restart the RunPod orchestrator direct-process path before claiming remote Entity Brain/Replanner/Evolution evidence.
+
+Do not run Docker/Compose/DinD. Do not claim model-weight self-training.

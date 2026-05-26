@@ -322,6 +322,12 @@ async def learning_status() -> LearningStatusResponse:
     return simulation.learning_status()
 
 
+@fastapi_app.post("/api/v1/learning/reset", response_model=LearningStatusResponse)
+async def learning_reset() -> LearningStatusResponse:
+    simulation.learning.reset()
+    return simulation.learning_status()
+
+
 @fastapi_app.post("/api/v1/sim/start", response_model=SimStatusResponse)
 async def sim_start() -> SimStatusResponse:
     status = simulation.start()

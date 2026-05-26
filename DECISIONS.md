@@ -258,3 +258,58 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - Keeping the server running accumulates experience and repeated planning context, but it still does not train new vLLM/YOLO/PPO/LSTM weights without a separate approved training job.
 - Rejected: Calling vLLM every tick or letting raw model prose mutate state directly, because that would violate latency, cost, safety, and contract constraints.
 - Revisit when: a queue-backed planning worker, persistent vector memory, or real reinforcement/fine-tuning loop is explicitly approved.
+
+## ADR-021: God Mode complex stories execute through bounded ScenarioDirective steps
+
+- Status: accepted
+- Context: Presenter commands such as “민수가 하린을 만난 뒤 택시로 민지에게 가고, 드론은 서연에게 이동한 뒤 서연은 민지와 민수를 만나러 간다” need visible multi-actor causality. The previous God Mode and City AI loops could classify or schedule high-level actions, but they did not expose a step-by-step actor chain for arbitrary audience-suggested stories.
+- Decision: Add a `ScenarioDirective` contract and deterministic scenario executor. Natural-language commands can compile into bounded steps for citizen movement, meetings, taxi calls/drives, drone movement, group rendezvous, weather, and traffic. The engine advances steps over ticks and exposes current/completed steps in `WorldStatePayload.scenario`; the browser shows a Scenario Director panel and focuses the 3D camera on the active step. vLLM may still provide command provenance through the existing God Mode interpreter, but raw model prose never mutates state directly.
+- Consequences:
+  - Complex demo stories now show visible travel, taxi, drone, and rendezvous phases instead of looking like a static loop.
+  - The audience can inspect what the system understood and which step is currently executing.
+  - The implementation remains safe and testable because all effects are constrained Python executors with shared schemas.
+  - This is not autonomous model weight self-training; persistent improvement still requires the existing learning state or a separately approved training job.
+  - Docker remains excluded from the current direct-process runtime strategy.
+- Rejected: Letting an LLM emit arbitrary coordinates or per-frame motion directly, because that would be unsafe, hard to verify, and likely unstable during a live demo.
+- Revisit when: a richer scenario-planning vLLM schema, persistent planner memory, or multi-vehicle dispatch queue is approved.
+
+## ADR-022: TaskGraph planner is the bounded contract for free-form city stories
+
+- Status: accepted
+- Context: Scenario Director made one complex story visible, but arbitrary audience prompts still needed a durable planning contract with explicit actors, dependencies, success/failure conditions, and rejection semantics. The contract must work with deterministic rules even when vLLM is unavailable, and it must not allow raw LLM prose or coordinates to mutate the simulation.
+- Decision: Add shared `TaskGraph`, `TaskNode`, `TaskEdge`, `TaskCondition`, `TaskGraphPlan`, and `TaskGraphExecutionSnapshot` schemas. Free-form Korean God Mode text first compiles into a bounded TaskGraph action vocabulary; accepted complex graphs can become ScenarioDirective executor steps, rejected graphs expose a reason, and world state streams the active graph snapshot. vLLM remains optional provenance/planning input, but Python validates and executes only bounded actions.
+- Consequences:
+  - Ten Korean fixture families now compile to valid graph plans or explicit rejection/clarification outcomes.
+  - God Mode responses expose either the compiled graph or a rejection reason; `WorldStatePayload.task_graph` exposes active/completed/rejected graph execution state.
+  - Existing simple God Mode commands keep their old effects while also returning a completed graph when a bounded graph is available.
+  - Scenario Director UI can show the TaskGraph snapshot before/alongside step execution.
+  - Docker remains excluded from the verified direct-process runtime strategy.
+- Rejected: Letting vLLM directly emit unbounded state mutations, hidden per-tick plans, or silent coordinate edits, because that would be unsafe and impossible to verify during demo.
+- Revisit when: Goal 13 entity brains and Goal 14 replanner need richer graph node ownership, blocker states, or recovery-specific edge semantics.
+
+
+## ADR-023: Entity brains and bounded replanning make autonomy inspectable
+
+- Status: accepted
+- Context: The city could execute TaskGraph/ScenarioDirective steps, but observers still saw anonymous moving geometry and could misread pauses as a frozen loop. The demo also needed bounded recovery when a taxi, actor, drone, or dependency stalls.
+- Decision: Add shared entity-brain contracts and replan records to world state. The simulation derives current goal, next action, reason, source, constraints, progress, blocker, status, and fallback from TaskGraph, City AI, God Mode, or routine state. A deterministic bounded replanner emits `task_blocked`, `task_replanned`, and `task_recovered` with max attempts and safe fallback actions.
+- Consequences:
+  - The browser can show `Entity intent`, `Replan feed`, and a causal chain without trusting hidden UI-local state.
+  - Synthetic tests can force all major demo blocker classes and prove recovery without infinite retries.
+  - This is still bounded simulation logic; it does not let vLLM emit raw coordinates or mutate state directly.
+  - Docker remains excluded from the current direct-process runtime strategy.
+- Rejected: Per-tick LLM replanning or unbounded retries, because they are too slow, costly, and unsafe for a live demo.
+- Revisit when: a validated vLLM replanning schema or real multi-vehicle dispatch queue is added.
+
+## ADR-024: Learning/evolution is JSON-backed policy-bias adaptation, not model-weight self-training
+
+- Status: accepted
+- Context: The user wanted the city to keep improving, but claiming live self-training of vLLM/YOLO/PPO/LSTM weights would be false without separate training jobs and promoted checkpoints.
+- Decision: Extend the learning loop with trajectory events, outcome scores, learning signals, policy-bias snapshots, and an evolution snapshot persisted to a deterministic JSON path. These signals influence demo-safe speed/traffic/taxi/fallback reasons and are visible in the UI. A reset endpoint exists for repeatable demos.
+- Consequences:
+  - The city can truthfully show experience accumulation, replan/fallback usage, taxi/traffic/weather signals, and policy-bias changes across restarts.
+  - The presenter must say “persistent deterministic adaptation” or “policy-bias evolution,” not “model weights self-train.”
+  - Future PPO/LSTM/vLLM fine-tuning remains an explicit opt-in training/checkpoint promotion path.
+  - Docker remains excluded from the current direct-process runtime strategy.
+- Rejected: Silent background fine-tuning or unbounded logs, because that would create cost, safety, and truthfulness risks.
+- Revisit when: an approved 5090/RunPod training workflow and checkpoint registry are implemented.

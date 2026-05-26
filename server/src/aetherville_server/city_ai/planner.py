@@ -229,6 +229,8 @@ class OpenAICompatibleCityPlanner:
             "Plan the next 10-20 seconds of the city. Do not script coordinates frame by frame. "
             "Choose 1-3 safe actions that the simulator can execute. Prefer visible movement, "
             "citizen intent, taxi tasks, traffic pressure, weather, and memory updates.\n"
+            "Write summary, label, memory, and reason in concise Korean for the live presenter UI. "
+            "Keep action type strings in the allowed English enum only.\n"
             "Allowed action types: move_citizen, call_taxi, meet, remember, traffic_surge, "
             "set_weather, no_op. Use actor_id/target_id/destination_actor_id from "
             "the provided IDs. "

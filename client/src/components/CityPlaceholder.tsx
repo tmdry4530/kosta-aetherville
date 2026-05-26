@@ -12,8 +12,8 @@ import { useConnectionStore } from '@/store/connection';
 const CITY_STAGE_SCALE = 1.08;
 const CITY_CAMERA_POSITION = [7.6, 7.15, 7.6] as [number, number, number];
 const CITY_CAMERA_FOV = 38;
-const ACTOR_SMOOTHING = 15.5;
-const ROTATION_SMOOTHING = 15.5;
+const ACTOR_SMOOTHING = 5.8;
+const ROTATION_SMOOTHING = 8.5;
 const ACTOR_SCALE = {
   citizen: 1.16,
   vehicle: 1.12,
@@ -189,11 +189,56 @@ function cityAiFocus(worldState: WorldStatePayload): Vec3 | null {
   return vehicle ? [vehicle.pos[0], 0, vehicle.pos[2]] : null;
 }
 
+function scenarioFocus(worldState: WorldStatePayload): Vec3 | null {
+  const scenario = worldState.scenario;
+  if (!scenario || scenario.status === 'idle') {
+    return null;
+  }
+  const step =
+    scenario.steps.find((candidate) => candidate.id === scenario.current_step_id) ??
+    scenario.steps.find((candidate) => candidate.status === 'running') ??
+    scenario.steps.find((candidate) => candidate.status === 'pending') ??
+    scenario.steps[scenario.steps.length - 1];
+  if (!step) {
+    return null;
+  }
+  if (step.type === 'taxi_drive_to_actor' || step.type === 'call_taxi') {
+    const vehicle = worldState.vehicles.find((candidate) => candidate.id === (step.vehicle_id ?? 'v01'));
+    if (vehicle) {
+      return [vehicle.pos[0], 0, vehicle.pos[2]];
+    }
+  }
+  if (step.type === 'drone_move_to_actor') {
+    const drone = worldState.drones.find((candidate) => candidate.id === (step.drone_id ?? 'd01'));
+    if (drone) {
+      return [drone.pos[0], 0, drone.pos[2]];
+    }
+  }
+  const actors = [
+    step.actor_id ? worldState.citizens.find((citizen) => citizen.id === step.actor_id) : null,
+    step.target_actor_id ? worldState.citizens.find((citizen) => citizen.id === step.target_actor_id) : null,
+    ...step.target_actor_ids.map((id) => worldState.citizens.find((citizen) => citizen.id === id) ?? null)
+  ].filter((actor): actor is CitizenState => Boolean(actor));
+  if (actors.length === 0) {
+    return null;
+  }
+  return [
+    actors.reduce((sum, actor) => sum + actor.pos[0], 0) / actors.length,
+    0,
+    actors.reduce((sum, actor) => sum + actor.pos[2], 0) / actors.length
+  ];
+}
+
 function sceneFocusForWorld(worldState: WorldStatePayload): Vec3 {
   const taxi = worldState.vehicles.find((vehicle) => vehicle.id === 'v01');
   const minji = worldState.citizens.find((citizen) => citizen.name === '민지' || citizen.id === 'c01');
   const minsu = worldState.citizens.find((citizen) => citizen.name === '민수' || citizen.id === 'c02');
+  const directiveFocus = scenarioFocus(worldState);
   const aiFocus = cityAiFocus(worldState);
+
+  if (directiveFocus) {
+    return directiveFocus;
+  }
 
   if (taxi && tagIncludes(taxi.display_tags, '택시 호출')) {
     if (minji && tagIncludes(taxi.display_tags, '민지에게')) {
@@ -253,6 +298,11 @@ function AnimatedActorGroup({
   scale?: number;
 }) {
   const groupRef = useRef<Group>(null);
+  // Keep the Three.js transform uncontrolled after mount. If `position`/`rotation`
+  // are bound directly to live props, each Socket.IO state update snaps the actor
+  // before useFrame can interpolate, which makes AI-directed movement look choppy.
+  const initialPositionRef = useRef<[number, number, number]>([pos[0], pos[1], pos[2]]);
+  const initialRotationRef = useRef<[number, number, number]>([rot[0], rot[1], rot[2]]);
 
   useFrame((_state, delta) => {
     const group = groupRef.current;
@@ -272,7 +322,7 @@ function AnimatedActorGroup({
   });
 
   return (
-    <group ref={groupRef} position={[pos[0], pos[1], pos[2]]} rotation={[rot[0], rot[1], rot[2]]} scale={scale}>
+    <group ref={groupRef} position={initialPositionRef.current} rotation={initialRotationRef.current} scale={scale}>
       {children}
     </group>
   );
@@ -612,7 +662,7 @@ function DroneRotor({ position, phase }: { position: [number, number, number]; p
 function DroneActor({ drone }: { drone: DroneState }) {
   return (
     <AnimatedActorGroup pos={drone.pos} scale={ACTOR_SCALE.drone}>
-      <BillboardTag lines={['드론', drone.id]} position={[0, 0.68, 0]} accent={actorPalette.droneBeacon} scale={0.82} />
+      <BillboardTag lines={['드론', drone.cargo ?? drone.id]} position={[0, 0.68, 0]} accent={actorPalette.droneBeacon} scale={0.82} />
       <mesh>
         <octahedronGeometry args={[0.3]} />
         <meshStandardMaterial color={actorPalette.drone} emissive={actorPalette.droneBeacon} emissiveIntensity={0.3} />
@@ -797,6 +847,8 @@ function impactLabelsForWorld(worldState: WorldStatePayload) {
     taxi?.passenger_id || tags.includes('택시 호출') ? 'TAXI DISPATCH' : null,
     minji?.talking_to === minsu?.id || minsu?.talking_to === minji?.id || tags.includes('대화') ? 'MEETING' : null,
     worldState.city_ai.mode !== 'disabled' && worldState.city_ai.status === 'applied' ? 'CITY AI PLAN' : null,
+    worldState.scenario?.status === 'running' ? 'SCENARIO RUNNING' : null,
+    worldState.scenario?.status === 'completed' ? 'SCENARIO COMPLETE' : null,
     worldState.traffic_ai.mode === 'checkpoint' ? 'GPU POLICY' : null,
     worldState.traffic_forecast_ai.mode === 'lstm_checkpoint' ? 'LSTM FORECAST' : null
   ].filter((label): label is string => Boolean(label));

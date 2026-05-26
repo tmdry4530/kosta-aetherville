@@ -54,8 +54,10 @@
 - Enter a multi-action text command such as “도시에 비를 내리고 민지가 택시를 부르게 하고 출근길을 혼잡하게 만들고 민수와 만나게 해줘” or use a macro button.
 - Point out `vLLM NN%` and the `actions: rain + traffic_jam + taxi_call + meeting` sequence when `AETHERVILLE_GOD_MODE_LLM=vllm` is enabled; if it says `rules fallback`, explain the safety fallback.
 - Confirm the visible world-state effect in the `SCENE DIRECTOR` HUD and `Live impact board`: RAIN, TAXI, TRAFFIC, MEETING, GPU POLICY, and LSTM FORECAST cards should light up after the combined command.
-- Show the `AI 학습 루프` panel and point out experience count, epoch, policy
-  version, traffic bias, and taxi success signal changing after commands.
+- Then run the complex story macro or type: “민수가 하린을 만난 뒤 택시를 불러 민지에게 가고, 드론은 서연에게 이동한 뒤 서연은 민지와 민수를 만나러 간다.” Point to the `Scenario Director` panel while it advances citizen movement, meeting, taxi drive, drone movement, and group rendezvous steps.
+- Open the `AI operations` panel and narrate the causal chain: command → TaskGraph → entity intent → replan feed → outcome → learning signal. Point out `Entity intent` for the active citizen/taxi/drone and `Replan feed` if a blocker scenario was used.
+- Show the `AI 학습 루프` / `Evolution state` panel and point out experience count, epoch, policy
+  version, traffic bias, taxi success signal, recent learning signals, and active policy-bias values changing after commands.
 - State clearly that this is persistent deterministic adaptation for demo
   safety, not live training of new vLLM/YOLO/PPO/LSTM weights.
 - Optionally click `Voice STT`, speak the same command, then stop recording. If the result says `fallback`, explain that the demo safely used the typed fallback transcript. If it says `stt_status=ok`, it is the real faster-whisper path; the server-side real-audio smoke has already been verified with a temporary Korean WAV, but the live microphone path still depends on browser permission and codec capture.
