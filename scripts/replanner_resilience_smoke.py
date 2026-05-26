@@ -75,6 +75,11 @@ def main() -> int:
             if str(event.get("kind", "")).startswith("task_")
         )
         if {"task_blocked", "task_replanned", "task_recovered"}.issubset(seen):
+            # Timeline events and world-state snapshots can be observed on adjacent
+            # polling ticks. Re-fetch once so the final ReplanRecord assertion uses
+            # the state that includes the just-seen recovery event.
+            state = request_json(f"{base_url}/api/v1/sim/state")
+            records = list(state.get("replans", []))
             break
         time.sleep(0.5)
 

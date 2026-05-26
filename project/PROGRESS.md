@@ -1105,3 +1105,16 @@ Verification update — 2026-05-25T18:04:10+09:00:
 - Remote handoff backup completed locally at `.omx/backups/runpod-remote-handoff-20260526-213131`; archive sha256 `92af4c5911d9d6633c8e34b227917f2eb00a8837cc7c8c21b360be87a810835b`; secret-like path scan passed. The remote archive includes the current remote workspace and runtime learning state, but not model caches or a full pod image.
 - Important caveat: 5090 정상작동은 새 5090 팟에서 safe-smoke 및 real-demo health/smoke가 통과한 뒤에만 확정할 수 있다.
 - Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not run.
+
+## H100 direct-process real-demo bring-up — 2026-05-26T22:11:00+09:00
+
+- Status: complete on branch `feat/llm-driven-city-loop`; final commit/push follows.
+- Updated local ignored `infra/runpod/.env.runpod` to the new H100 pod values without printing or tracking secrets.
+- H100 verification passed: NVIDIA H100 80GB HBM3, driver 580.126.09, CUDA 13.0, 80GB container disk, 250GB `/workspace`, Python 3.11.10. Docker was intentionally skipped.
+- Safe-smoke deploy passed on the H100 pod: repository synced via tar-over-SSH, `uv` bootstrapped, mock vLLM, mock vision, orchestrator, simulation, and memory Redis fallback health passed.
+- Real-demo deploy passed: vLLM `Qwen/Qwen2.5-14B-Instruct-AWQ` served on `:8000`, real Ultralytics YOLO served on verified vision port `18001`, orchestrator health returned ok with vLLM and vision ok, simulation started and ticking.
+- Local SSH tunnel was switched from the previous 4090 pod to the H100 pod on local ports `18080`, `18000`, and `18001`; local health checks passed through the tunnel.
+- Verification passed against H100 tunnel: scenario directive smoke, replanner resilience smoke, learning/evolution smoke, autonomous city dogfood smoke, browser live smoke, and browser replay smoke.
+- `scripts/replanner_resilience_smoke.py` was hardened to re-fetch world state after timeline recovery events so it no longer races state snapshot propagation.
+- Current truthful state: H100 is running real vLLM + real YOLO + deterministic JSON-backed learning/evolution. This is policy/experience self-learning, not live LLM weight fine-tuning.
+- Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not run.

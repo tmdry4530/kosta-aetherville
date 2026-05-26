@@ -999,3 +999,49 @@ archive sha256: 92af4c5911d9d6633c8e34b227917f2eb00a8837cc7c8c21b360be87a810835b
 This backup is a remote workspace/runtime-state safety net, not a full RunPod disk/model-cache image. It intentionally excludes secrets, dependency/build caches, and model caches. Recreate `.env.runpod`, HF/model credentials, and vLLM/YOLO packages on the 5090 machine.
 
 Do not delete the 4090 pod until the 5090 tunnel health checks and scenario/browser smokes pass against `http://127.0.0.1:18080`.
+
+## H100 live runtime handoff — 2026-05-26T22:11:00+09:00
+
+Current branch: `feat/llm-driven-city-loop`.
+
+H100 direct-process runtime is live through the local tunnel:
+
+```text
+local orchestrator: http://127.0.0.1:18080
+local vLLM:         http://127.0.0.1:18000/v1
+local vision:       http://127.0.0.1:18001
+local client:       http://127.0.0.1:3000/
+```
+
+Verified runtime state:
+
+```text
+GPU: NVIDIA H100 80GB HBM3
+vLLM: Qwen/Qwen2.5-14B-Instruct-AWQ, max_model_len 8192
+Vision: real Ultralytics YOLO, yolo11n.pt
+Orchestrator: health ok, simulation running
+Learning: JSON-backed deterministic online adaptation/evolution active
+City AI: vLLM mode applied
+```
+
+Important operations:
+
+```bash
+# Health through local tunnel
+curl -fsS http://127.0.0.1:18080/api/v1/health | python3 -m json.tool
+curl -fsS http://127.0.0.1:18080/api/v1/sim/status | python3 -m json.tool
+curl -fsS http://127.0.0.1:18001/health | python3 -m json.tool
+curl -fsS http://127.0.0.1:18000/v1/models | python3 -m json.tool
+
+# Smokes
+python3 scripts/scenario_directive_smoke.py --orchestrator-url http://127.0.0.1:18080 --wait-seconds 12
+python3 scripts/replanner_resilience_smoke.py --orchestrator-url http://127.0.0.1:18080 --wait-seconds 70
+python3 scripts/learning_evolution_smoke.py --orchestrator-url http://127.0.0.1:18080 --repeat 2 --wait-seconds 25
+python3 scripts/autonomous_city_dogfood_smoke.py --orchestrator-url http://127.0.0.1:18080 --wait-seconds 8
+python3 scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://localhost:18080 --timeout-seconds 60
+python3 scripts/browser_demo_smoke.py --mode replay --url http://127.0.0.1:3000/replay --timeout-seconds 60
+```
+
+Do not claim live LLM weight fine-tuning. The current self-learning claim is experience/reward/policy adaptation with JSON persistence and visible evolution metrics.
+
+Do not run Docker/Compose/DinD.

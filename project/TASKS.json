@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "rtx5090_migration_ready_with_remote_handoff_backup",
+  "status": "h100_real_demo_runtime_live_verified",
   "source_prd": "project/source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -1158,6 +1158,30 @@
         "remote_backup_archive_sha256": "92af4c5911d9d6633c8e34b227917f2eb00a8837cc7c8c21b360be87a810835b",
         "remote_backup_scope": "workspace_plus_tmp_aetherville_learning_state_no_secrets_no_model_cache_no_full_pod_image",
         "deploy_profiles": "safe_smoke_no_model_download_and_real_demo_guarded_by_AETHERVILLE_APPROVE_REAL_AI",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+      }
+    },
+    {
+      "id": "OPS-H100-001",
+      "title": "Bring up H100 direct-process real-demo runtime with vLLM YOLO and learning smokes",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "project/SESSION_HANDOFF.md",
+      "depends_on": [
+        "OPS-5090-001"
+      ],
+      "unblocked_by": "user_provided_h100_runpod_ssh_and_approved_fast_work",
+      "last_checked_at": "2026-05-26T22:11:00+09:00",
+      "completed_at": "2026-05-26T22:11:00+09:00",
+      "diagnostics": {
+        "gpu": "NVIDIA_H100_80GB_HBM3_driver_580_126_09_cuda_13_0",
+        "runtime": "direct_process_safe_smoke_then_real_demo_passed",
+        "vllm": "Qwen_Qwen2_5_14B_Instruct_AWQ_on_local_tunnel_18000",
+        "vision": "real_Ultralytics_YOLO_yolo11n_on_verified_port_18001",
+        "orchestrator": "health_ok_simulation_running_local_tunnel_18080",
+        "learning": "json_backed_deterministic_online_adaptation_evolution_active",
+        "smokes": "scenario_replanner_learning_autonomous_dogfood_browser_live_browser_replay_passed",
+        "test_fix": "replanner_smoke_refetches_world_state_after_timeline_recovery_event",
         "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
       }
     }
