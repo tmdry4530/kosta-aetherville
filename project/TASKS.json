@@ -1285,7 +1285,7 @@
             "depends_on": [
                 "OPS-H100-005"
             ],
-            "last_checked_at": "2026-05-27T03:00:07+09:00",
+            "last_checked_at": "2026-05-27T03:08:40+09:00",
             "completed_at": "2026-05-27T03:00:07+09:00",
             "diagnostics": {
                 "runpod_gpu": "NVIDIA H100 80GB HBM3 verified",
@@ -1297,7 +1297,8 @@
                 "checkpoint_registry": "registry mode promoted, 4 promoted checkpoints, reload_count 1",
                 "eval_gate": "all four target jobs passed target-specific gate during execute cycle",
                 "runtime_reload": "/api/v1/runtime/reload verified vllm registered, yolo hot_swapped, traffic_ppo hot_swapped, traffic_lstm hot_swapped",
-                "health": "orchestrator ok; dependencies simulation learning model_training vision vllm ok; redis/stt stubs by policy"
+                "health": "orchestrator ok; dependencies simulation learning model_training vision vllm ok; redis/stt stubs by policy",
+                "rollback": "local regression test verifies rollback restores previous promoted traffic checkpoint; H100 registry remains on latest promoted runtime state"
             }
         }
     ]

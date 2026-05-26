@@ -14,6 +14,7 @@
   - `traffic_ppo`: PPO-style rollout policy checkpoint promoted and hot-swapped into the simulation.
   - `traffic_lstm`: CUDA torch LSTM forecast checkpoint promoted and hot-swapped into the simulation.
   - registry after smoke: mode `promoted`, 4 promoted checkpoints, reload_count `1`.
+  - rollback proof: local regression test verifies a second promoted checkpoint marks the first as rollback candidate and restores it via `rollback()`.
 - The local browser demo is available at `http://127.0.0.1:3000/` and `/replay`. It is currently served from `/tmp/aetherville-run/client` because Next build/dev on the WSL `/mnt/d` checkout stalled; the source of truth remains this repo.
 - Connectivity caveat: this RunPod SSH proxy rejected local `-L` forwarding and RunPod HTTP proxy returned 404 for unexposed service ports. The current live browser uses an ephemeral Cloudflare quick tunnel to the orchestrator. Do not commit the ephemeral URL; restart the tunnel if the pod/process restarts.
 - Latest verification passed: H100 health, approved model training execute/reload smoke, vLLM City AI smoke, scenario directive smoke, learning evolution smoke, replanner smoke, autonomous dogfood smoke, browser live smoke, and browser replay smoke.

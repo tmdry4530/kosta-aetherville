@@ -26,6 +26,7 @@
   - pass: `scripts/training_reload_smoke.py --orchestrator-url http://127.0.0.1:8080 --execute --force --target vllm_lora --target yolo --target traffic_ppo --target traffic_lstm`.
   - pass: training status after execute — mode `promoted`, dataset_count `8`, checkpoint_count `4`, promoted_count `4`, reload_count `1`.
   - pass: runtime state after reload — `traffic_ai.checkpoint_loaded=true`, `traffic_forecast_ai.checkpoint_loaded=true`.
+  - pass: local rollback regression — second promoted `traffic_ppo` checkpoint creates rollback candidate and `rollback()` restores the previous promoted version.
   - pass: YOLO reload result — status `hot_swapped`, produced/loaded `best.pt`.
   - pass: traffic LSTM — `training_backend=torch_cuda`, `trained_on_gpu=true`, MAPE recorded.
 - Residual truth constraints:

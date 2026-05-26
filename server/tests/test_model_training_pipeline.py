@@ -171,6 +171,41 @@ def test_execute_training_promotes_traffic_and_runtime_reload(
     assert engine.learning.training.snapshot().reload_count == 1
 
 
+def test_training_rollback_restores_previous_promoted_checkpoint(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AETHERVILLE_APPROVE_MODEL_TRAINING", "1")
+    engine = SimulationEngine(learning_store=LearningStore(tmp_path / "learning_state.json"))
+    seed_training_experience(engine)
+
+    first = engine.learning.training.run_cycle(
+        dry_run=False,
+        targets=["traffic_ppo"],
+        force=True,
+    )
+    second = engine.learning.training.run_cycle(
+        dry_run=False,
+        targets=["traffic_ppo"],
+        force=True,
+    )
+
+    assert first.status == "promoted"
+    assert second.status == "promoted"
+    before = engine.learning.training.snapshot()
+    assert before.rollback_available is True
+
+    rollback = engine.learning.training.rollback(
+        target="traffic_ppo",
+        reason="regression smoke rollback",
+    )
+
+    assert rollback.accepted is True
+    assert rollback.rolled_back_to is not None
+    after = engine.learning.training.promoted_checkpoints(targets=["traffic_ppo"])
+    assert after["traffic_ppo"].version == rollback.rolled_back_to
+
+
 def test_runtime_reload_endpoint_reports_missing_promoted_checkpoint() -> None:
     client = TestClient(fastapi_app)
 
