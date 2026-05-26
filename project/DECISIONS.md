@@ -1,4 +1,4 @@
-# DECISIONS.md — Project Aetherville ADR Log
+# project/DECISIONS.md — Project Aetherville ADR Log
 
 ## ADR-001: RunPod GPU backend is the primary inference/simulation host
 

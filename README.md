@@ -327,11 +327,7 @@ pnpm --filter @aetherville/client exec next dev -H 0.0.0.0 -p 3000
 orchestrator의 복합 상황 실행 상태를 표시합니다. WSL/Next dev는 cold start가
 느릴 수 있으므로 발표 전에 `/`와 `/replay`를 한 번씩 열어 warmup합니다.
 
-맥북 발표 세팅은 아래 문서를 먼저 보면 됩니다.
-
-```text
-docs/macbook-demo-setup.md
-```
+맥북 발표 세팅은 이 README의 “SSH tunnel 방식”과 “브라우저 확인” 절을 따르면 됩니다. 세부 운영 runbook은 로컬 작업환경에 `docs/`가 남아 있을 때만 보조 자료로 사용합니다.
 
 ## 발표 전 확인
 
@@ -367,18 +363,16 @@ python3 scripts/demo_rehearsal.py \
 
 ## 문서 인덱스
 
-- `docs/macbook-demo-setup.md` — 맥북 클론/tunnel/client 세팅 가이드
-- `docs/live-demo-runbook.md` — 라이브 데모 운영 명령
-- `docs/demo-script-15min.md` — 15분 발표 스크립트
-- `docs/demo-readiness-checklist.md` — 발표 전 체크리스트
-- `docs/metrics-report.md` — 검증된 AI/데모 지표
-- `docs/final-deficiency-audit.md` — 최종 결함 감사
-- `docs/risk-register.md` — 남은 운영 리스크
-- `docs/api-ws-contract.md` — API/Socket.IO 계약
-- `docs/architecture-contract.md` — 아키텍처 경계
-- `DECISIONS.md` — 주요 의사결정 기록
-- `PROGRESS.md` — 구현/검증 진행 로그
-- `SESSION_HANDOFF.md` — 현재 운영 handoff
+공유 저장소에서 추적하는 프로젝트 상태 문서는 `project/` 아래에 모았습니다. 로컬 에이전트/운영 runbook 성격의 `.codex/`, `.agents/`, `codex/`, `docs/`는 현재 `.gitignore` 대상입니다.
+
+- `project/SPEC.md` — 구현 스펙
+- `project/TEST_PLAN.md` — 테스트 계획
+- `project/DECISIONS.md` — 주요 의사결정 기록
+- `project/PROGRESS.md` — 구현/검증 진행 로그
+- `project/SESSION_HANDOFF.md` — 현재 운영 handoff
+- `project/TASKS.json` — 작업/마일스톤 상태
+- `project/source/Project Aetherville PRD.pdf` — 원본 PRD 자료
+- `infra/docker/` — Docker Compose 포터빌리티 참고 자료. 현재 RunPod 실행 경로는 direct-process입니다.
 
 ## 주의 사항
 

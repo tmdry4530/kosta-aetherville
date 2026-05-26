@@ -1,4 +1,4 @@
-# TEST_PLAN.md — Aetherville Verification Contract
+# project/TEST_PLAN.md — Aetherville Verification Contract
 
 ## Release gate levels
 
@@ -11,7 +11,7 @@ Required:
 - Orchestrator `/api/v1/health` returns all service statuses.
 - WebSocket client receives at least 10 sequential ticks.
 - RunPod SSH check passes or blocker is documented.
-- `TASKS.json`, `PROGRESS.md`, `SESSION_HANDOFF.md` updated.
+- `project/TASKS.json`, `project/PROGRESS.md`, `project/SESSION_HANDOFF.md` updated.
 
 ### Gate B — Playable local/cloud slice
 

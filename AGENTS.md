@@ -22,11 +22,11 @@ The backend runs on a rented RunPod GPU instance via SSH. The local machine runs
 
 ## Work protocol
 
-1. Read `SPEC.md`, `TEST_PLAN.md`, `DECISIONS.md`, and relevant `docs/*.md` before non-trivial implementation.
+1. Read `project/SPEC.md`, `project/TEST_PLAN.md`, `project/DECISIONS.md`, and relevant local-only `docs/*.md` if present before non-trivial implementation.
 2. For long tasks, use the matching `.codex/goals/*.md` file as acceptance criteria.
 3. Prefer `/plan` before broad edits.
 4. Keep diffs scoped to the goal file.
-5. Update `TASKS.json`, `PROGRESS.md`, and `SESSION_HANDOFF.md` whenever a milestone changes state.
+5. Update `project/TASKS.json`, `project/PROGRESS.md`, and `project/SESSION_HANDOFF.md` whenever a milestone changes state.
 6. If RunPod SSH, Docker, GPU, model download, or port exposure fails, stop blind retries and document the blocker.
 
 ## Package managers and commands
@@ -40,8 +40,8 @@ The backend runs on a rented RunPod GPU instance via SSH. The local machine runs
   - `pnpm test`
   - `pnpm test:e2e` when browser workflow exists
 - Docker path:
-  - `docker compose -f docker-compose.yml -f docker-compose.cloud.yml config`
-  - `docker compose -f docker-compose.yml -f docker-compose.cloud.yml up -d --build`
+  - `docker compose -f infra/docker/docker-compose.yml -f infra/docker/docker-compose.cloud.yml config`
+  - `docker compose -f infra/docker/docker-compose.yml -f infra/docker/docker-compose.cloud.yml up -d --build`
 
 ## RunPod rules
 
@@ -58,7 +58,7 @@ The backend runs on a rented RunPod GPU instance via SSH. The local machine runs
 - Do not weaken tests to get green.
 - Do not change public schemas without updating both Python and TypeScript schema outputs.
 - Do not add new production dependencies without explaining why existing stack cannot solve it.
-- Do not silently reduce scope; record scope cuts in `DECISIONS.md`.
+- Do not silently reduce scope; record scope cuts in `project/DECISIONS.md`.
 
 ## Completion report required
 

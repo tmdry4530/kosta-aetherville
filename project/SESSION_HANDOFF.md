@@ -1,4 +1,4 @@
-# SESSION_HANDOFF.md
+# project/SESSION_HANDOFF.md
 
 ## Current state
 
@@ -89,7 +89,7 @@ Next autonomous direct-process milestone:
 
 Final demo freeze verification:
 
-- `python3 -m json.tool TASKS.json`: pass.
+- `python3 -m json.tool project/TASKS.json`: pass.
 - `bash -n infra/runpod/*.sh`: pass.
 - `git diff --check`: pass.
 - `pnpm typecheck`: pass.
@@ -824,7 +824,7 @@ uv run ruff check server packages scripts                                  # pas
 uv run mypy server packages                                                # pass
 pnpm typecheck                                                             # pass
 pnpm test                                                                  # 3 passed
-python3 -m json.tool TASKS.json                                            # pass
+python3 -m json.tool project/TASKS.json                                            # pass
 git diff --check                                                           # pass
 ```
 
@@ -941,3 +941,31 @@ Do not run Docker/Compose/DinD. Do not claim model-weight self-training.
   - `scripts/autonomous_city_dogfood_smoke.py`
 - Local browser server is running with tunnel endpoint envs at `http://127.0.0.1:3000/`; WSL network URL observed as `http://172.22.251.143:3000/` for same-machine LAN/Windows access.
 - Browser smokes passed for live and replay routes against the local server.
+
+## Repository root cleanup handoff — 2026-05-26T21:20:00+09:00
+
+Current branch: `feat/llm-driven-city-loop`.
+
+Tracked project docs/state now live under `project/`:
+
+```text
+project/SPEC.md
+project/TEST_PLAN.md
+project/DECISIONS.md
+project/PROGRESS.md
+project/SESSION_HANDOFF.md
+project/TASKS.json
+project/source/Project Aetherville PRD.pdf
+```
+
+Other structure moves:
+
+```text
+infra/docker/docker-compose.yml
+infra/docker/docker-compose.cloud.yml
+.github/ISSUE_TEMPLATE/milestone_task.md
+```
+
+Local agent/runbook folders `.codex/`, `.agents/`, `codex/`, and `docs/` remain ignored and local-only by design. Use `project/TASKS.json`, `project/PROGRESS.md`, and `project/SESSION_HANDOFF.md` for future tracked status updates.
+
+RunPod was not touched for this cleanup. Do not run Docker/Compose/DinD.

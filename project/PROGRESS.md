@@ -1,4 +1,4 @@
-# PROGRESS.md
+# project/PROGRESS.md
 
 ## Current objective
 
@@ -96,10 +96,10 @@
 - `client/src/lib/coords.ts`
 - `client/src/store/connection.ts`
 - `client/tests/config.test.mjs`
-- `TASKS.json`
-- `PROGRESS.md`
-- `SESSION_HANDOFF.md`
-- `DECISIONS.md`
+- `project/TASKS.json`
+- `project/PROGRESS.md`
+- `project/SESSION_HANDOFF.md`
+- `project/DECISIONS.md`
 
 
 ## Phase 02 — Cloud Services Direct Process Runtime
@@ -108,8 +108,8 @@
 - Goal 02 is treated as **Cloud Services Direct Process Runtime** while retaining filename compatibility with `.codex/goals/02-cloud-services-docker-compose.md`.
 - Current acceptance does not require Docker execution.
 - Docker/Compose artifacts are retained only for future Docker-capable portability documentation:
-  - `docker-compose.yml`
-  - `docker-compose.cloud.yml`
+  - `infra/docker/docker-compose.yml`
+  - `infra/docker/docker-compose.cloud.yml`
   - `infra/docker/server.Dockerfile`
   - optional `infra/caddy/Caddyfile`
 - Added direct-process service scripts:
@@ -506,7 +506,7 @@
 
 - Status: complete as of 2026-05-24T21:57:21+09:00.
 - Audited master final criteria against current repo and runtime evidence.
-- `TASKS.json` now includes and marks the final audit task `M7-001` as done.
+- `project/TASKS.json` now includes and marks the final audit task `M7-001` as done.
 - Final local verification evidence:
   - pass: `git status --short` ran; repository has untracked project files because this workspace is not yet committed, but no secret env/key files were printed or added to tracked output.
   - pass: `uv run pytest` — 29 tests passed
@@ -558,7 +558,7 @@
 
 - pass: `git status --short` ran and showed only tracked direct-process hardening/docs/status edits.
 - pass: `bash -n infra/runpod/verify_runpod.sh infra/runpod/deploy_over_ssh.sh infra/runpod/bootstrap_runpod.sh infra/runpod/start_direct_processes.sh infra/runpod/stop_direct_processes.sh infra/runpod/health_check_direct.sh`
-- pass: `python3 -m json.tool TASKS.json`
+- pass: `python3 -m json.tool project/TASKS.json`
 - pass: markdown fenced-code/local-link check for changed goal/docs/status files.
 - pass: `uv run pytest` — 29 tests.
 - pass: `uv run pytest packages server` — 52 tests.
@@ -605,7 +605,7 @@
 
 ## Verification evidence — final demo freeze
 
-- pass: `python3 -m json.tool TASKS.json`
+- pass: `python3 -m json.tool project/TASKS.json`
 - pass: `bash -n infra/runpod/*.sh`
 - pass: `git diff --check`
 - pass: `pnpm typecheck`
@@ -988,7 +988,7 @@ Verification update — 2026-05-25T18:04:10+09:00:
   - `uv run mypy server packages` — pass.
   - `python3 -m py_compile scripts/city_ai_smoke.py` — pass.
   - `bash -n infra/runpod/*.sh` — pass.
-  - `python3 -m json.tool TASKS.json` — pass.
+  - `python3 -m json.tool project/TASKS.json` — pass.
   - `pnpm lint` — pass.
   - `pnpm typecheck` — pass.
   - `pnpm test` — 3 passed.
@@ -1008,7 +1008,7 @@ Verification update — 2026-05-25T18:04:10+09:00:
 - Added `scripts/scenario_directive_smoke.py`; local smoke passed against `http://127.0.0.1:18088` with required step types and visible movement progress.
 - Dogfood used `agent-browser` against `http://127.0.0.1:3000` connected to local orchestrator `http://127.0.0.1:18088`; report saved at `dogfood-output/scenario-director-dogfood/report.md`. No reproducible issues were found. Console had React DevTools info plus WebGL ReadPixels performance warnings only.
 - RunPod state touched: SSH/GPU verification passed; Docker was not run. A targeted backend/schema/script sync to the remote workspace completed using tar-over-SSH. The earlier full sync attempt was stopped because full tar sync can hang; no Docker/Compose path was attempted.
-- Verification passed: `uv run pytest` (48 passed), `uv run ruff check server packages scripts`, `uv run mypy server packages`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `python3 -m json.tool TASKS.json`, `bash -n infra/runpod/*.sh`, `git diff --check`, `python3 scripts/scenario_directive_smoke.py --orchestrator-url http://127.0.0.1:18088 --wait-seconds 12`, and `python3 scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18088`.
+- Verification passed: `uv run pytest` (48 passed), `uv run ruff check server packages scripts`, `uv run mypy server packages`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `python3 -m json.tool project/TASKS.json`, `bash -n infra/runpod/*.sh`, `git diff --check`, `python3 scripts/scenario_directive_smoke.py --orchestrator-url http://127.0.0.1:18088 --wait-seconds 12`, and `python3 scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18088`.
 - Verification caveat: `pnpm --filter @aetherville/client build` was attempted but manually terminated after the known WSL/Next production build hang at “Creating an optimized production build ...”. Dev server was restarted cleanly and browser smoke/dogfood passed.
 - Truthfulness: this makes complex natural-language situations visible and inspectable, but does not mean an LLM directly animates every frame or self-trains model weights.
 
@@ -1040,7 +1040,7 @@ Verification update — 2026-05-25T18:04:10+09:00:
 - `WorldStatePayload.task_graph` now streams accepted/running/completed/rejected graph execution snapshots, synced to ScenarioDirective step status when applicable.
 - `ScenarioDirectorPanel` now shows TaskGraph status, current node, assumptions, and rejection reason in addition to the scenario step timeline.
 - Added Goal 12 tests for 10 Korean fixture families and runtime response/snapshot exposure.
-- Verification passed: `uv run pytest packages/shared-schemas/tests server/orchestrator server/sim` — 56 passed; `uv run ruff check server packages scripts` — pass; `uv run mypy server packages` — pass; `pnpm typecheck` — pass; `pnpm test` — 3 passed; `python3 -m json.tool TASKS.json` — pass; `git diff --check` — pass.
+- Verification passed: `uv run pytest packages/shared-schemas/tests server/orchestrator server/sim` — 56 passed; `uv run ruff check server packages scripts` — pass; `uv run mypy server packages` — pass; `pnpm typecheck` — pass; `pnpm test` — 3 passed; `python3 -m json.tool project/TASKS.json` — pass; `git diff --check` — pass.
 - 5090 portability note added at `docs/rtx-5090-taskgraph-portability.md`; local backup created at `.omx/backups/aetherville-goal12-taskgraph-20260526-045058.tar.gz` with checksum `.omx/backups/aetherville-goal12-taskgraph-20260526-045058.tar.gz.sha256`. Secrets/env files are excluded.
 - RunPod state: not touched in this turn. Docker/Compose/DinD were not run.
 
@@ -1084,3 +1084,12 @@ Verification update — 2026-05-25T18:04:10+09:00:
   - `scripts/autonomous_city_dogfood_smoke.py`
 - Local browser server is running with tunnel endpoint envs at `http://127.0.0.1:3000/`; WSL network URL observed as `http://172.22.251.143:3000/` for same-machine LAN/Windows access.
 - Browser smokes passed for live and replay routes against the local server.
+
+## Repository root cleanup — 2026-05-26T21:20:00+09:00
+
+- Status: complete on branch `feat/llm-driven-city-loop` pending final commit/push.
+- Moved tracked project status/spec files from the repository root into `project/` so root now keeps only standard entrypoints and package/tooling files.
+- Moved PRD source PDF to `project/source/`, GitHub issue template to `.github/ISSUE_TEMPLATE/`, and Docker Compose portability artifacts to `infra/docker/`.
+- Updated `AGENTS.md`, `README.md`, `project/TASKS.json`, and status docs to reference the new paths.
+- Local-only `.codex/`, `.agents/`, `codex/`, and `docs/` remain ignored and were not moved to avoid breaking local Codex/OMX/runtime surfaces.
+- Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not run.
