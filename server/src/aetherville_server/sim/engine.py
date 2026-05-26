@@ -3,16 +3,19 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import math
 import os
 import random
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal, cast
 from uuid import uuid4
 
 from aetherville_schemas import (
+    CheckpointArtifact,
     CitizenState,
     CityActorContext,
     CityAiAction,
@@ -33,6 +36,7 @@ from aetherville_schemas import (
     GodCommandResponse,
     LearningStatusResponse,
     ReplanRecord,
+    RuntimeReloadTargetSnapshot,
     ScenarioDirective,
     ScenarioStep,
     SimStatusResponse,
@@ -41,6 +45,7 @@ from aetherville_schemas import (
     TaskNode,
     TrafficAiSnapshot,
     TrafficLightState,
+    TrainingTarget,
     VehicleCameraFrame,
     VehicleState,
     WorldClock,
@@ -202,6 +207,81 @@ class SimulationEngine:
             )
         ]
         return self.status()
+
+    def reload_training_checkpoints(
+        self,
+        checkpoints: Mapping[TrainingTarget, CheckpointArtifact],
+    ) -> list[RuntimeReloadTargetSnapshot]:
+        """Hot-swap promoted checkpoints that the orchestrator owns in-process."""
+
+        results: list[RuntimeReloadTargetSnapshot] = []
+        for target, checkpoint in checkpoints.items():
+            path = Path(checkpoint.path)
+            if target == "traffic_ppo":
+                try:
+                    self.traffic_policy = TrafficPolicyWrapper(path)
+                    verified = self.traffic_policy.checkpoint_loaded
+                    results.append(
+                        RuntimeReloadTargetSnapshot(
+                            target="traffic_ppo",
+                            status="hot_swapped" if verified else "failed",
+                            checkpoint_version=checkpoint.version,
+                            checkpoint_path=checkpoint.path,
+                            verified=verified,
+                            detail=self.traffic_policy.detail,
+                        )
+                    )
+                except (OSError, ValueError, json.JSONDecodeError) as exc:
+                    results.append(_reload_failed("traffic_ppo", checkpoint, exc))
+            elif target == "traffic_lstm":
+                try:
+                    self.traffic_forecaster = LstmForecastWrapper(checkpoint_path=path)
+                    snapshot = self.traffic_forecaster.snapshot()
+                    verified = snapshot.checkpoint_loaded
+                    results.append(
+                        RuntimeReloadTargetSnapshot(
+                            target="traffic_lstm",
+                            status="hot_swapped" if verified else "failed",
+                            checkpoint_version=checkpoint.version,
+                            checkpoint_path=checkpoint.path,
+                            verified=verified,
+                            detail=snapshot.detail,
+                        )
+                    )
+                except (OSError, ValueError, json.JSONDecodeError, KeyError) as exc:
+                    results.append(_reload_failed("traffic_lstm", checkpoint, exc))
+            elif target == "vllm_lora":
+                os.environ["AETHERVILLE_VLLM_LORA_CHECKPOINT"] = checkpoint.path
+                results.append(
+                    RuntimeReloadTargetSnapshot(
+                        target="vllm_lora",
+                        status="registered",
+                        checkpoint_version=checkpoint.version,
+                        checkpoint_path=checkpoint.path,
+                        verified=path.exists(),
+                        detail=(
+                            "LoRA/SFT adapter manifest registered; vLLM base process "
+                            "requires adapter-aware serving or restart to mutate weights."
+                        ),
+                    )
+                )
+            elif target == "yolo":
+                model_path = _checkpoint_model_path(path) or checkpoint.path
+                os.environ["AETHERVILLE_YOLO_MODEL"] = model_path
+                results.append(
+                    RuntimeReloadTargetSnapshot(
+                        target="yolo",
+                        status="restart_required",
+                        checkpoint_version=checkpoint.version,
+                        checkpoint_path=model_path,
+                        verified=Path(model_path).exists(),
+                        detail=(
+                            "YOLO checkpoint path registered for the vision service; "
+                            "external vision process reload/restart is required."
+                        ),
+                    )
+                )
+        return results
 
     def step(self) -> Envelope:
         self.tick += 1
@@ -2090,6 +2170,30 @@ def _metadata_xz(value: object) -> tuple[float, float] | None:
     if not isinstance(x, int | float) or not isinstance(z, int | float):
         return None
     return (float(x), float(z))
+
+
+def _reload_failed(
+    target: TrainingTarget,
+    checkpoint: CheckpointArtifact,
+    exc: Exception,
+) -> RuntimeReloadTargetSnapshot:
+    return RuntimeReloadTargetSnapshot(
+        target=target,
+        status="failed",
+        checkpoint_version=checkpoint.version,
+        checkpoint_path=checkpoint.path,
+        verified=False,
+        detail=f"checkpoint reload failed: {type(exc).__name__}: {str(exc)[:180]}",
+    )
+
+
+def _checkpoint_model_path(path: Path) -> str | None:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    value = payload.get("model_path") if isinstance(payload, dict) else None
+    return str(value) if value else None
 
 
 def _task_graph_with_status(

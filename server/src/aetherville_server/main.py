@@ -33,6 +33,9 @@ from aetherville_schemas import (
     MemoryStreamResponse,
     ModelTrainingSnapshot,
     ReflectionResponse,
+    RuntimeReloadRequest,
+    RuntimeReloadResponse,
+    RuntimeReloadTargetSnapshot,
     ServiceStatus,
     SimResetRequest,
     SimStatusResponse,
@@ -373,6 +376,94 @@ async def training_rollback(request: TrainingRollbackRequest) -> TrainingRollbac
         return simulation.learning.training.rollback(target=request.target, reason=request.reason)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@fastapi_app.post("/api/v1/training/reload", response_model=RuntimeReloadResponse)
+async def training_reload(request: RuntimeReloadRequest | None = None) -> RuntimeReloadResponse:
+    request = request or RuntimeReloadRequest()
+    try:
+        return _reload_promoted_training_checkpoints(request)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@fastapi_app.post("/api/v1/runtime/reload", response_model=RuntimeReloadResponse)
+async def runtime_reload(request: RuntimeReloadRequest | None = None) -> RuntimeReloadResponse:
+    request = request or RuntimeReloadRequest()
+    try:
+        return _reload_promoted_training_checkpoints(request)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+def _reload_promoted_training_checkpoints(
+    request: RuntimeReloadRequest,
+) -> RuntimeReloadResponse:
+    reload_id = f"reload_{int(time.time())}"
+    checkpoints = simulation.learning.training.promoted_checkpoints(targets=request.targets)
+    selected_targets = request.targets or list(simulation.learning.training.snapshot().targets)
+    results = simulation.reload_training_checkpoints(
+        {target: checkpoint for target, checkpoint in checkpoints.items()}
+    )
+    reloaded_targets = {result.target for result in results}
+    for target in selected_targets:
+        if target not in reloaded_targets:
+            results.append(
+                RuntimeReloadTargetSnapshot(
+                    target=target,
+                    status="skipped",
+                    verified=False,
+                    detail="no promoted checkpoint is available for this target",
+                )
+            )
+    _try_reload_vision(results)
+    simulation.learning.training.record_runtime_reload(
+        reload_id=reload_id,
+        results=results,
+        reason=request.reason,
+    )
+    accepted = any(result.verified for result in results)
+    return RuntimeReloadResponse(
+        accepted=accepted,
+        reload_id=reload_id,
+        reloaded=results,
+        training=simulation.learning.training.snapshot(),
+        message=(
+            "runtime checkpoint reload completed"
+            if accepted
+            else "no promoted checkpoints were hot-swapped"
+        ),
+    )
+
+
+def _try_reload_vision(results: list[RuntimeReloadTargetSnapshot]) -> None:
+    """Best-effort YOLO detector reload for direct-process vision services."""
+
+    for index, result in enumerate(results):
+        if result.target != "yolo" or result.checkpoint_path is None:
+            continue
+        vision_url = os.getenv("AETHERVILLE_VISION_URL")
+        if not vision_url:
+            continue
+        payload = RuntimeReloadRequest(
+            targets=["yolo"],
+            checkpoint_path=result.checkpoint_path,
+            reason="training checkpoint promotion",
+        )
+        encoded = json.dumps(payload.model_dump(mode="json")).encode("utf-8")
+        http_request = urllib.request.Request(
+            f"{vision_url.rstrip('/')}/reload",
+            data=encoded,
+            headers={"content-type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(http_request, timeout=8.0) as response:
+                body = RuntimeReloadResponse.model_validate_json(response.read())
+            if body.reloaded:
+                results[index] = body.reloaded[0]
+        except (OSError, TimeoutError, urllib.error.URLError, ValidationError, ValueError):
+            continue
 
 
 @fastapi_app.post("/api/v1/sim/start", response_model=SimStatusResponse)

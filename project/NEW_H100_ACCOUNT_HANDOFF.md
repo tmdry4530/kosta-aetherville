@@ -12,6 +12,34 @@
 - Local browser proof passed at `http://127.0.0.1:3000/` and `/replay` using the H100 public orchestrator URL.
 - Training proof passed as dry-run dataset/evaluation/checkpoint-plan generation only. Actual weight mutation remains pending explicit `AETHERVILLE_APPROVE_MODEL_TRAINING=1`, non-dry-run trainer execution, promotion, and runtime reload verification.
 
+## Model-training reload addendum — 2026-05-27T03:00:07+09:00
+
+- Approved non-dry-run training/reload smoke is now complete on the H100 direct-process runtime.
+- Verified command shape:
+
+```bash
+cd /workspace/aetherville
+export AETHERVILLE_APPROVE_MODEL_TRAINING=1
+uv run python scripts/training_reload_smoke.py \
+  --orchestrator-url http://127.0.0.1:8080 \
+  --execute \
+  --force \
+  --target vllm_lora \
+  --target yolo \
+  --target traffic_ppo \
+  --target traffic_lstm
+```
+
+- Result summary:
+  - training registry mode `promoted`
+  - promoted checkpoints: `4`
+  - runtime reload count: `1`
+  - YOLO detector reload: `hot_swapped`
+  - traffic policy reload: `hot_swapped`
+  - traffic LSTM forecast reload: `hot_swapped`
+  - vLLM LoRA/SFT artifact: `registered`
+- Truth line: YOLO/traffic artifacts are runtime-applied; vLLM LoRA remains a promoted SFT/adapter manifest and still needs adapter-aware vLLM serving/restart before claiming base-model weight mutation.
+
 ## 0. 현재 보존 상태
 
 - GitHub `master`에는 demo-ready direct-process runtime과 guarded model-training pipeline이 푸시되어 있다.

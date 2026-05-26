@@ -309,6 +309,13 @@ export type CheckpointStatus =
   | 'rolled_back'
   | 'rollback_candidate';
 
+export type RuntimeReloadStatus =
+  | 'hot_swapped'
+  | 'registered'
+  | 'restart_required'
+  | 'skipped'
+  | 'failed';
+
 export interface TrainingDatasetArtifact {
   id: string;
   target: TrainingTarget;
@@ -369,6 +376,8 @@ export interface ModelTrainingSnapshot {
   targets: TrainingTarget[];
   jobs: TrainingJobSnapshot[];
   last_cycle_id?: string | null;
+  reload_count: number;
+  last_reload_ts?: number | null;
 }
 
 export interface TrainingCycleRequest {
@@ -396,6 +405,29 @@ export interface TrainingRollbackResponse {
   target: TrainingTarget;
   rolled_back_to?: string | null;
   training: ModelTrainingSnapshot;
+  message: string;
+}
+
+export interface RuntimeReloadTargetSnapshot {
+  target: TrainingTarget;
+  status: RuntimeReloadStatus;
+  checkpoint_version?: string | null;
+  checkpoint_path?: string | null;
+  verified: boolean;
+  detail: string;
+}
+
+export interface RuntimeReloadRequest {
+  targets: TrainingTarget[];
+  checkpoint_path?: string | null;
+  reason: string;
+}
+
+export interface RuntimeReloadResponse {
+  accepted: boolean;
+  reload_id: string;
+  reloaded: RuntimeReloadTargetSnapshot[];
+  training?: ModelTrainingSnapshot | null;
   message: string;
 }
 

@@ -3,12 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from aetherville_schemas import (
     EventPayload,
     GodCommand,
     ModelTrainingSnapshot,
+    RuntimeReloadResponse,
     TrainingCycleResponse,
 )
 from aetherville_server.learning import LearningStore
@@ -131,3 +133,53 @@ def test_training_rollback_reports_missing_candidate() -> None:
     body = response.json()
     assert body["accepted"] is False
     assert body["rolled_back_to"] is None
+
+
+def test_execute_training_promotes_traffic_and_runtime_reload(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("AETHERVILLE_APPROVE_MODEL_TRAINING", "1")
+    engine = SimulationEngine(learning_store=LearningStore(tmp_path / "learning_state.json"))
+    seed_training_experience(engine)
+
+    response = engine.learning.training.run_cycle(
+        dry_run=False,
+        targets=["traffic_ppo", "traffic_lstm"],
+        force=True,
+    )
+
+    assert response.status == "promoted"
+    assert [job.status for job in response.jobs] == ["promoted", "promoted"]
+    assert all(job.checkpoint and Path(job.checkpoint.path).exists() for job in response.jobs)
+
+    checkpoints = engine.learning.training.promoted_checkpoints(
+        targets=["traffic_ppo", "traffic_lstm"]
+    )
+    reloads = engine.reload_training_checkpoints(checkpoints)
+
+    assert {result.target for result in reloads} == {"traffic_ppo", "traffic_lstm"}
+    assert all(result.status == "hot_swapped" and result.verified for result in reloads)
+    state = engine.snapshot()
+    assert state.traffic_ai.checkpoint_loaded is True
+    assert state.traffic_forecast_ai.checkpoint_loaded is True
+    engine.learning.training.record_runtime_reload(
+        reload_id="reload_test",
+        results=reloads,
+        reason="test",
+    )
+    assert engine.learning.training.snapshot().reload_count == 1
+
+
+def test_runtime_reload_endpoint_reports_missing_promoted_checkpoint() -> None:
+    client = TestClient(fastapi_app)
+
+    response = client.post(
+        "/api/v1/runtime/reload",
+        json={"targets": ["traffic_ppo"], "reason": "test"},
+    )
+
+    assert response.status_code == 200
+    parsed = RuntimeReloadResponse.model_validate(response.json())
+    assert parsed.accepted is False
+    assert parsed.reloaded[0].status == "skipped"

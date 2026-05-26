@@ -1,17 +1,23 @@
 # project/SESSION_HANDOFF.md
 
-## Current state — new-account H100 live demo runtime (2026-05-27T02:09:23+09:00)
+## Current state — new-account H100 model-training + live demo runtime (2026-05-27T03:00:07+09:00)
 
 - New H100 pod is the active demo backend. Verified GPU: NVIDIA H100 80GB HBM3, driver `580.126.09`; Docker is absent and remains forbidden for this runtime path.
 - Direct-process real-demo is running on the H100:
   - orchestrator `:8080` with `AETHERVILLE_LLM_MODE=vllm` and `AETHERVILLE_CITY_AI_MODE=vllm`
   - vLLM `:8000` serving `Qwen/Qwen2.5-14B-Instruct-AWQ`
-  - vision `:18001` with real Ultralytics YOLO `yolo11n.pt`
+  - vision `:18001` with real Ultralytics YOLO; latest reload hot-swapped the promoted pseudo-label self-training `best.pt`
   - Redis memory fallback; STT stub
+- Approved non-dry-run model-training/reload smoke passed:
+  - `vllm_lora`: SFT dataset and LoRA adapter manifest promoted/registered.
+  - `yolo`: pseudo-label self-training produced a promoted Ultralytics artifact and vision `/reload` hot-swapped it.
+  - `traffic_ppo`: PPO-style rollout policy checkpoint promoted and hot-swapped into the simulation.
+  - `traffic_lstm`: CUDA torch LSTM forecast checkpoint promoted and hot-swapped into the simulation.
+  - registry after smoke: mode `promoted`, 4 promoted checkpoints, reload_count `1`.
 - The local browser demo is available at `http://127.0.0.1:3000/` and `/replay`. It is currently served from `/tmp/aetherville-run/client` because Next build/dev on the WSL `/mnt/d` checkout stalled; the source of truth remains this repo.
 - Connectivity caveat: this RunPod SSH proxy rejected local `-L` forwarding and RunPod HTTP proxy returned 404 for unexposed service ports. The current live browser uses an ephemeral Cloudflare quick tunnel to the orchestrator. Do not commit the ephemeral URL; restart the tunnel if the pod/process restarts.
-- Latest verification passed: H100 health, model training dry-run cycle, vLLM City AI smoke, scenario directive smoke, learning evolution smoke, replanner smoke, autonomous dogfood smoke, browser live smoke, and browser replay smoke.
-- Truth line: runtime adaptation and dry-run trainer handoff are verified; actual model-weight fine-tuning/promotion/reload is **not** claimed until an approved non-dry-run trainer cycle promotes a checkpoint and the runtime reload is smoke-tested.
+- Latest verification passed: H100 health, approved model training execute/reload smoke, vLLM City AI smoke, scenario directive smoke, learning evolution smoke, replanner smoke, autonomous dogfood smoke, browser live smoke, and browser replay smoke.
+- Truth line: YOLO and traffic runtime artifacts are now trained/promoted/reloaded. vLLM LoRA is still an SFT dataset/adapter manifest registration; the base vLLM server has not been mutated in-place and reports fine-tuning disabled.
 
 ## Immediate recovery commands
 
@@ -31,6 +37,28 @@ pnpm install --frozen-lockfile
 NEXT_TELEMETRY_DISABLED=1 CI=1 pnpm --filter @aetherville/client exec next build --no-lint
 cd client && ./node_modules/.bin/next start -H 0.0.0.0 -p 3000
 ```
+
+## H100 model-training reload recovery commands
+
+```bash
+# Run inside the H100 workspace after direct-process services are healthy.
+cd /workspace/aetherville
+export AETHERVILLE_APPROVE_MODEL_TRAINING=1
+uv run python scripts/training_reload_smoke.py \
+  --orchestrator-url http://127.0.0.1:8080 \
+  --execute \
+  --force \
+  --target vllm_lora \
+  --target yolo \
+  --target traffic_ppo \
+  --target traffic_lstm
+```
+
+Expected proof after a successful reload:
+
+- `GET /api/v1/training/status`: `mode=promoted`, `promoted_count>=4`, `reload_count>=1`.
+- `GET /api/v1/sim/state`: `traffic_ai.checkpoint_loaded=true` and `traffic_forecast_ai.checkpoint_loaded=true`.
+- `GET /api/v1/health`: model_training, vision, and vLLM dependencies `ok`.
 
 ## Current state
 

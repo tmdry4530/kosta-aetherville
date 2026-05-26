@@ -358,7 +358,9 @@ export function createFallbackWorldState(tick = 0): WorldStatePayload {
             command: ['python3', 'scripts/train_vllm_lora.py', '--dry-run']
           }
         ] : [],
-        last_cycle_id: tick > 180 ? `replay_train_${Math.floor(tick / 180)}` : null
+        last_cycle_id: tick > 180 ? `replay_train_${Math.floor(tick / 180)}` : null,
+        reload_count: 0,
+        last_reload_ts: null
       }
     },
     city_ai: {

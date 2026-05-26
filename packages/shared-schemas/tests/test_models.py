@@ -32,6 +32,9 @@ from aetherville_schemas import (
     ModelTrainingSnapshot,
     PlanNode,
     ReplanRecord,
+    RuntimeReloadRequest,
+    RuntimeReloadResponse,
+    RuntimeReloadTargetSnapshot,
     ScenarioDirective,
     ScenarioStep,
     TaskCondition,
@@ -153,6 +156,23 @@ def test_model_training_contract_validates_checkpoint_promotion_path() -> None:
     assert rollback.accepted is False
     assert TrainingCycleRequest(dry_run=True).targets == []
     assert TrainingRollbackRequest(target="traffic_ppo").reason == "manual rollback"
+    reload_target = RuntimeReloadTargetSnapshot(
+        target="traffic_ppo",
+        status="hot_swapped",
+        checkpoint_version="traffic-ppo-v1",
+        checkpoint_path="/tmp/aetherville/training/checkpoints/traffic.json",
+        verified=True,
+        detail="traffic policy hot-swapped",
+    )
+    reload_response = RuntimeReloadResponse(
+        accepted=True,
+        reload_id="reload_test",
+        reloaded=[reload_target],
+        training=snapshot,
+        message="runtime checkpoint reload completed",
+    )
+    assert reload_response.reloaded[0].verified is True
+    assert RuntimeReloadRequest(targets=["yolo"]).reason == "manual runtime reload"
 
     with pytest.raises(ValidationError):
         TrainingDatasetArtifact.model_validate(dataset.model_dump() | {"target": "bad_target"})

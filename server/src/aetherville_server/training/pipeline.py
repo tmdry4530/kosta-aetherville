@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+import sys
 import time
 from collections.abc import Sequence
 from pathlib import Path
@@ -22,6 +24,7 @@ from aetherville_schemas import (
     EvaluationGateSnapshot,
     EventPayload,
     ModelTrainingSnapshot,
+    RuntimeReloadTargetSnapshot,
     TrainingCycleResponse,
     TrainingDatasetArtifact,
     TrainingJobSnapshot,
@@ -107,6 +110,8 @@ class TrainingPipeline:
             targets=list(TARGETS),
             jobs=jobs[-8:],
             last_cycle_id=registry.get("last_cycle_id"),
+            reload_count=len(list(registry.get("reloads", []))),
+            last_reload_ts=_last_reload_ts(registry),
         )
 
     def run_cycle(
@@ -237,6 +242,47 @@ class TrainingPipeline:
             message=_cycle_message(status),
         )
 
+    def promoted_checkpoints(
+        self,
+        *,
+        targets: Sequence[str] | None = None,
+    ) -> dict[TrainingTarget, CheckpointArtifact]:
+        """Return the latest promoted checkpoint per selected target."""
+
+        selected = _normalize_targets(targets)
+        registry = self._load_registry()
+        promoted: dict[TrainingTarget, CheckpointArtifact] = {}
+        for checkpoint in registry.get("checkpoints", []):
+            if checkpoint.get("status") != "promoted":
+                continue
+            target = checkpoint.get("target")
+            if target not in selected:
+                continue
+            artifact = CheckpointArtifact.model_validate(checkpoint)
+            previous = promoted.get(artifact.target)
+            if previous is None or (artifact.promoted_ts or 0) >= (previous.promoted_ts or 0):
+                promoted[artifact.target] = artifact
+        return promoted
+
+    def record_runtime_reload(
+        self,
+        *,
+        reload_id: str,
+        results: Sequence[RuntimeReloadTargetSnapshot],
+        reason: str,
+    ) -> None:
+        registry = self._load_registry()
+        registry.setdefault("reloads", []).append(
+            {
+                "id": reload_id,
+                "ts": time.time(),
+                "reason": reason,
+                "results": [result.model_dump(mode="json") for result in results],
+            }
+        )
+        registry["reloads"] = list(registry.get("reloads", []))[-24:]
+        self._save_registry(registry)
+
     def rollback(self, *, target: str, reason: str = "manual rollback") -> TrainingRollbackResponse:
         normalized = _normalize_targets([target])[0]
         registry = self._load_registry()
@@ -334,17 +380,20 @@ class TrainingPipeline:
                 )
             except Exception as exc:  # pragma: no cover - defensive optional training path
                 payload["trainer_error"] = str(exc)[:240]
-        else:
-            payload["trainer_recipe"] = _trainer_command(target, dataset.path, dry_run=False)
-            payload["requires_optional_dependencies"] = True
-            payload["detail"] = (
-                f"{target} recipe-only checkpoint; run the guarded trainer with real "
-                "dependencies and weight artifacts before promotion"
-            )
-            if target == "vllm_lora":
-                payload["plan_validity"] = 0.0
-            if target == "yolo":
-                payload["pseudo_label_quality"] = 0.0
+        elif target in {"vllm_lora", "yolo"}:
+            try:
+                payload = _run_json_trainer(
+                    target,
+                    dataset_path=dataset.path,
+                    output_path=checkpoint_path,
+                )
+            except RuntimeError as exc:
+                payload["trainer_error"] = str(exc)[:500]
+                payload["detail"] = f"{target} trainer failed before producing a candidate"
+                if target == "vllm_lora":
+                    payload["plan_validity"] = 0.0
+                else:
+                    payload["pseudo_label_quality"] = 0.0
         checkpoint_path.write_text(
             json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
@@ -626,7 +675,7 @@ def _evaluate_checkpoint(
 
 def _gate_config(target: TrainingTarget) -> tuple[str, float, Literal["gte", "lte"]]:
     if target == "traffic_lstm":
-        return "mape", 0.38, "lte"
+        return "mape", 38.0, "lte"
     if target == "traffic_ppo":
         return "improvement_pct", 0.0, "gte"
     if target == "yolo":
@@ -696,7 +745,13 @@ def _metrics_from_payload(target: TrainingTarget, payload: dict[str, Any]) -> di
     return {"plan_validity": float(payload.get("plan_validity", 0.62))}
 
 
-def _trainer_command(target: TrainingTarget, dataset_path: str, *, dry_run: bool) -> list[str]:
+def _trainer_command(
+    target: TrainingTarget,
+    dataset_path: str,
+    *,
+    dry_run: bool,
+    output_path: str = "<checkpoint-path>",
+) -> list[str]:
     if target == "traffic_ppo":
         return [
             "uv",
@@ -705,7 +760,7 @@ def _trainer_command(target: TrainingTarget, dataset_path: str, *, dry_run: bool
             "-m",
             "aetherville_server.traffic_ai.train_gpu_policy",
             "--output",
-            "<checkpoint-path>",
+            output_path,
         ]
     if target == "traffic_lstm":
         return [
@@ -715,17 +770,56 @@ def _trainer_command(target: TrainingTarget, dataset_path: str, *, dry_run: bool
             "-m",
             "aetherville_server.traffic_ai.train_lstm_forecast",
             "--output",
-            "<checkpoint-path>",
+            output_path,
         ]
     script = (
         "scripts/train_vllm_lora.py"
         if target == "vllm_lora"
         else "scripts/train_yolo_self_training.py"
     )
-    command = ["python3", script, "--dataset", dataset_path, "--output", "<checkpoint-path>"]
+    command = [sys.executable, script, "--dataset", dataset_path, "--output", output_path]
+    if target == "yolo":
+        command.extend(["--device", os.getenv("AETHERVILLE_YOLO_TRAIN_DEVICE", "cpu")])
     if dry_run:
         command.append("--dry-run")
     return command
+
+
+def _run_json_trainer(
+    target: TrainingTarget,
+    *,
+    dataset_path: str,
+    output_path: Path,
+) -> dict[str, Any]:
+    command = _trainer_command(
+        target,
+        dataset_path,
+        dry_run=False,
+        output_path=str(output_path),
+    )
+    if target == "yolo" and os.getenv("AETHERVILLE_YOLO_JSON_FALLBACK") == "1":
+        command.append("--allow-json-fallback")
+    try:
+        completed = subprocess.run(
+            command,
+            check=False,
+            cwd=Path(__file__).resolve().parents[4],
+            text=True,
+            capture_output=True,
+            timeout=int(os.getenv("AETHERVILLE_TRAINER_TIMEOUT_SEC", "900")),
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError(f"trainer process failed: {exc}") from exc
+    if completed.returncode != 0:
+        detail = (completed.stderr or completed.stdout).strip().splitlines()[-3:]
+        raise RuntimeError("trainer exited non-zero: " + " | ".join(detail))
+    try:
+        payload = json.loads(output_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError("trainer did not write a JSON checkpoint") from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError("trainer checkpoint JSON must be an object")
+    return payload
 
 
 def _quality_score(records: Sequence[dict[str, Any]]) -> float:
@@ -756,6 +850,16 @@ def _mark_previous_promoted_as_rollback(registry: dict[str, Any], target: Traini
 
 def _rollback_available(checkpoints: Sequence[dict[str, Any]]) -> bool:
     return any(checkpoint.get("status") == "rollback_candidate" for checkpoint in checkpoints)
+
+
+def _last_reload_ts(registry: dict[str, Any]) -> float | None:
+    reloads = registry.get("reloads", [])
+    if not isinstance(reloads, list) or not reloads:
+        return None
+    try:
+        return float(reloads[-1].get("ts"))
+    except (AttributeError, TypeError, ValueError):
+        return None
 
 
 def _safe_token(value: str) -> str:
@@ -791,4 +895,3 @@ def _pseudo_label(record: dict[str, Any]) -> str:
     if entity_id.startswith("c"):
         return "person"
     return "vehicle"
-

@@ -2,11 +2,36 @@
 
 ## Current objective
 
-- Active runtime: **new-account RunPod H100 direct-process real-demo** as of 2026-05-27T02:09:23+09:00.
+- Active runtime: **new-account RunPod H100 direct-process model-training + hot-reload demo** as of 2026-05-27T03:00:07+09:00.
 - Cloud state: H100 80GB verified, Docker absent by policy, vLLM real server up with `Qwen/Qwen2.5-14B-Instruct-AWQ`, vision real YOLO on `18001`, orchestrator on `8080`, Redis memory fallback.
 - Local browser state: Next production client is running on `http://127.0.0.1:3000/` from a Linux-filesystem build copy because WSL `/mnt/d` Next build/dev was too slow/stalled; source remains in this repo and `.env.local` stays ignored.
 - Connectivity: RunPod SSH proxy rejected local `-L` forwarding and RunPod HTTP proxy returned 404 for unexposed ports, so the live demo currently uses an ephemeral Cloudflare quick tunnel to the H100 orchestrator. Do not commit the ephemeral URL.
-- Model-training truth: dry-run trainer handoff is verified; model weights are not claimed changed until an approved non-dry-run trainer produces/promotes a checkpoint and the runtime reload is verified.
+- Model-training truth: approved non-dry-run trainer cycle now produced/promoted checkpoints and runtime reload was smoke-tested. vLLM LoRA is a promoted SFT/adapter manifest, not base model weight mutation; YOLO/traffic LSTM/traffic policy runtime artifacts were hot-swapped or registered as described below.
+
+## H100 model-training promotion + runtime reload — 2026-05-27T03:00:07+09:00
+
+- Status: complete for the requested bounded training/reload gate.
+- Source patch was synced to the active H100 via tar-over-SSH/PTTY with secret/env/model artifacts excluded.
+- Implemented:
+  - LoRA/SFT dataset builder and adapter-manifest promotion for `vllm_lora`.
+  - YOLO pseudo-label manifest → synthetic frame dataset → Ultralytics self-training → `best.pt` artifact.
+  - PPO-style traffic rollout trainer exporting a JSON traffic policy checkpoint.
+  - CUDA torch LSTM traffic forecast retraining exporting a runtime-loadable checkpoint.
+  - Checkpoint registry reload history, eval gate pass/fail state, rollback-compatible promoted/rollback statuses.
+  - `/api/v1/training/reload` and `/api/v1/runtime/reload` for promoted checkpoint reload.
+  - In-process hot-swap for traffic policy and LSTM forecast; vision `/reload` hot-swaps YOLO detector; vLLM LoRA manifest is registered for adapter-aware serving/restart.
+- H100 verification evidence:
+  - pass: read-only SSH/GPU check — NVIDIA H100 80GB HBM3, Python 3.11.10, Docker absent.
+  - pass: orchestrator health after patch restart — simulation/learning/model_training/vision/vLLM all `ok`; Redis and STT remain explicit stubs.
+  - pass: `scripts/training_reload_smoke.py --orchestrator-url http://127.0.0.1:8080 --execute --force --target vllm_lora --target yolo --target traffic_ppo --target traffic_lstm`.
+  - pass: training status after execute — mode `promoted`, dataset_count `8`, checkpoint_count `4`, promoted_count `4`, reload_count `1`.
+  - pass: runtime state after reload — `traffic_ai.checkpoint_loaded=true`, `traffic_forecast_ai.checkpoint_loaded=true`.
+  - pass: YOLO reload result — status `hot_swapped`, produced/loaded `best.pt`.
+  - pass: traffic LSTM — `training_backend=torch_cuda`, `trained_on_gpu=true`, MAPE recorded.
+- Residual truth constraints:
+  - vLLM OpenAI `/v1/models` still reports `allow_fine_tuning=false`; the promoted LoRA/SFT artifact is a dataset/adapter manifest, not a live mutation of the base served model.
+  - Traffic policy trainer is bounded PPO-style clipped policy-gradient smoke, not a production PPO library/training cluster.
+  - Redis and STT remain stubs by current demo policy.
 
 ## New-account H100 real-demo runtime — 2026-05-27T02:09:23+09:00
 

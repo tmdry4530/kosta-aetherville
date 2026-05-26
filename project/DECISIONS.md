@@ -354,3 +354,17 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - Model-weight fine-tuning remains a guarded offline trainer/promotion process; the current verified training cycle is dry-run only.
 - Rejected: Blind Docker setup, Docker-in-Docker, or treating SSH forwarding as guaranteed on this RunPod proxy, because the live environment explicitly rejects those paths.
 - Revisit when: RunPod HTTP Services are configured for `8080`/`18001`/`8000`, a stable tunnel/domain is available, or an approved non-dry-run training checkpoint is promoted and reloaded.
+
+## ADR-028: H100 model-training promotion uses explicit reload gates before demo claims
+
+- Status: accepted
+- Context: The project now needs to prove more than dry-run handoff: LoRA/SFT data, YOLO self-training, traffic policy rollout, LSTM retraining, checkpoint registry, eval gates, promotion/rollback, and runtime reload must be observable. The live vLLM server still does not fine-tune itself in place, and vLLM reports fine-tuning disabled on its OpenAI-compatible model metadata.
+- Decision: Add shared runtime reload contracts plus `/api/v1/training/reload` and `/api/v1/runtime/reload`. Approved training cycles can promote four target artifacts: `vllm_lora` SFT/adapter manifest, YOLO pseudo-label self-training artifact, PPO-style traffic rollout policy checkpoint, and CUDA LSTM forecast checkpoint. Runtime reload hot-swaps traffic policy/forecast in-process, reloads the vision detector through the vision service `/reload` endpoint, and registers the vLLM LoRA manifest for adapter-aware serving or restart.
+- Consequences:
+  - A successful H100 execute cycle can be reported as “promoted checkpoints and runtime reload verified.”
+  - The truthful vLLM statement remains: SFT/LoRA dataset+adapter manifest is promoted, but the base served model has not been mutated in place.
+  - YOLO and traffic runtime artifacts can be shown in `/api/v1/sim/state` and `/api/v1/training/status`.
+  - Rollback remains registry-based; production-grade rollback of external vLLM/YOLO services still requires service-level restart/reload orchestration.
+  - Docker remains excluded from the active runtime path.
+- Rejected: Claiming live vLLM base-weight fine-tuning from an inference server, or silently accepting a checkpoint without eval/reload evidence.
+- Revisit when: vLLM LoRA dynamic adapter serving is wired and smoke-tested, or when a full PPO trainer replaces the bounded PPO-style smoke trainer.

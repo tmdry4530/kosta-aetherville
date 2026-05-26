@@ -325,6 +325,13 @@ CheckpointStatus: TypeAlias = Literal[
     "rolled_back",
     "rollback_candidate",
 ]
+RuntimeReloadStatus: TypeAlias = Literal[
+    "hot_swapped",
+    "registered",
+    "restart_required",
+    "skipped",
+    "failed",
+]
 
 
 class TrainingDatasetArtifact(StrictModel):
@@ -389,6 +396,8 @@ class ModelTrainingSnapshot(StrictModel):
     targets: list[TrainingTarget] = Field(default_factory=list)
     jobs: list[TrainingJobSnapshot] = Field(default_factory=list)
     last_cycle_id: str | None = None
+    reload_count: int = Field(default=0, ge=0)
+    last_reload_ts: float | None = Field(default=None, ge=0)
 
 
 class TrainingCycleRequest(StrictModel):
@@ -416,6 +425,29 @@ class TrainingRollbackResponse(StrictModel):
     target: TrainingTarget
     rolled_back_to: str | None = None
     training: ModelTrainingSnapshot
+    message: str
+
+
+class RuntimeReloadTargetSnapshot(StrictModel):
+    target: TrainingTarget
+    status: RuntimeReloadStatus
+    checkpoint_version: str | None = None
+    checkpoint_path: str | None = None
+    verified: bool = False
+    detail: str
+
+
+class RuntimeReloadRequest(StrictModel):
+    targets: list[TrainingTarget] = Field(default_factory=list)
+    checkpoint_path: str | None = None
+    reason: str = "manual runtime reload"
+
+
+class RuntimeReloadResponse(StrictModel):
+    accepted: bool
+    reload_id: str
+    reloaded: list[RuntimeReloadTargetSnapshot] = Field(default_factory=list)
+    training: ModelTrainingSnapshot | None = None
     message: str
 
 

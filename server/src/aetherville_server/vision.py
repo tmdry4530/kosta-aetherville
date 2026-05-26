@@ -6,6 +6,7 @@ import base64
 import importlib.util
 import os
 import threading
+import time
 from io import BytesIO
 from typing import Any, Literal
 
@@ -13,6 +14,9 @@ from fastapi import FastAPI
 
 from aetherville_schemas import (
     HealthResponse,
+    RuntimeReloadRequest,
+    RuntimeReloadResponse,
+    RuntimeReloadTargetSnapshot,
     ServiceStatus,
     VisionDetectRequest,
     VisionDetectResponse,
@@ -169,6 +173,43 @@ async def detect(request: VisionDetectRequest) -> VisionDetectResponse:
     except (TypeError, ValueError):
         tick = 0
     return VisionDetectResponse(detections=mock_vehicle_detections(tick))
+
+
+@app.post("/reload", response_model=RuntimeReloadResponse)
+async def reload_detector(request: RuntimeReloadRequest) -> RuntimeReloadResponse:
+    """Hot-reload the in-process YOLO detector when the vision service owns it."""
+
+    global _DETECTOR
+    if request.checkpoint_path:
+        os.environ["AETHERVILLE_YOLO_MODEL"] = request.checkpoint_path
+    with _DETECTOR_LOCK:
+        _DETECTOR = None
+    verified = False
+    status = "registered"
+    detail = "YOLO model path registered; next detection call will lazy-load it"
+    if vision_mode() == "real":
+        try:
+            detector = get_real_detector()
+            verified = bool(detector.model_name)
+            status = "hot_swapped" if verified else "failed"
+            detail = f"YOLO detector reloaded with model {detector.model_name}"
+        except (RealYoloUnavailable, OSError, ValueError, RuntimeError) as exc:
+            status = "failed"
+            detail = f"YOLO detector reload failed: {type(exc).__name__}: {str(exc)[:180]}"
+    return RuntimeReloadResponse(
+        accepted=verified or status == "registered",
+        reload_id=f"vision_reload_{int(time.time())}",
+        reloaded=[
+            RuntimeReloadTargetSnapshot(
+                target="yolo",
+                status=status,  # type: ignore[arg-type]
+                checkpoint_path=request.checkpoint_path,
+                verified=verified,
+                detail=detail,
+            )
+        ],
+        message=detail,
+    )
 
 
 def _decode_frame(frame_b64: str | None) -> Any:

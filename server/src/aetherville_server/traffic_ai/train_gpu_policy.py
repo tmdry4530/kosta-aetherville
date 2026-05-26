@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 import tempfile
 from pathlib import Path
@@ -62,19 +63,26 @@ def train_policy_checkpoint(
             detail="deterministic pressure policy checkpoint",
         )
 
+    random.seed(seed)
+    if os.getenv("AETHERVILLE_TRAFFIC_PPO_BACKEND", "stdlib").lower() != "torch_supervised":
+        return _train_policy_checkpoint_ppo_stdlib(
+            episodes=episodes,
+            horizon=horizon,
+            seed=seed,
+        )
+
+    features, labels = _build_training_set(episodes=episodes, horizon=horizon, seed=seed)
     try:
         import torch  # type: ignore[import-not-found]
         import torch.nn.functional as functional  # type: ignore[import-not-found]
     except ImportError:
-        return _pressure_checkpoint(
-            episodes=0,
+        return _train_policy_checkpoint_stdlib(
+            features=features,
+            labels=labels,
+            episodes=episodes,
             horizon=horizon,
-            trained_on_gpu=False,
-            training_backend="json",
-            detail="torch unavailable; exported deterministic pressure policy fallback",
         )
 
-    random.seed(seed)
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
@@ -85,7 +93,6 @@ def train_policy_checkpoint(
     )
     device = torch.device("cuda" if wants_cuda else "cpu")
 
-    features, labels = _build_training_set(episodes=episodes, horizon=horizon, seed=seed)
     x = torch.tensor(features, dtype=torch.float32, device=device)
     y = torch.tensor(labels, dtype=torch.long, device=device)
     model = torch.nn.Linear(len(FEATURE_NAMES), 2, device=device)
@@ -131,6 +138,155 @@ def train_policy_checkpoint(
 
     trained_payload["selection"] = "trained_linear_policy"
     return trained_payload
+
+
+def _train_policy_checkpoint_stdlib(
+    *,
+    features: list[list[float]],
+    labels: list[int],
+    episodes: int,
+    horizon: int,
+) -> dict[str, Any]:
+    """Train a tiny softmax policy from real environment rollouts without torch.
+
+    This is not a full PPO optimizer, but it does perform an actual rollout
+    collection + gradient update cycle and exports the same lightweight runtime
+    checkpoint shape.  H100 runs with torch can still use the CUDA path above.
+    """
+
+    weights = [[0.0 for _ in FEATURE_NAMES], [0.0 for _ in FEATURE_NAMES]]
+    bias = [0.0, 0.0]
+    learning_rate = 0.08
+    last_loss = 0.0
+    for _epoch in range(120):
+        total_loss = 0.0
+        for row, label in zip(features, labels, strict=True):
+            score0 = (
+                sum(weight * value for weight, value in zip(weights[0], row, strict=True))
+                + bias[0]
+            )
+            score1 = (
+                sum(weight * value for weight, value in zip(weights[1], row, strict=True))
+                + bias[1]
+            )
+            max_score = max(score0, score1)
+            exp0 = pow(2.718281828459045, score0 - max_score)
+            exp1 = pow(2.718281828459045, score1 - max_score)
+            denom = exp0 + exp1
+            prob0 = exp0 / denom
+            prob1 = exp1 / denom
+            target0 = 1.0 if label == 0 else 0.0
+            target1 = 1.0 - target0
+            total_loss += -(
+                target0 * _safe_log(prob0)
+                + target1 * _safe_log(prob1)
+            )
+            grad0 = prob0 - target0
+            grad1 = prob1 - target1
+            for index, value in enumerate(row):
+                weights[0][index] -= learning_rate * grad0 * value
+                weights[1][index] -= learning_rate * grad1 * value
+            bias[0] -= learning_rate * grad0
+            bias[1] -= learning_rate * grad1
+        last_loss = total_loss / max(len(features), 1)
+        learning_rate *= 0.985
+
+    payload = _payload_from_weights(
+        weights=weights,
+        bias=bias,
+        episodes=episodes,
+        horizon=horizon,
+        trained_on_gpu=False,
+        training_backend="json",
+        detail="stdlib rollout-trained linear traffic policy",
+        loss=last_loss,
+    )
+    payload["selection"] = "stdlib_rollout_policy"
+    return payload
+
+
+def _train_policy_checkpoint_ppo_stdlib(
+    *,
+    episodes: int,
+    horizon: int,
+    seed: int,
+) -> dict[str, Any]:
+    """Run a bounded PPO-style rollout update without heavyweight deps."""
+
+    rng = random.Random(seed)
+    weights = [
+        [0.35, -0.35, -0.04, 0.0, 0.0],
+        [-0.35, 0.35, 0.04, 0.0, 0.0],
+    ]
+    bias = [0.0, 0.0]
+    learning_rate = 0.035
+    clip_epsilon = 0.2
+    rollout_steps = 0
+    reward_total = 0.0
+    for _episode in range(episodes):
+        env = TrafficSignalEnv(horizon=horizon)
+        observation = env.reset()
+        episode_rewards: list[float] = []
+        episode_rows: list[tuple[list[float], int, float]] = []
+        for _step in range(horizon):
+            row = _features(observation)
+            prob0, prob1 = _policy_probs(weights, bias, row)
+            action = 0 if rng.random() <= prob0 else 1
+            next_observation, reward, done, _info = env.step(action)
+            episode_rows.append((row, action, prob0 if action == 0 else prob1))
+            episode_rewards.append(float(reward))
+            reward_total += float(reward)
+            rollout_steps += 1
+            observation = next_observation
+            if done:
+                break
+        baseline = sum(episode_rewards) / max(len(episode_rewards), 1)
+        for (row, action, old_prob), reward in zip(episode_rows, episode_rewards, strict=True):
+            advantage = max(-1.0, min(1.0, (reward - baseline) / 25.0))
+            prob0, prob1 = _policy_probs(weights, bias, row)
+            current_prob = prob0 if action == 0 else prob1
+            ratio = current_prob / max(old_prob, 1e-6)
+            clipped_ratio = max(1.0 - clip_epsilon, min(1.0 + clip_epsilon, ratio))
+            scale = -advantage * clipped_ratio
+            grad0 = (prob0 - (1.0 if action == 0 else 0.0)) * scale
+            grad1 = (prob1 - (1.0 if action == 1 else 0.0)) * scale
+            for index, value in enumerate(row):
+                weights[0][index] -= learning_rate * grad0 * value
+                weights[1][index] -= learning_rate * grad1 * value
+            bias[0] -= learning_rate * grad0
+            bias[1] -= learning_rate * grad1
+        learning_rate *= 0.995
+
+    payload = _payload_from_weights(
+        weights=weights,
+        bias=bias,
+        episodes=episodes,
+        horizon=horizon,
+        trained_on_gpu=False,
+        training_backend="json",
+        detail="stdlib PPO-style rollout-trained traffic policy",
+        loss=None,
+    )
+    payload["selection"] = "ppo_style_rollout_policy"
+    payload["algorithm"] = "clipped_policy_gradient_smoke"
+    payload["ppo_clip_epsilon"] = clip_epsilon
+    payload["rollout_steps"] = rollout_steps
+    payload["mean_rollout_reward"] = round(reward_total / max(rollout_steps, 1), 6)
+    if float(payload["improvement_pct"]) <= 0:
+        fallback = _pressure_checkpoint(
+            episodes=episodes,
+            horizon=horizon,
+            trained_on_gpu=False,
+            training_backend="json",
+            detail="PPO-style policy underperformed; exported pressure-policy safety checkpoint",
+        )
+        fallback["selection"] = "ppo_safety_pressure_policy"
+        fallback["algorithm"] = "clipped_policy_gradient_smoke"
+        fallback["ppo_clip_epsilon"] = clip_epsilon
+        fallback["rollout_steps"] = rollout_steps
+        fallback["mean_rollout_reward"] = round(reward_total / max(rollout_steps, 1), 6)
+        return fallback
+    return payload
 
 
 def _build_training_set(
@@ -233,6 +389,26 @@ def _features(observation: dict[str, int]) -> list[float]:
         min(1.0, observation["tick"] / 120.0),
         1.0,
     ]
+
+
+def _policy_probs(
+    weights: list[list[float]],
+    bias: list[float],
+    row: list[float],
+) -> tuple[float, float]:
+    score0 = sum(weight * value for weight, value in zip(weights[0], row, strict=True)) + bias[0]
+    score1 = sum(weight * value for weight, value in zip(weights[1], row, strict=True)) + bias[1]
+    max_score = max(score0, score1)
+    exp0 = pow(2.718281828459045, score0 - max_score)
+    exp1 = pow(2.718281828459045, score1 - max_score)
+    denom = exp0 + exp1
+    return exp0 / denom, exp1 / denom
+
+
+def _safe_log(value: float) -> float:
+    import math
+
+    return math.log(max(value, 1e-9))
 
 
 if __name__ == "__main__":
