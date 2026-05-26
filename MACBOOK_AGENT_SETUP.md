@@ -11,6 +11,21 @@
 - public RunPod endpoint가 없으면 SSH tunnel 모드로 접속한다.
 - self-learning 문구는 정확히 말한다: 기본 live loop는 reward-gated policy adaptation이고, 모델 weight fine-tuning은 `AETHERVILLE_APPROVE_MODEL_TRAINING=1`로 승인한 별도 trainer/checkpoint promotion cycle에서만 실제 실행된다.
 
+## 현재 H100 demo quick check
+
+- 새 H100에서 SSH 포워딩이 거부될 수 있다. 이 경우 `ssh -L` 대신 RunPod HTTP Services 또는 임시 public orchestrator tunnel URL을 `client/.env.local`에 넣는다.
+- public orchestrator URL은 커밋하지 않는다.
+- live client 확인 명령:
+
+```bash
+curl -fsS "$NEXT_PUBLIC_ORCHESTRATOR_URL/api/v1/health" | python3 -m json.tool
+NEXT_TELEMETRY_DISABLED=1 pnpm --filter @aetherville/client build
+pnpm --filter @aetherville/client exec next start -H 0.0.0.0 -p 3000
+```
+
+- Mac/WSL 파일시스템에서 Next build가 비정상적으로 느리면 레포를 로컬 APFS/Linux filesystem으로 복사한 뒤 빌드한다.
+
+
 ## 1. MacBook 사전 설치
 
 ```bash

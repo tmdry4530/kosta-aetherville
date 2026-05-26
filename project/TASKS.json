@@ -1,6 +1,6 @@
 {
     "epic": "project-aetherville-codex-implementation",
-    "status": "new_h100_handoff_docs_and_backups_prepared",
+    "status": "new_h100_real_demo_runtime_verified",
     "source_prd": "project/source/Project Aetherville PRD.pdf",
     "tasks": [
         {
@@ -1248,6 +1248,32 @@
                 "handoff_doc": "project_NEW_H100_ACCOUNT_HANDOFF_md_created",
                 "risk_plan": "new_h100_migration_model_training_reload_and_truthfulness_risks_documented",
                 "docker_policy": "no_docker_no_compose_no_dind"
+            }
+        },
+        {
+            "id": "OPS-H100-005",
+            "title": "Verify new-account H100 direct-process real-demo runtime and browser smoke",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "project/NEW_H100_ACCOUNT_HANDOFF.md",
+            "depends_on": [
+                "OPS-H100-004"
+            ],
+            "unblocked_by": "user_finished_new_h100_disk_setup_and_requested_subagent_assisted_completion",
+            "last_checked_at": "2026-05-27T02:09:23+09:00",
+            "completed_at": "2026-05-27T02:09:23+09:00",
+            "diagnostics": {
+                "gpu": "NVIDIA_H100_80GB_HBM3_driver_580_126_09_workspace_250GB",
+                "sync": "git_https_clone_prompted_for_credentials_so_secretless_local_tar_over_ssh_pty_sync_used",
+                "runtime": "direct_process_real_demo_passed_no_docker",
+                "vllm": "real_Qwen_Qwen2_5_14B_Instruct_AWQ_models_endpoint_ok",
+                "vision": "real_Ultralytics_YOLO_yolo11n_on_port_18001_health_ok",
+                "orchestrator": "health_ok_city_ai_vllm_enabled_socketio_polling_client_connected",
+                "connectivity": "ssh_L_forwarding_rejected_by_runpod_proxy_and_runpod_http_proxy_404_for_unexposed_ports_ephemeral_cloudflare_quick_tunnel_used",
+                "training": "dry_run_training_cycle_passed_after_entityless_yolo_pseudo_label_fix_no_weights_mutated",
+                "smokes": "city_ai_vllm_scenario_directive_learning_evolution_replanner_autonomous_dogfood_browser_live_browser_replay_passed",
+                "local_client": "Next_build_on_mnt_d_timed_out_working_build_and_start_from_tmp_linux_filesystem",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
             }
         }
     ]

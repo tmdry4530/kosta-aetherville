@@ -33,18 +33,18 @@ is unavailable and not required. These scripts are conservative: they do not
 install Docker, run Docker Compose, or delete remote data. Real vLLM model
 downloads start only when explicitly configured with
 `AETHERVILLE_VLLM_MODE=real`, `AETHERVILLE_BOOTSTRAP_VLLM=1`, and a selected
-`MODEL_NAME`; the current 4090 pod uses a CUDA-12.8-compatible vLLM pin such as
+`MODEL_NAME`; the current H100/RunPod pod uses a CUDA-12.8-compatible vLLM pin such as
 `AETHERVILLE_VLLM_INSTALL_PACKAGE="vllm==0.10.2"` plus
 `AETHERVILLE_VLLM_COMPAT_PACKAGE="transformers==4.55.4"`, and model cache
 should live under `/workspace`.
 
-5090 migration helpers:
+H100/5090 migration helpers:
 
 ```bash
 # Before stopping the old pod, capture a remote workspace/runtime handoff archive.
 bash infra/runpod/create_remote_handoff_backup.sh
 
-# On the new 5090 pod, first bring up a no-download smoke runtime.
+# On a new H100/5090 pod, first bring up a no-download smoke runtime.
 bash infra/runpod/deploy_5090_direct.sh --profile safe-smoke --dry-run
 bash infra/runpod/deploy_5090_direct.sh --profile safe-smoke
 
@@ -53,3 +53,7 @@ AETHERVILLE_APPROVE_REAL_AI=1 bash infra/runpod/deploy_5090_direct.sh --profile 
 ```
 
 Detailed checklist: `project/RTX5090_MIGRATION_RUNBOOK.md`.
+
+## RunPod SSH proxy note
+
+Some RunPod SSH proxy sessions reject local `-L` forwarding with an unsupported channel type. If that happens, do not retry blindly. Use RunPod HTTP Services for the required ports or a temporary reverse/public tunnel to the orchestrator, then point the local Next client at that public orchestrator URL. Keep generated URLs and all `.env.runpod` values out of git.

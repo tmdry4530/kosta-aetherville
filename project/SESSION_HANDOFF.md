@@ -1,5 +1,37 @@
 # project/SESSION_HANDOFF.md
 
+## Current state — new-account H100 live demo runtime (2026-05-27T02:09:23+09:00)
+
+- New H100 pod is the active demo backend. Verified GPU: NVIDIA H100 80GB HBM3, driver `580.126.09`; Docker is absent and remains forbidden for this runtime path.
+- Direct-process real-demo is running on the H100:
+  - orchestrator `:8080` with `AETHERVILLE_LLM_MODE=vllm` and `AETHERVILLE_CITY_AI_MODE=vllm`
+  - vLLM `:8000` serving `Qwen/Qwen2.5-14B-Instruct-AWQ`
+  - vision `:18001` with real Ultralytics YOLO `yolo11n.pt`
+  - Redis memory fallback; STT stub
+- The local browser demo is available at `http://127.0.0.1:3000/` and `/replay`. It is currently served from `/tmp/aetherville-run/client` because Next build/dev on the WSL `/mnt/d` checkout stalled; the source of truth remains this repo.
+- Connectivity caveat: this RunPod SSH proxy rejected local `-L` forwarding and RunPod HTTP proxy returned 404 for unexposed service ports. The current live browser uses an ephemeral Cloudflare quick tunnel to the orchestrator. Do not commit the ephemeral URL; restart the tunnel if the pod/process restarts.
+- Latest verification passed: H100 health, model training dry-run cycle, vLLM City AI smoke, scenario directive smoke, learning evolution smoke, replanner smoke, autonomous dogfood smoke, browser live smoke, and browser replay smoke.
+- Truth line: runtime adaptation and dry-run trainer handoff are verified; actual model-weight fine-tuning/promotion/reload is **not** claimed until an approved non-dry-run trainer cycle promotes a checkpoint and the runtime reload is smoke-tested.
+
+## Immediate recovery commands
+
+```bash
+# H100 public-orchestrator mode: use the current quick-tunnel/public orchestrator URL locally.
+cat > client/.env.local <<'EOF_ENV'
+NEXT_PUBLIC_ORCHESTRATOR_URL=<public-orchestrator-url>
+NEXT_PUBLIC_SOCKET_URL=<public-orchestrator-url>
+NEXT_PUBLIC_SOCKET_TRANSPORTS=polling
+EOF_ENV
+
+# If /mnt/d Next build stalls, build from Linux filesystem copy.
+rm -rf /tmp/aetherville-run
+tar --exclude=.git --exclude=node_modules --exclude=client/node_modules --exclude=client/.next --exclude=.venv --exclude=.omx --exclude=.gstack --exclude=dogfood-output -czf - . | tar -xzf - -C /tmp/aetherville-run
+cd /tmp/aetherville-run
+pnpm install --frozen-lockfile
+NEXT_TELEMETRY_DISABLED=1 CI=1 pnpm --filter @aetherville/client exec next build --no-lint
+cd client && ./node_modules/.bin/next start -H 0.0.0.0 -p 3000
+```
+
 ## Current state
 
 Master goal was re-audited as complete as of 2026-05-24T22:39:21+09:00 after the direct-process runtime strategy patch. All phases Goal 00, Phase 01–10, Phase 99, and the post-audit direct-process hardening pass have completion evidence.
@@ -261,11 +293,11 @@ If restarting:
 3. Verify `curl http://127.0.0.1:18080/api/v1/learning/status` before presenting the AI learning panel.
 4. Do not run Docker, Docker Compose, Docker-in-Docker, or real model training without a separate explicit request.
 
-## Real 4090 vLLM handoff — 2026-05-25T13:02:41+09:00
+## Historical Real 4090 vLLM handoff — 2026-05-25T13:02:41+09:00
 
 Current GPU state:
 
-- Real vLLM is active on the RunPod RTX 4090 through direct-process runtime.
+- Historical note: real vLLM was active on the previous RunPod RTX 4090 through direct-process runtime.
 - Served model: `Qwen/Qwen2.5-14B-Instruct-AWQ`.
 - Runtime pins for this pod: `vllm==0.10.2`, `transformers==4.55.4`, Torch CUDA 12.8.
 - Model cache: `/workspace/aetherville-model-cache`.

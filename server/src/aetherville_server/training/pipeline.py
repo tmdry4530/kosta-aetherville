@@ -787,7 +787,8 @@ def _pseudo_label(record: dict[str, Any]) -> str:
         return "taxi"
     if action == "traffic_jam":
         return "traffic_light"
-    if record.get("entity_id", "").startswith("c"):
+    entity_id = str(record.get("entity_id") or "")
+    if entity_id.startswith("c"):
         return "person"
     return "vehicle"
 

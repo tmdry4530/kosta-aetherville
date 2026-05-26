@@ -2,6 +2,16 @@
 
 이 문서는 기존 계정 문제로 새 계정의 H100 RunPod/클라우드를 대여했을 때, MacBook/Windows 로컬 에이전트가 **현재 `master` 브랜치 상태를 새 H100 direct-process 런타임으로 복구하고 다음 작업을 이어가기 위한 실행 문서**다.
 
+## Deployment completion addendum — 2026-05-27T02:09:23+09:00
+
+- New-account H100 direct-process real-demo bring-up is complete.
+- Verified H100 runtime: H100 80GB, direct-process orchestrator `8080`, vLLM `8000`, real YOLO vision `18001`, memory Redis fallback, STT stub.
+- Real vLLM model served: `Qwen/Qwen2.5-14B-Instruct-AWQ`.
+- Real YOLO mode served with `yolo11n.pt`.
+- RunPod SSH `-L` forwarding failed with unsupported channel type, and default RunPod proxy returned 404 for unconfigured HTTP service ports. Current demo connectivity therefore uses an ephemeral Cloudflare quick tunnel to the orchestrator. Do not commit the generated URL.
+- Local browser proof passed at `http://127.0.0.1:3000/` and `/replay` using the H100 public orchestrator URL.
+- Training proof passed as dry-run dataset/evaluation/checkpoint-plan generation only. Actual weight mutation remains pending explicit `AETHERVILLE_APPROVE_MODEL_TRAINING=1`, non-dry-run trainer execution, promotion, and runtime reload verification.
+
 ## 0. 현재 보존 상태
 
 - GitHub `master`에는 demo-ready direct-process runtime과 guarded model-training pipeline이 푸시되어 있다.

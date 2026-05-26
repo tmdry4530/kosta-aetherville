@@ -2,9 +2,40 @@
 
 ## Current objective
 
-- Active master goal: complete; post-audit continuation uses direct-process runtime only for cloud milestones.
-- Current phase state: **Phase 99 Final Audit complete** as of 2026-05-24T21:57:21+09:00.
-- Current follow-up: patch goal/status documents so verified RunPod execution strategy is explicitly direct-process runtime, not Docker-first.
+- Active runtime: **new-account RunPod H100 direct-process real-demo** as of 2026-05-27T02:09:23+09:00.
+- Cloud state: H100 80GB verified, Docker absent by policy, vLLM real server up with `Qwen/Qwen2.5-14B-Instruct-AWQ`, vision real YOLO on `18001`, orchestrator on `8080`, Redis memory fallback.
+- Local browser state: Next production client is running on `http://127.0.0.1:3000/` from a Linux-filesystem build copy because WSL `/mnt/d` Next build/dev was too slow/stalled; source remains in this repo and `.env.local` stays ignored.
+- Connectivity: RunPod SSH proxy rejected local `-L` forwarding and RunPod HTTP proxy returned 404 for unexposed ports, so the live demo currently uses an ephemeral Cloudflare quick tunnel to the H100 orchestrator. Do not commit the ephemeral URL.
+- Model-training truth: dry-run trainer handoff is verified; model weights are not claimed changed until an approved non-dry-run trainer produces/promotes a checkpoint and the runtime reload is verified.
+
+## New-account H100 real-demo runtime — 2026-05-27T02:09:23+09:00
+
+- Status: complete for live demo runtime bring-up.
+- Read-only H100 verification passed: NVIDIA H100 80GB HBM3, driver `580.126.09`, Python 3.11.10, `/workspace` 250GB, Docker missing.
+- Source sync: GitHub HTTPS clone required credentials, so the repo was synced by local tar-over-SSH/PTTY upload with secret/env/model artifacts excluded.
+- Safe-smoke runtime passed first with mock vLLM, mock vision, orchestrator, memory Redis fallback, and training status.
+- Real-demo runtime passed after installing vLLM and Ultralytics into the direct-process uv environment:
+  - vLLM model: `Qwen/Qwen2.5-14B-Instruct-AWQ` on `:8000`.
+  - Vision: real Ultralytics YOLO `yolo11n.pt` on verified port `18001`.
+  - Orchestrator: FastAPI/Socket.IO on `:8080`, `AETHERVILLE_LLM_MODE=vllm`, `AETHERVILLE_CITY_AI_MODE=vllm`.
+  - Redis remains memory fallback; STT remains stub unless explicitly enabled.
+- Connectivity finding: this RunPod SSH proxy does not support `direct-tcpip` local forwarding, and `https://<pod>-<port>.proxy.runpod.net` returned 404 for service ports not configured as HTTP Services. An ephemeral Cloudflare quick tunnel was started for the orchestrator so local browser smoke could run.
+- Verification evidence:
+  - pass: H100 internal `infra/runpod/health_check_direct.sh` after real-demo start.
+  - pass: public orchestrator health/status/training checks through the quick tunnel.
+  - pass: `uv run python scripts/model_training_cycle.py --orchestrator-url <public-orchestrator> --force`; dry-run datasets/eval generated for vLLM LoRA, YOLO, traffic PPO, and traffic LSTM.
+  - pass: `uv run python scripts/city_ai_smoke.py --expect-mode vllm`; vLLM City AI plan applied.
+  - pass: `uv run python scripts/scenario_directive_smoke.py`.
+  - pass: `uv run python scripts/learning_evolution_smoke.py --repeat 2 --wait-seconds 12`.
+  - pass: `uv run python scripts/replanner_resilience_smoke.py --wait-seconds 20`.
+  - pass: `uv run python scripts/autonomous_city_dogfood_smoke.py`.
+  - pass: browser live/replay smokes with `/usr/bin/google-chrome-stable` against `http://127.0.0.1:3000/` and `/replay`.
+- Fix made during bring-up: YOLO pseudo-label dry-run now handles entityless experience records, preventing `None.startswith` failures in `/api/v1/training/cycle`.
+- Residual risks:
+  - Cloudflare quick tunnel URL is ephemeral; for durable demos configure RunPod HTTP Services or a stable tunnel/domain.
+  - SSH `-L` tunnel examples remain valid for providers that support port forwarding, but this RunPod SSH proxy rejected forwarding.
+  - Real vLLM inference is verified; real weight fine-tuning/promotion is not yet verified.
+  - Local Next build on `/mnt/d` timed out; the working demo server was built under `/tmp/aetherville-run` on the Linux filesystem.
 
 ## Phase 00 — RunPod SSH Bootstrap
 

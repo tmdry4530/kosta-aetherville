@@ -5,7 +5,12 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from aetherville_schemas import GodCommand, ModelTrainingSnapshot, TrainingCycleResponse
+from aetherville_schemas import (
+    EventPayload,
+    GodCommand,
+    ModelTrainingSnapshot,
+    TrainingCycleResponse,
+)
 from aetherville_server.learning import LearningStore
 from aetherville_server.main import fastapi_app
 from aetherville_server.sim import SimulationEngine
@@ -50,6 +55,31 @@ def test_learning_store_writes_experience_log_and_dry_run_training_cycle(tmp_pat
     assert response.training.checkpoint_count == 0
     assert response.training.approval_required is True
 
+
+def test_yolo_dry_run_handles_entityless_experience_records(tmp_path: Path) -> None:
+    learning_path = tmp_path / "learning_state.json"
+    store = LearningStore(learning_path)
+    store.training.append_experience(
+        EventPayload(
+            kind="weather_changed",
+            message="비가 내리기 시작했습니다.",
+            entity_id=None,
+            metadata={"weather": "rain"},
+        ),
+        tick=7,
+        learning={"reward_score": 0.6},
+    )
+
+    response = store.training.run_cycle(dry_run=True, targets=["yolo"], force=True)
+
+    assert response.status == "dry_run"
+    assert response.jobs[0].status == "dry_run"
+    assert response.jobs[0].dataset is not None
+    rows = [
+        json.loads(line)
+        for line in Path(response.jobs[0].dataset.path).read_text(encoding="utf-8").splitlines()
+    ]
+    assert rows[0]["pseudo_labels"][0]["label"] == "vehicle"
 
 def test_real_training_cycle_is_blocked_without_explicit_approval(tmp_path: Path) -> None:
     engine = SimulationEngine(learning_store=LearningStore(tmp_path / "learning_state.json"))

@@ -340,3 +340,17 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - Docker remains excluded from the current direct-process runtime strategy.
 - Rejected: Mutating model weights inside the live request/tick loop, because it risks demo instability, hidden regressions, runaway GPU spend, and no clean rollback boundary.
 - Revisit when: a promoted non-dry-run LoRA/PPO/LSTM/YOLO checkpoint has been produced on H100 and the runtime reload path is verified end-to-end.
+
+## ADR-027: New-account H100 demo runtime uses direct-process real AI plus ephemeral public orchestrator fallback
+
+- Status: accepted
+- Context: The previous H100 account was stopped and a new H100 pod was provisioned. The new pod verifies H100 GPU capacity but its RunPod SSH proxy rejects local `-L` forwarding and the default RunPod HTTP proxy returns 404 until service ports are explicitly configured as HTTP Services.
+- Decision: Keep the active runtime as direct-process on the H100 pod, with real vLLM and real YOLO enabled for demo proof. Use an ephemeral Cloudflare quick tunnel for the orchestrator when RunPod HTTP Services or SSH forwarding are unavailable. Do not commit the tunnel URL or any local RunPod secret values.
+- Consequences:
+  - The browser demo can run immediately from any local machine that has the current public orchestrator URL in ignored `client/.env.local`.
+  - vLLM inference is real and verified through orchestrator health and City AI smoke; YOLO runtime is real and verified through vision health.
+  - Durable production-style access still requires configuring RunPod HTTP Services, a stable reverse tunnel, or a domain/TLS gateway.
+  - Docker remains excluded. The H100 pod itself is the execution environment.
+  - Model-weight fine-tuning remains a guarded offline trainer/promotion process; the current verified training cycle is dry-run only.
+- Rejected: Blind Docker setup, Docker-in-Docker, or treating SSH forwarding as guaranteed on this RunPod proxy, because the live environment explicitly rejects those paths.
+- Revisit when: RunPod HTTP Services are configured for `8080`/`18001`/`8000`, a stable tunnel/domain is available, or an approved non-dry-run training checkpoint is promoted and reloaded.
