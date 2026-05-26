@@ -30,3 +30,9 @@ coverage/
 
 # Local browser QA artifacts
 dogfood-output/
+
+# Local Codex/agent instructions and generated project documentation
+.codex/
+.agents/
+codex/
+docs/
