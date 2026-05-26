@@ -36,3 +36,6 @@ dogfood-output/
 .agents/
 codex/
 docs/
+
+# Local GitHub workflow metadata intentionally not tracked
+.github/
