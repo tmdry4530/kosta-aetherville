@@ -1,0 +1,103 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
+from aetherville_schemas import GodCommand, ModelTrainingSnapshot, TrainingCycleResponse
+from aetherville_server.learning import LearningStore
+from aetherville_server.main import fastapi_app
+from aetherville_server.sim import SimulationEngine
+
+
+def make_command(text: str) -> GodCommand:
+    return GodCommand(input_modality="text", raw_text=text, user_id="presenter")
+
+
+def seed_training_experience(engine: SimulationEngine) -> None:
+    for command in (
+        "교통량 증가시켜",
+        "민지가 택시를 불러줘",
+        "도시에 비를 내려줘",
+        "민수와 하린이 만나게 해줘",
+        "택시 없음 상황에서 민수가 택시를 불러 민지에게 간다",
+    ):
+        engine.execute_god_command(make_command(command))
+
+
+def test_learning_store_writes_experience_log_and_dry_run_training_cycle(tmp_path: Path) -> None:
+    learning_path = tmp_path / "learning_state.json"
+    engine = SimulationEngine(learning_store=LearningStore(learning_path))
+    seed_training_experience(engine)
+
+    training = engine.learning_status().learning.model_training
+    assert training.experience_log_path is not None
+    experience_log = Path(training.experience_log_path)
+    assert experience_log.exists()
+    first_record = json.loads(experience_log.read_text(encoding="utf-8").splitlines()[0])
+    assert "vllm_lora" in first_record["targets"]
+    assert "reward" in first_record
+
+    response = engine.learning.training.run_cycle(dry_run=True)
+
+    assert response.status == "dry_run"
+    assert len(response.jobs) == 4
+    assert all(job.status == "dry_run" for job in response.jobs)
+    assert all(job.dataset and Path(job.dataset.path).exists() for job in response.jobs)
+    assert all(job.checkpoint is not None for job in response.jobs)
+    assert response.training.dataset_count >= 4
+    assert response.training.checkpoint_count == 0
+    assert response.training.approval_required is True
+
+
+def test_real_training_cycle_is_blocked_without_explicit_approval(tmp_path: Path) -> None:
+    engine = SimulationEngine(learning_store=LearningStore(tmp_path / "learning_state.json"))
+    seed_training_experience(engine)
+
+    response = engine.learning.training.run_cycle(dry_run=False, targets=["vllm_lora"])
+
+    assert response.status == "blocked"
+    assert response.jobs[0].status == "failed"
+    assert "AETHERVILLE_APPROVE_MODEL_TRAINING" in response.jobs[0].detail
+
+
+def test_training_status_and_cycle_endpoints_use_shared_contract() -> None:
+    client = TestClient(fastapi_app)
+    client.post(
+        "/api/v1/god/command",
+        json={
+            "kind": "god_command",
+            "input_modality": "text",
+            "raw_text": "교통량 증가시켜",
+            "audio_blob_b64": None,
+            "user_id": "presenter",
+        },
+    )
+
+    status = client.get("/api/v1/training/status")
+    assert status.status_code == 200
+    snapshot = ModelTrainingSnapshot.model_validate(status.json())
+    assert "vllm_lora" in snapshot.targets
+
+    cycle = client.post(
+        "/api/v1/training/cycle",
+        json={"dry_run": True, "targets": ["vllm_lora", "traffic_ppo"], "force": True},
+    )
+    assert cycle.status_code == 200
+    parsed = TrainingCycleResponse.model_validate(cycle.json())
+    assert parsed.status == "dry_run"
+    assert [job.target for job in parsed.jobs] == ["vllm_lora", "traffic_ppo"]
+
+
+def test_training_rollback_reports_missing_candidate() -> None:
+    client = TestClient(fastapi_app)
+    response = client.post(
+        "/api/v1/training/rollback",
+        json={"target": "vllm_lora", "reason": "test rollback"},
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["accepted"] is False
+    assert body["rolled_back_to"] is None

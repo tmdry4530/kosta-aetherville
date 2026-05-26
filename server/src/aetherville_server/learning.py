@@ -1,9 +1,10 @@
-"""Persistent demo learning loop for Aetherville.
+"""Persistent learning loop for Aetherville.
 
-This is intentionally not GPU model training.  It records live city experience
-signals, persists an adaptive policy snapshot, and feeds that snapshot back into
-simulation forecasts/tags so a long-running direct-process demo visibly evolves
-without starting costly model downloads or training jobs.
+The hot path remains safe JSON-backed reward adaptation, but every recorded
+experience is also written into the guarded model-training pipeline. That gives
+H100/5090 operators a concrete Experience Log → Dataset Builder → trainer →
+evaluation → checkpoint promotion/rollback path without mutating weights during
+the live tick loop.
 """
 
 from __future__ import annotations
@@ -25,6 +26,7 @@ from aetherville_schemas import (
     TaskOutcomeScore,
     TrajectoryEvent,
 )
+from aetherville_server.training import TrainingPipeline
 
 DEFAULT_INSIGHT = (
     "아직 학습 신호가 부족합니다. God Mode나 시민 이벤트를 실행하면 적응이 시작됩니다."
@@ -32,16 +34,18 @@ DEFAULT_INSIGHT = (
 
 
 class LearningStore:
-    """Small JSON-backed online adaptation state.
+    """Small JSON-backed online adaptation plus trainer handoff state.
 
-    The store is deterministic, cheap, and process-safe enough for the single
-    orchestrator process used by the RunPod direct-process runtime.  It is a
-    persistence/adaptation layer, not a replacement for future PPO/LSTM/vLLM
-    training pipelines.
+    The store is deterministic and cheap enough for the single orchestrator
+    process used by the RunPod direct-process runtime. Model weights are trained
+    only by explicit background trainer cycles, then promoted or rolled back via
+    the checkpoint registry.
     """
 
     def __init__(self, path: str | Path | None = None) -> None:
         self.path = Path(path) if path else _default_learning_path()
+        training_base = self.path.parent / "training"
+        self.training = TrainingPipeline(training_base)
         self._state = self._load_state()
 
     @property
@@ -83,22 +87,28 @@ class LearningStore:
                 for candidate in list(self._state.get("policy_candidates", []))[-6:]
             ],
             promotion_gate=self._promotion_gate_snapshot(),
+            model_training=self.training.snapshot(),
         )
 
     def status_response(self) -> LearningStatusResponse:
         return LearningStatusResponse(
             learning=self.snapshot(),
             explanation=(
-                "현재 학습 루프는 비용 안전한 deterministic online adaptation입니다. "
-                "서버가 실행되는 동안 God Mode, 시민 기억, 택시, 정체 이벤트를 JSON 상태로 "
-                "누적하고 reward gate로 후보 정책을 평가한 뒤, 통과한 정책만 다음 "
-                "forecast/tag/데모 정책에 즉시 반영합니다."
+                "현재 런타임은 JSON reward-gated adaptation을 즉시 반영하고, 동시에 "
+                "Experience Log → Dataset Builder → guarded trainer → Evaluation Gate → "
+                "Checkpoint Registry → Promotion/Rollback 파이프라인으로 모델 weight 학습 "
+                "준비물을 생성합니다. 실제 weight training은 AETHERVILLE_APPROVE_MODEL_TRAINING=1 "
+                "승인 후 별도 trainer job에서 실행됩니다."
             ),
             upgrade_path=[
-                "Redis/Postgres/Vector DB로 경험 로그 영속화",
-                "PPO 교통 신호 정책 오프라인 학습 후 checkpoint 배포",
-                "LSTM/Transformer 교통 예측 재학습 잡 추가",
-                "승인된 real vLLM으로 시민 reflection/plan batch worker 연결",
+                "Experience Log JSONL로 모든 God Mode/시민/교통/vision 이벤트 수집",
+                "vLLM LoRA/SFT/DPO용 chat_sft_jsonl dataset builder",
+                "YOLO pseudo-label manifest builder와 optional self-training script",
+                "교통 PPO rollout dataset과 checkpoint trainer/evaluator",
+                "LSTM traffic sequence dataset과 checkpoint trainer/evaluator",
+                "Evaluation Gate 통과 checkpoint만 registry에서 promoted로 승격",
+                "실패 checkpoint는 rejected, 문제 발생 시 rollback endpoint로 "
+                "이전 promoted checkpoint 복구",
             ],
         )
 
@@ -252,6 +262,16 @@ class LearningStore:
         self._state["policy_version"] = f"adaptive-demo-v{self._state['adaptation_epoch']}"
         self._maybe_evaluate_policy_candidate(tick=tick, source_signal=event.kind)
         self._save_state()
+        self.training.append_experience(
+            event,
+            tick=tick,
+            learning={
+                "experience_count": self._state.get("experience_count", 0),
+                "adaptation_epoch": self._state.get("adaptation_epoch", 0),
+                "policy_version": self._state.get("active_policy_version"),
+                "reward_score": self._reward_score(),
+            },
+        )
         return self.snapshot()
 
     def reset(self) -> LearningSnapshot:

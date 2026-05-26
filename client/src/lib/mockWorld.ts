@@ -331,6 +331,34 @@ export function createFallbackWorldState(tick = 0): WorldStatePayload {
         last_decision: tick > 180 ? 'promoted' : 'none',
         last_promoted_version: tick > 180 ? `adaptive-policy-candidate-v${Math.max(1, Math.floor(tick / 180))}` : null,
         rollback_available: tick > 180
+      },
+      model_training: {
+        mode: tick > 180 ? 'dry_run' : 'not_configured',
+        approval_required: true,
+        approval_env: 'AETHERVILLE_APPROVE_MODEL_TRAINING',
+        experience_log_path: '/tmp/aetherville/training/experience_log.jsonl',
+        registry_path: '/tmp/aetherville/training/checkpoints/registry.json',
+        dataset_count: tick > 180 ? 4 : 0,
+        checkpoint_count: 0,
+        promoted_count: 0,
+        rollback_available: false,
+        targets: ['vllm_lora', 'yolo', 'traffic_ppo', 'traffic_lstm'],
+        jobs: tick > 180 ? [
+          {
+            id: `replay_train_${tick}`,
+            target: 'vllm_lora',
+            status: 'dry_run',
+            dry_run: true,
+            dataset: null,
+            checkpoint: null,
+            evaluation: null,
+            started_ts: tick,
+            completed_ts: tick,
+            detail: 'Replay shows guarded model-weight training handoff without mutating weights.',
+            command: ['python3', 'scripts/train_vllm_lora.py', '--dry-run']
+          }
+        ] : [],
+        last_cycle_id: tick > 180 ? `replay_train_${Math.floor(tick / 180)}` : null
       }
     },
     city_ai: {

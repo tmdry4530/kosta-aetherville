@@ -1141,3 +1141,15 @@ Verification update — 2026-05-25T18:04:10+09:00:
   - `python3 scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18080 --timeout-seconds 60`
   - `python3 scripts/browser_demo_smoke.py --mode replay --url http://127.0.0.1:3000/replay --timeout-seconds 60`
 - H100 health remained ok after production browser smoke.
+
+## OPS-H100-003 — Guarded model-weight training pipeline — 2026-05-27T00:26:30+09:00
+
+- Status: implementation in progress on `master` after the demo runtime merge.
+- Added the missing bridge from JSON-backed reward adaptation to real model-weight training: Experience Log JSONL, target-specific Dataset Builder, guarded trainer command paths, Evaluation Gate, Checkpoint Registry, Promotion/Rollback API, and UI evidence.
+- Training targets now have explicit dataset formats: `vllm_lora` chat SFT JSONL, `yolo` pseudo-label manifest JSONL, `traffic_ppo` rollout JSONL, and `traffic_lstm` sequence JSONL.
+- Real model-weight trainer execution is intentionally blocked unless `AETHERVILLE_APPROVE_MODEL_TRAINING=1` is set. Dry-run cycles build datasets and evaluation evidence without model downloads or GPU spend.
+- Added `/api/v1/training/status`, `/api/v1/training/cycle`, and `/api/v1/training/rollback` to make checkpoint promotion/rollback observable from the orchestrator.
+- Updated direct-process RunPod env/start/deploy scripts to carry `AETHERVILLE_TRAINING_DIR` and `AETHERVILLE_APPROVE_MODEL_TRAINING` without Docker.
+- Added local scripts for the training cycle plus guarded vLLM LoRA and YOLO self-training entrypoints. PPO/LSTM reuse existing traffic checkpoint trainers behind the same promotion gate.
+- Final local verification passed: `uv run pytest -q` (57 passed), `uv run ruff check server packages scripts`, `uv run mypy server packages scripts/model_training_cycle.py scripts/train_vllm_lora.py scripts/train_yolo_self_training.py`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm test:e2e`, `pnpm --filter @aetherville/client build`, dry-run training cycle smoke, `python3 -m json.tool project/TASKS.json`, `bash -n infra/runpod/*.sh`, and `git diff --check`.
+- Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not run.

@@ -42,6 +42,18 @@ export function LearningPanel({ learning }: LearningPanelProps) {
     rollback_available: false
   };
   const latestCandidate = (learning.policy_candidates ?? []).at(-1);
+  const modelTraining = learning.model_training ?? {
+    mode: 'not_configured',
+    approval_required: true,
+    approval_env: 'AETHERVILLE_APPROVE_MODEL_TRAINING',
+    dataset_count: 0,
+    checkpoint_count: 0,
+    promoted_count: 0,
+    rollback_available: false,
+    targets: [],
+    jobs: []
+  };
+  const latestTrainingJob = (modelTraining.jobs ?? []).at(-1);
   const latestInsight = insights.at(-1) ?? '아직 충분한 학습 신호가 없습니다. God Mode 명령을 실행해 보세요.';
 
   return (
@@ -100,8 +112,24 @@ export function LearningPanel({ learning }: LearningPanelProps) {
           </small>
         ) : null}
       </div>
+
+      <div className="modelTrainingGate" aria-label="Model weight training pipeline">
+        <strong>Model weight training pipeline</strong>
+        <span>{modelTraining.mode} · datasets {modelTraining.dataset_count} · checkpoints {modelTraining.checkpoint_count}</span>
+        <small>
+          targets {(modelTraining.targets ?? []).join(', ') || 'not configured'} · approval{' '}
+          {modelTraining.approval_required ? `required: ${modelTraining.approval_env}` : 'granted'}
+        </small>
+        {latestTrainingJob ? (
+          <small>
+            최근 {latestTrainingJob.target}: {latestTrainingJob.status} · {latestTrainingJob.detail}
+          </small>
+        ) : (
+          <small>Experience Log → Dataset Builder → Trainer → Eval Gate → Promotion/Rollback 준비됨</small>
+        )}
+      </div>
       <small className="learningInsight">
-        {latestInsight} · model-weight self-training: not verified, online policy-bias adaptation and promotion-gated learning only.
+        {latestInsight} · model-weight training path is guarded by approval and checkpoint promotion evidence.
       </small>
       {insights.length > 1 ? (
         <ul className="learningInsightList" aria-label="Recent learning insights">

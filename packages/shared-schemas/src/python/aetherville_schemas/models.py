@@ -303,6 +303,122 @@ class PolicyPromotionSnapshot(StrictModel):
     rollback_available: bool = False
 
 
+
+
+TrainingTarget: TypeAlias = Literal["vllm_lora", "yolo", "traffic_ppo", "traffic_lstm"]
+TrainingJobStatus: TypeAlias = Literal[
+    "queued",
+    "dataset_ready",
+    "training_skipped",
+    "training",
+    "trained",
+    "evaluated",
+    "promoted",
+    "rejected",
+    "failed",
+    "dry_run",
+]
+CheckpointStatus: TypeAlias = Literal[
+    "candidate",
+    "promoted",
+    "rejected",
+    "rolled_back",
+    "rollback_candidate",
+]
+
+
+class TrainingDatasetArtifact(StrictModel):
+    id: str
+    target: TrainingTarget
+    path: str
+    record_count: int = Field(ge=0)
+    format: str
+    created_ts: float = Field(ge=0)
+    source_experience_count: int = Field(default=0, ge=0)
+
+
+class CheckpointArtifact(StrictModel):
+    id: str
+    target: TrainingTarget
+    version: str
+    path: str
+    status: CheckpointStatus = "candidate"
+    metrics: dict[str, float] = Field(default_factory=dict)
+    created_ts: float = Field(ge=0)
+    promoted_ts: float | None = Field(default=None, ge=0)
+    trainer_backend: str = "unknown"
+    detail: str
+
+
+class EvaluationGateSnapshot(StrictModel):
+    target: TrainingTarget
+    metric: str
+    threshold: float
+    comparator: Literal["gte", "lte"]
+    candidate_value: float | None = None
+    passed: bool = False
+    reason: str
+
+
+class TrainingJobSnapshot(StrictModel):
+    id: str
+    target: TrainingTarget
+    status: TrainingJobStatus
+    dry_run: bool = True
+    dataset: TrainingDatasetArtifact | None = None
+    checkpoint: CheckpointArtifact | None = None
+    evaluation: EvaluationGateSnapshot | None = None
+    started_ts: float = Field(ge=0)
+    completed_ts: float | None = Field(default=None, ge=0)
+    detail: str
+    command: list[str] = Field(default_factory=list)
+
+
+class ModelTrainingSnapshot(StrictModel):
+    mode: Literal["not_configured", "dry_run", "ready", "training", "promoted", "blocked"] = (
+        "not_configured"
+    )
+    approval_required: bool = True
+    approval_env: str = "AETHERVILLE_APPROVE_MODEL_TRAINING"
+    experience_log_path: str | None = None
+    registry_path: str | None = None
+    dataset_count: int = Field(default=0, ge=0)
+    checkpoint_count: int = Field(default=0, ge=0)
+    promoted_count: int = Field(default=0, ge=0)
+    rollback_available: bool = False
+    targets: list[TrainingTarget] = Field(default_factory=list)
+    jobs: list[TrainingJobSnapshot] = Field(default_factory=list)
+    last_cycle_id: str | None = None
+
+
+class TrainingCycleRequest(StrictModel):
+    dry_run: bool = True
+    targets: list[TrainingTarget] = Field(default_factory=list)
+    force: bool = False
+
+
+class TrainingCycleResponse(StrictModel):
+    accepted: bool
+    cycle_id: str
+    status: Literal["dry_run", "promoted", "rejected", "blocked", "skipped"]
+    jobs: list[TrainingJobSnapshot] = Field(default_factory=list)
+    training: ModelTrainingSnapshot
+    message: str
+
+
+class TrainingRollbackRequest(StrictModel):
+    target: TrainingTarget
+    reason: str = "manual rollback"
+
+
+class TrainingRollbackResponse(StrictModel):
+    accepted: bool
+    target: TrainingTarget
+    rolled_back_to: str | None = None
+    training: ModelTrainingSnapshot
+    message: str
+
+
 class LearningSnapshot(StrictModel):
     mode: Literal["deterministic_online_adaptation"] = "deterministic_online_adaptation"
     storage: Literal["json_persistence", "memory"] = "memory"
@@ -322,6 +438,7 @@ class LearningSnapshot(StrictModel):
     evolution: EvolutionSnapshot = Field(default_factory=EvolutionSnapshot)
     policy_candidates: list[PolicyCandidateSnapshot] = Field(default_factory=list)
     promotion_gate: PolicyPromotionSnapshot = Field(default_factory=PolicyPromotionSnapshot)
+    model_training: ModelTrainingSnapshot = Field(default_factory=ModelTrainingSnapshot)
 
 
 class LearningStatusResponse(StrictModel):

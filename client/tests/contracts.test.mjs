@@ -91,8 +91,8 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(learningPanelSource, /learningMetrics/);
   assert.match(learningPanelSource, /Evolution state/);
   assert.match(learningPanelSource, /Policy promotion gate/);
-  assert.match(learningPanelSource, /promotion-gated learning/);
-  assert.match(learningPanelSource, /model-weight self-training: not verified/);
+  assert.match(learningPanelSource, /Model weight training pipeline/);
+  assert.match(learningPanelSource, /model-weight training path is guarded/);
   assert.match(aiOperationsSource, /AI operations/);
   assert.match(aiOperationsSource, /Entity intent/);
   assert.match(aiOperationsSource, /Replan feed/);
@@ -145,6 +145,7 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(cssSource, /learningMetrics/);
   assert.match(cssSource, /learningMeter/);
   assert.match(cssSource, /promotionGate/);
+  assert.match(cssSource, /modelTrainingGate/);
   assert.match(cssSource, /aiOperationsPanel/);
   assert.match(cssSource, /entityIntent/);
   assert.match(cssSource, /replanRecord/);
@@ -177,6 +178,8 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(typesSource, /export interface TrafficAiSnapshot/);
   assert.match(typesSource, /export interface TrafficForecastAiSnapshot/);
   assert.match(typesSource, /export interface LearningSnapshot/);
+  assert.match(typesSource, /export interface ModelTrainingSnapshot/);
+  assert.match(typesSource, /export interface TrainingCycleResponse/);
   assert.match(typesSource, /export interface ScenarioDirective/);
   assert.match(typesSource, /export interface ScenarioStep/);
   assert.match(typesSource, /export interface TaskGraphPlan/);
@@ -190,6 +193,7 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(typesSource, /learning: LearningSnapshot/);
   assert.ok(typesSource.includes('policy_candidates: PolicyCandidateSnapshot[]'));
   assert.match(typesSource, /promotion_gate: PolicyPromotionSnapshot/);
+  assert.match(typesSource, /model_training: ModelTrainingSnapshot/);
   assert.match(typesSource, /scenario\\?: ScenarioDirective \\| null/);
   assert.match(typesSource, /task_graph\\?: TaskGraphExecutionSnapshot \\| null/);
 });

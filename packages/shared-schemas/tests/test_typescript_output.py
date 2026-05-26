@@ -25,6 +25,9 @@ def test_generated_typescript_contract_exists() -> None:
     assert "export interface TrafficForecastAiSnapshot" in text
     assert "export interface LearningSnapshot" in text
     assert "export interface LearningStatusResponse" in text
+    assert "export interface ModelTrainingSnapshot" in text
+    assert "export interface TrainingCycleResponse" in text
+    assert "export interface TrainingRollbackResponse" in text
     assert "export interface CityWorldContext" in text
     assert "export interface CityAiAction" in text
     assert "export interface CityAiPlan" in text
@@ -51,6 +54,7 @@ def test_generated_typescript_contract_exists() -> None:
     assert "export interface PolicyPromotionSnapshot" in text
     assert "policy_candidates: PolicyCandidateSnapshot[]" in text
     assert "promotion_gate: PolicyPromotionSnapshot" in text
+    assert "model_training: ModelTrainingSnapshot" in text
     assert "replans: ReplanRecord[]" in text
     assert "entity_brains: EntityBrainState[]" in text
     assert "export interface EvolutionSnapshot" in text

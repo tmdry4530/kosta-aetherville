@@ -7,6 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from aetherville_schemas import (
+    CheckpointArtifact,
     CitizenDetailResponse,
     CityAiAction,
     CityAiPlan,
@@ -19,6 +20,7 @@ from aetherville_schemas import (
     EntityProgress,
     Envelope,
     EnvelopeType,
+    EvaluationGateSnapshot,
     EvolutionSnapshot,
     GodCommand,
     GodCommandResponse,
@@ -27,6 +29,7 @@ from aetherville_schemas import (
     LearningSnapshot,
     LearningStatusResponse,
     MemoryRecord,
+    ModelTrainingSnapshot,
     PlanNode,
     ReplanRecord,
     ScenarioDirective,
@@ -39,6 +42,12 @@ from aetherville_schemas import (
     TaskOutcomeScore,
     TrafficAiSnapshot,
     TrafficForecastAiSnapshot,
+    TrainingCycleRequest,
+    TrainingCycleResponse,
+    TrainingDatasetArtifact,
+    TrainingJobSnapshot,
+    TrainingRollbackRequest,
+    TrainingRollbackResponse,
     TrajectoryEvent,
     TripState,
     VehicleCameraFrame,
@@ -68,6 +77,85 @@ def test_state_update_fixture_parses() -> None:
     assert payload.learning.mode == "deterministic_online_adaptation"
     assert payload.learning.experience_count == 0
     assert payload.city_ai.mode == "disabled"
+
+
+def test_model_training_contract_validates_checkpoint_promotion_path() -> None:
+    dataset = TrainingDatasetArtifact(
+        id="dataset_test_vllm",
+        target="vllm_lora",
+        path="/tmp/aetherville/training/datasets/test.jsonl",
+        record_count=12,
+        format="chat_sft_jsonl",
+        created_ts=1.0,
+        source_experience_count=12,
+    )
+    checkpoint = CheckpointArtifact(
+        id="checkpoint_test_vllm",
+        target="vllm_lora",
+        version="vllm_lora-test",
+        path="/tmp/aetherville/training/checkpoints/test.json",
+        status="candidate",
+        metrics={"plan_validity": 0.72},
+        created_ts=2.0,
+        trainer_backend="dry_run_recipe",
+        detail="candidate LoRA checkpoint",
+    )
+    evaluation = EvaluationGateSnapshot(
+        target="vllm_lora",
+        metric="plan_validity",
+        threshold=0.6,
+        comparator="gte",
+        candidate_value=0.72,
+        passed=True,
+        reason="gate passed",
+    )
+    job = TrainingJobSnapshot(
+        id="job_test_vllm",
+        target="vllm_lora",
+        status="dry_run",
+        dry_run=True,
+        dataset=dataset,
+        checkpoint=checkpoint,
+        evaluation=evaluation,
+        started_ts=1.0,
+        completed_ts=2.0,
+        detail="dry-run verified",
+        command=["python3", "scripts/train_vllm_lora.py", "--dry-run"],
+    )
+    snapshot = ModelTrainingSnapshot(
+        mode="dry_run",
+        experience_log_path="/tmp/aetherville/training/experience_log.jsonl",
+        registry_path="/tmp/aetherville/training/checkpoints/registry.json",
+        dataset_count=1,
+        checkpoint_count=0,
+        promoted_count=0,
+        targets=["vllm_lora", "yolo", "traffic_ppo", "traffic_lstm"],
+        jobs=[job],
+        last_cycle_id="train_test",
+    )
+    response = TrainingCycleResponse(
+        accepted=True,
+        cycle_id="train_test",
+        status="dry_run",
+        jobs=[job],
+        training=snapshot,
+        message="training handoff verified",
+    )
+    rollback = TrainingRollbackResponse(
+        accepted=False,
+        target="vllm_lora",
+        training=snapshot,
+        message="rollback candidate is unavailable",
+    )
+
+    assert response.training.jobs[0].evaluation is not None
+    assert response.training.jobs[0].evaluation.passed is True
+    assert rollback.accepted is False
+    assert TrainingCycleRequest(dry_run=True).targets == []
+    assert TrainingRollbackRequest(target="traffic_ppo").reason == "manual rollback"
+
+    with pytest.raises(ValidationError):
+        TrainingDatasetArtifact.model_validate(dataset.model_dump() | {"target": "bad_target"})
 
 
 def test_invalid_envelope_type_is_rejected() -> None:

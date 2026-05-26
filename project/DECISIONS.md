@@ -326,3 +326,17 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - Docker remains excluded from the verified direct-process runtime strategy.
 - Rejected: Claiming background model-weight self-training from ordinary runtime events, because no verified training job, checkpoint registry, or rollback gate exists for that claim.
 - Revisit when: a real training worker and checkpoint promotion registry are implemented and verified on a GPU machine.
+
+## ADR-026: Model-weight self-learning uses guarded offline trainer cycles and checkpoint promotion
+
+- Status: accepted
+- Context: H100 capacity makes LoRA/PPO/LSTM/YOLO training feasible, but vLLM inference, YOLO serving, traffic policy runtime, and the live simulation tick loop do not automatically mutate weights. Claiming “진짜 자가학습 AI 도시” requires training artifacts, evaluation evidence, checkpoint promotion, and rollback.
+- Decision: Keep the live tick loop safe and deterministic while writing every learning event into an Experience Log JSONL. Add dataset builders for `vllm_lora`, `yolo`, `traffic_ppo`, and `traffic_lstm`; guarded trainer command paths; per-target evaluation gates; a checkpoint registry; promotion/rollback API; and UI status. Real trainer execution requires `AETHERVILLE_APPROVE_MODEL_TRAINING=1`; dry-run cycles remain the default.
+- Consequences:
+  - The project now has a concrete path from runtime experience to model-weight training jobs without pretending that serving vLLM trains weights.
+  - Demo operators can prove the handoff with dry-run datasets/evaluation and then run approved H100 training windows separately.
+  - Only checkpoints that pass evaluation become promoted; failed candidates are rejected and rollback state is preserved.
+  - The presenter must distinguish “dry-run trainer handoff ready” from “weights actually fine-tuned and loaded.”
+  - Docker remains excluded from the current direct-process runtime strategy.
+- Rejected: Mutating model weights inside the live request/tick loop, because it risks demo instability, hidden regressions, runaway GPU spend, and no clean rollback boundary.
+- Revisit when: a promoted non-dry-run LoRA/PPO/LSTM/YOLO checkpoint has been produced on H100 and the runtime reload path is verified end-to-end.

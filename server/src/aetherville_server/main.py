@@ -31,10 +31,15 @@ from aetherville_schemas import (
     HealthResponse,
     LearningStatusResponse,
     MemoryStreamResponse,
+    ModelTrainingSnapshot,
     ReflectionResponse,
     ServiceStatus,
     SimResetRequest,
     SimStatusResponse,
+    TrainingCycleRequest,
+    TrainingCycleResponse,
+    TrainingRollbackRequest,
+    TrainingRollbackResponse,
     VehicleCameraFrame,
     VisionDetectRequest,
     VisionDetectResponse,
@@ -221,6 +226,21 @@ def enrich_camera_frame_with_vision(
     )
 
 
+def _model_training_service_status() -> ServiceStatus:
+    snapshot = simulation.learning.training.snapshot()
+    status: Literal["ok", "degraded"] = (
+        "ok" if snapshot.mode != "blocked" else "degraded"
+    )
+    return ServiceStatus(
+        name="model_training",
+        status=status,
+        detail=(
+            "Experience Log → Dataset Builder → Evaluation Gate → "
+            f"Checkpoint Registry mode={snapshot.mode}"
+        ),
+    )
+
+
 def build_health_response() -> HealthResponse:
     """Return orchestrator health and optional direct-process dependency probes."""
 
@@ -233,8 +253,9 @@ def build_health_response() -> HealthResponse:
         ServiceStatus(
             name="learning",
             status="ok",
-            detail="deterministic online adaptation JSON persistence active",
+            detail="JSON adaptation plus guarded trainer/checkpoint handoff active",
         ),
+        _model_training_service_status(),
         ServiceStatus(
             name="stt",
             status=voice_transcriber.health_status(),
@@ -326,6 +347,32 @@ async def learning_status() -> LearningStatusResponse:
 async def learning_reset() -> LearningStatusResponse:
     simulation.learning.reset()
     return simulation.learning_status()
+
+
+@fastapi_app.get("/api/v1/training/status", response_model=ModelTrainingSnapshot)
+async def training_status() -> ModelTrainingSnapshot:
+    return simulation.learning.training.snapshot()
+
+
+@fastapi_app.post("/api/v1/training/cycle", response_model=TrainingCycleResponse)
+async def training_cycle(request: TrainingCycleRequest | None = None) -> TrainingCycleResponse:
+    request = request or TrainingCycleRequest()
+    try:
+        return simulation.learning.training.run_cycle(
+            targets=request.targets,
+            dry_run=request.dry_run,
+            force=request.force,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+
+@fastapi_app.post("/api/v1/training/rollback", response_model=TrainingRollbackResponse)
+async def training_rollback(request: TrainingRollbackRequest) -> TrainingRollbackResponse:
+    try:
+        return simulation.learning.training.rollback(target=request.target, reason=request.reason)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 @fastapi_app.post("/api/v1/sim/start", response_model=SimStatusResponse)

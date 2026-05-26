@@ -1101,3 +1101,32 @@ NEXT_TELEMETRY_DISABLED=1 timeout 900 pnpm --filter @aetherville/client build
 ```
 
 Both passed after filesystem warmup. Production Next is currently running at `http://127.0.0.1:3000/` with H100 tunnel env, and live/replay `browser_demo_smoke.py` passed against it.
+
+## Model-weight training pipeline handoff — 2026-05-27T00:26:30+09:00
+
+Current branch: `master`.
+
+New runtime truth:
+
+```text
+- Hot simulation loop still uses safe JSON reward-gated adaptation.
+- Every learning event is also appended to an Experience Log JSONL.
+- Dry-run training cycles build datasets/evaluation evidence with no weight mutation.
+- Real trainer execution requires AETHERVILLE_APPROVE_MODEL_TRAINING=1.
+- Candidate checkpoints are promoted only through Evaluation Gate and registry state; rollback endpoint exists.
+```
+
+Useful commands:
+
+```bash
+# Local dry-run without GPU spend
+uv run python scripts/model_training_cycle.py --force
+
+# Live orchestrator dry-run through tunnel
+python3 scripts/model_training_cycle.py --orchestrator-url http://127.0.0.1:18080 --force
+
+# Real training is guarded; set only for an intentional H100 training window
+AETHERVILLE_APPROVE_MODEL_TRAINING=1 uv run python scripts/model_training_cycle.py --execute --target traffic_ppo
+```
+
+Do not claim vLLM/YOLO/PPO/LSTM weights changed until a non-dry-run cycle has produced a promoted checkpoint and the runtime has been reloaded/restarted against that checkpoint. Do not run Docker/Compose/DinD. Do not print `.env.runpod`, SSH key paths, tokens, or model credentials.

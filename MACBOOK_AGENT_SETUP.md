@@ -9,7 +9,7 @@
 - 브라우저 클라이언트는 vLLM에 직접 붙지 않는다. 항상 orchestrator REST/Socket.IO endpoint에 붙는다.
 - 현재 vision service의 검증 포트는 `18001`이다.
 - public RunPod endpoint가 없으면 SSH tunnel 모드로 접속한다.
-- self-learning 문구는 정확히 말한다: 현재 기본 데모는 reward-gated policy adaptation이며, 모델 weight fine-tuning은 별도 trainer/checkpoint pipeline이 필요하다.
+- self-learning 문구는 정확히 말한다: 기본 live loop는 reward-gated policy adaptation이고, 모델 weight fine-tuning은 `AETHERVILLE_APPROVE_MODEL_TRAINING=1`로 승인한 별도 trainer/checkpoint promotion cycle에서만 실제 실행된다.
 
 ## 1. MacBook 사전 설치
 
@@ -151,6 +151,7 @@ Tunnel health 확인:
 ```bash
 curl -fsS http://127.0.0.1:18080/api/v1/health
 curl -fsS http://127.0.0.1:18080/api/v1/sim/status
+curl -fsS http://127.0.0.1:18080/api/v1/training/status
 curl -fsS http://127.0.0.1:18001/health
 curl -fsS http://127.0.0.1:18000/v1/models
 ```
@@ -235,6 +236,29 @@ python3 scripts/browser_impact_smoke.py \
   --wait-seconds 8 \
   --timeout-seconds 120
 ```
+
+
+## 6.5 모델 학습 파이프라인 dry-run 확인
+
+실제 weight training 없이 Experience Log → Dataset Builder → Evaluation Gate → Registry 경로만 확인한다.
+
+```bash
+python3 scripts/model_training_cycle.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --force
+```
+
+실제 H100 training을 실행하려면 비용/모델 접근을 확인한 뒤에만 다음처럼 승인한다.
+
+```bash
+AETHERVILLE_APPROVE_MODEL_TRAINING=1 \
+python3 scripts/model_training_cycle.py \
+  --orchestrator-url http://127.0.0.1:18080 \
+  --execute \
+  --target traffic_ppo
+```
+
+`dry_run` 결과만으로는 모델 weight가 바뀌었다고 말하지 않는다.
 
 ## 7. 데모 중 확인해야 할 UI 상태
 

@@ -287,6 +287,118 @@ export interface PolicyPromotionSnapshot {
   rollback_available: boolean;
 }
 
+
+export type TrainingTarget = 'vllm_lora' | 'yolo' | 'traffic_ppo' | 'traffic_lstm';
+
+export type TrainingJobStatus =
+  | 'queued'
+  | 'dataset_ready'
+  | 'training_skipped'
+  | 'training'
+  | 'trained'
+  | 'evaluated'
+  | 'promoted'
+  | 'rejected'
+  | 'failed'
+  | 'dry_run';
+
+export type CheckpointStatus =
+  | 'candidate'
+  | 'promoted'
+  | 'rejected'
+  | 'rolled_back'
+  | 'rollback_candidate';
+
+export interface TrainingDatasetArtifact {
+  id: string;
+  target: TrainingTarget;
+  path: string;
+  record_count: number;
+  format: string;
+  created_ts: number;
+  source_experience_count: number;
+}
+
+export interface CheckpointArtifact {
+  id: string;
+  target: TrainingTarget;
+  version: string;
+  path: string;
+  status: CheckpointStatus;
+  metrics: Record<string, number>;
+  created_ts: number;
+  promoted_ts?: number | null;
+  trainer_backend: string;
+  detail: string;
+}
+
+export interface EvaluationGateSnapshot {
+  target: TrainingTarget;
+  metric: string;
+  threshold: number;
+  comparator: 'gte' | 'lte';
+  candidate_value?: number | null;
+  passed: boolean;
+  reason: string;
+}
+
+export interface TrainingJobSnapshot {
+  id: string;
+  target: TrainingTarget;
+  status: TrainingJobStatus;
+  dry_run: boolean;
+  dataset?: TrainingDatasetArtifact | null;
+  checkpoint?: CheckpointArtifact | null;
+  evaluation?: EvaluationGateSnapshot | null;
+  started_ts: number;
+  completed_ts?: number | null;
+  detail: string;
+  command: string[];
+}
+
+export interface ModelTrainingSnapshot {
+  mode: 'not_configured' | 'dry_run' | 'ready' | 'training' | 'promoted' | 'blocked';
+  approval_required: boolean;
+  approval_env: string;
+  experience_log_path?: string | null;
+  registry_path?: string | null;
+  dataset_count: number;
+  checkpoint_count: number;
+  promoted_count: number;
+  rollback_available: boolean;
+  targets: TrainingTarget[];
+  jobs: TrainingJobSnapshot[];
+  last_cycle_id?: string | null;
+}
+
+export interface TrainingCycleRequest {
+  dry_run: boolean;
+  targets: TrainingTarget[];
+  force: boolean;
+}
+
+export interface TrainingCycleResponse {
+  accepted: boolean;
+  cycle_id: string;
+  status: 'dry_run' | 'promoted' | 'rejected' | 'blocked' | 'skipped';
+  jobs: TrainingJobSnapshot[];
+  training: ModelTrainingSnapshot;
+  message: string;
+}
+
+export interface TrainingRollbackRequest {
+  target: TrainingTarget;
+  reason: string;
+}
+
+export interface TrainingRollbackResponse {
+  accepted: boolean;
+  target: TrainingTarget;
+  rolled_back_to?: string | null;
+  training: ModelTrainingSnapshot;
+  message: string;
+}
+
 export interface LearningSnapshot {
   mode: 'deterministic_online_adaptation';
   storage: 'json_persistence' | 'memory';
@@ -306,6 +418,7 @@ export interface LearningSnapshot {
   evolution: EvolutionSnapshot;
   policy_candidates: PolicyCandidateSnapshot[];
   promotion_gate: PolicyPromotionSnapshot;
+  model_training: ModelTrainingSnapshot;
 }
 
 export interface LearningStatusResponse {
