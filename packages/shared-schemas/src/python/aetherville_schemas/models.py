@@ -247,6 +247,9 @@ class LearningSignal(StrictModel):
         "citizen_meeting",
         "actor_memory",
         "fallback_path",
+        "policy_candidate",
+        "policy_promoted",
+        "policy_rejected",
     ]
     value: float = 0.0
     entity_id: str | None = None
@@ -278,6 +281,28 @@ class EvolutionSnapshot(StrictModel):
     last_signal: str | None = None
 
 
+class PolicyCandidateSnapshot(StrictModel):
+    id: str
+    tick: int = Field(ge=0)
+    candidate_version: str
+    source_signal: str
+    score_before: float = Field(ge=0, le=1)
+    score_after: float = Field(ge=0, le=1)
+    promoted: bool = False
+    reason: str
+
+
+class PolicyPromotionSnapshot(StrictModel):
+    active_policy_version: str = "adaptive-demo-v0"
+    evaluator: str = "deterministic_reward_gate"
+    candidate_count: int = Field(default=0, ge=0)
+    promoted_count: int = Field(default=0, ge=0)
+    rejected_count: int = Field(default=0, ge=0)
+    last_decision: Literal["none", "promoted", "rejected"] = "none"
+    last_promoted_version: str | None = None
+    rollback_available: bool = False
+
+
 class LearningSnapshot(StrictModel):
     mode: Literal["deterministic_online_adaptation"] = "deterministic_online_adaptation"
     storage: Literal["json_persistence", "memory"] = "memory"
@@ -295,6 +320,8 @@ class LearningSnapshot(StrictModel):
     signals: list[LearningSignal] = Field(default_factory=list)
     policy_bias: PolicyBiasSnapshot = Field(default_factory=PolicyBiasSnapshot)
     evolution: EvolutionSnapshot = Field(default_factory=EvolutionSnapshot)
+    policy_candidates: list[PolicyCandidateSnapshot] = Field(default_factory=list)
+    promotion_gate: PolicyPromotionSnapshot = Field(default_factory=PolicyPromotionSnapshot)
 
 
 class LearningStatusResponse(StrictModel):

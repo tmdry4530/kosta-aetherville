@@ -20,6 +20,8 @@ from aetherville_schemas import (
     LearningSnapshot,
     LearningStatusResponse,
     PolicyBiasSnapshot,
+    PolicyCandidateSnapshot,
+    PolicyPromotionSnapshot,
     TaskOutcomeScore,
     TrajectoryEvent,
 )
@@ -76,6 +78,11 @@ class LearningStore:
             ],
             policy_bias=self._policy_bias_snapshot(),
             evolution=evolution,
+            policy_candidates=[
+                PolicyCandidateSnapshot.model_validate(candidate)
+                for candidate in list(self._state.get("policy_candidates", []))[-6:]
+            ],
+            promotion_gate=self._promotion_gate_snapshot(),
         )
 
     def status_response(self) -> LearningStatusResponse:
@@ -84,7 +91,8 @@ class LearningStore:
             explanation=(
                 "현재 학습 루프는 비용 안전한 deterministic online adaptation입니다. "
                 "서버가 실행되는 동안 God Mode, 시민 기억, 택시, 정체 이벤트를 JSON 상태로 "
-                "누적하고 다음 forecast/tag/데모 정책에 즉시 반영합니다."
+                "누적하고 reward gate로 후보 정책을 평가한 뒤, 통과한 정책만 다음 "
+                "forecast/tag/데모 정책에 즉시 반영합니다."
             ),
             upgrade_path=[
                 "Redis/Postgres/Vector DB로 경험 로그 영속화",
@@ -242,6 +250,7 @@ class LearningStore:
             int(self._state.get("experience_count", 0)) // 3,
         )
         self._state["policy_version"] = f"adaptive-demo-v{self._state['adaptation_epoch']}"
+        self._maybe_evaluate_policy_candidate(tick=tick, source_signal=event.kind)
         self._save_state()
         return self.snapshot()
 
@@ -375,6 +384,121 @@ class LearningStore:
             safer_timeout_bias=_clamp01(replan_count * 0.06),
         )
 
+    def _promotion_gate_snapshot(self) -> PolicyPromotionSnapshot:
+        return PolicyPromotionSnapshot(
+            active_policy_version=str(
+                self._state.get(
+                    "active_policy_version",
+                    self._state.get("policy_version", "adaptive-demo-v0"),
+                )
+            ),
+            evaluator="deterministic_reward_gate",
+            candidate_count=len(list(self._state.get("policy_candidates", []))),
+            promoted_count=int(self._state.get("promoted_policy_count", 0)),
+            rejected_count=int(self._state.get("rejected_policy_count", 0)),
+            last_decision=str(self._state.get("last_promotion_decision", "none")),  # type: ignore[arg-type]
+            last_promoted_version=self._state.get("last_promoted_version"),
+            rollback_available=bool(self._state.get("rollback_policy_version")),
+        )
+
+    def _maybe_evaluate_policy_candidate(self, *, tick: int, source_signal: str) -> None:
+        experience_count = int(self._state.get("experience_count", 0))
+        evaluation_epoch = experience_count // 5
+        if evaluation_epoch <= 0 or evaluation_epoch <= int(
+            self._state.get("last_candidate_evaluation_epoch", 0)
+        ):
+            return
+
+        self._state["last_candidate_evaluation_epoch"] = evaluation_epoch
+        candidates = list(self._state.get("policy_candidates", []))
+        candidate_version = f"adaptive-policy-candidate-v{evaluation_epoch}"
+        score_before = float(self._state.get("active_policy_score", 0.5))
+        score_after = self._reward_score()
+        promoted = score_after >= max(0.55, score_before + 0.015)
+        decision = "promoted" if promoted else "rejected"
+        reason = (
+            "reward gate promoted: 최근 경험이 택시 성공률·재계획 복구·"
+            "시나리오 성공을 개선했습니다."
+            if promoted
+            else "reward gate rejected: 실패/재계획 비용 대비 개선 폭이 부족해 "
+            "현재 정책을 유지합니다."
+        )
+
+        candidates.append(
+            {
+                "id": f"policy_candidate_{tick}_{len(candidates) + 1:04d}",
+                "tick": tick,
+                "candidate_version": candidate_version,
+                "source_signal": source_signal,
+                "score_before": round(score_before, 4),
+                "score_after": round(score_after, 4),
+                "promoted": promoted,
+                "reason": reason,
+            }
+        )
+        self._state["policy_candidates"] = candidates[-30:]
+        self._state["last_promotion_decision"] = decision
+
+        if promoted:
+            previous_active = str(
+                self._state.get("active_policy_version", self._state.get("policy_version"))
+            )
+            self._state["rollback_policy_version"] = previous_active
+            self._state["active_policy_version"] = candidate_version
+            self._state["active_policy_score"] = round(score_after, 4)
+            self._state["last_promoted_version"] = candidate_version
+            self._state["promoted_policy_count"] = int(
+                self._state.get("promoted_policy_count", 0)
+            ) + 1
+            self._append_signal(
+                "policy_promoted",
+                tick=tick,
+                value=score_after,
+                entity_id=None,
+                description="reward gate가 후보 정책을 live policy로 승격했습니다.",
+            )
+            insights = list(self._state.get("insights", []))
+            insights.append(
+                f"{candidate_version} 승격: reward {score_before:.2f} → {score_after:.2f}"
+            )
+            self._state["insights"] = insights[-8:]
+        else:
+            self._state["rejected_policy_count"] = int(
+                self._state.get("rejected_policy_count", 0)
+            ) + 1
+            self._append_signal(
+                "policy_rejected",
+                tick=tick,
+                value=score_after,
+                entity_id=None,
+                description="reward gate가 후보 정책을 보류하고 기존 live policy를 유지했습니다.",
+            )
+
+    def _reward_score(self) -> float:
+        taxi_success = float(self._state.get("taxi_success_rate", 0.5))
+        successes = int(self._state.get("scenario_success_count", 0))
+        failures = int(self._state.get("scenario_failure_count", 0))
+        replans = int(self._state.get("replan_count", 0))
+        fallback_usage = int(self._state.get("fallback_path_usage", 0))
+        meetings = int(self._state.get("citizen_meeting_success_count", 0))
+        traffic_delay = float(self._state.get("traffic_delay_impact", 0.0))
+        weather_delay = float(self._state.get("weather_delay_impact", 0.0))
+        experience_count = max(1, int(self._state.get("experience_count", 1)))
+
+        reliability = _clamp01(
+            (successes + fallback_usage * 0.65 + meetings * 0.25) / experience_count
+        )
+        recovery = _clamp01(fallback_usage / max(1, replans))
+        penalty = _clamp01((failures * 0.09 + replans * 0.025) / max(1, experience_count / 4))
+        environment_pressure = _clamp01((traffic_delay + weather_delay) * 0.2)
+        return _clamp01(
+            0.38 * taxi_success
+            + 0.28 * reliability
+            + 0.2 * recovery
+            + 0.14 * environment_pressure
+            - penalty * 0.18
+        )
+
     def _evolution_snapshot(self) -> EvolutionSnapshot:
         storage: Literal["json_persistence", "memory"] = (
             "json_persistence" if self.persisted else "memory"
@@ -430,6 +554,15 @@ def _default_state() -> dict[str, Any]:
         "outcome_scores": [],
         "signals": [],
         "last_signal": None,
+        "policy_candidates": [],
+        "last_candidate_evaluation_epoch": 0,
+        "active_policy_version": "adaptive-demo-v0",
+        "active_policy_score": 0.5,
+        "promoted_policy_count": 0,
+        "rejected_policy_count": 0,
+        "last_promotion_decision": "none",
+        "last_promoted_version": None,
+        "rollback_policy_version": None,
     }
 
 

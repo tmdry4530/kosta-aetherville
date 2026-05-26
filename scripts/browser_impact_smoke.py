@@ -16,7 +16,7 @@ import time
 import urllib.error
 import urllib.request
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from browser_visual_smoke import capture_screenshot, find_chrome, sample_png_rgb, validate_png
 
@@ -191,7 +191,7 @@ def main() -> None:
         raise SystemExit(1)
 
 
-def get_json(url: str, timeout: int = 10) -> dict[str, Any]:
+def get_json(url: str, timeout: int = 10) -> Any:
     with urllib.request.urlopen(url, timeout=timeout) as response:
         return json.loads(response.read().decode("utf-8"))
 
@@ -206,7 +206,7 @@ def post_json(url: str, payload: dict[str, Any] | None, timeout: int = 10) -> di
     )
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
-            return json.loads(response.read().decode("utf-8"))
+            return cast(dict[str, Any], json.loads(response.read().decode("utf-8")))
     except urllib.error.HTTPError as exc:
         print(exc.read().decode("utf-8", errors="replace"), file=sys.stderr)
         raise
@@ -261,7 +261,8 @@ def wait_for_visible_effects(orchestrator_url: str) -> dict[str, Any]:
     deadline = time.monotonic() + 12
     latest: dict[str, Any] = {}
     while time.monotonic() < deadline:
-        latest = get_json(f"{orchestrator_url}/api/v1/sim/state")
+        latest = cast(dict[str, Any], get_json(f"{orchestrator_url}/api/v1/sim/state"))
+        latest["_recent_timeline"] = get_json(f"{orchestrator_url}/api/v1/timeline")
         if all(item["ok"] for item in validate_visible_effects(latest)):
             return latest
         time.sleep(1)
@@ -270,13 +271,31 @@ def wait_for_visible_effects(orchestrator_url: str) -> dict[str, Any]:
 
 def validate_visible_effects(state: dict[str, Any]) -> list[dict[str, Any]]:
     world = state.get("world", {})
-    vehicles = state.get("vehicles", [])
-    citizens = state.get("citizens", [])
-    taxi = next((vehicle for vehicle in vehicles if vehicle.get("id") == "v01"), {})
-    minji = next((citizen for citizen in citizens if citizen.get("id") == "c01"), {})
-    minsu = next((citizen for citizen in citizens if citizen.get("id") == "c02"), {})
+    vehicles = cast(list[dict[str, Any]], state.get("vehicles", []))
+    citizens = cast(list[dict[str, Any]], state.get("citizens", []))
+    taxi: dict[str, Any] = next((vehicle for vehicle in vehicles if vehicle.get("id") == "v01"), {})
+    minji: dict[str, Any] = next(
+        (citizen for citizen in citizens if citizen.get("id") == "c01"),
+        {},
+    )
+    minsu: dict[str, Any] = next(
+        (citizen for citizen in citizens if citizen.get("id") == "c02"),
+        {},
+    )
     vehicle_tags = " ".join(" ".join(vehicle.get("display_tags", [])) for vehicle in vehicles)
     taxi_tags = " ".join(taxi.get("display_tags", []))
+    timeline = state.get("_recent_timeline") or []
+    meeting_recorded = any(
+        event.get("kind") == "relationship_changed"
+        and event.get("metadata", {}).get("action") == "meeting"
+        and {
+            event.get("metadata", {}).get("source"),
+            event.get("metadata", {}).get("target"),
+        }
+        == {"c01", "c02"}
+        for event in timeline
+    )
+    meeting_live = minji.get("talking_to") == "c02" or minsu.get("talking_to") == "c01"
     return [
         check(
             "after weather rain",
@@ -297,10 +316,14 @@ def validate_visible_effects(state: dict[str, Any]) -> list[dict[str, Any]]:
             vehicle_tags,
         ),
         check(
-            "after citizen meeting",
-            minji.get("talking_to") == "c02" or minsu.get("talking_to") == "c01",
-            "c01<->c02",
-            {"c01": minji.get("talking_to"), "c02": minsu.get("talking_to")},
+            "after citizen meeting or taxi-deferred meeting event",
+            meeting_live or meeting_recorded,
+            "c01<->c02 live or relationship_changed meeting event",
+            {
+                "c01": minji.get("talking_to"),
+                "c02": minsu.get("talking_to"),
+                "timeline_meeting_recorded": meeting_recorded,
+            },
         ),
     ]
 

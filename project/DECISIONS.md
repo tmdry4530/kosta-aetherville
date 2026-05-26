@@ -313,3 +313,16 @@ Rejected: Enabling wildcard CORS for every origin by default, because explicit l
   - Docker remains excluded from the current direct-process runtime strategy.
 - Rejected: Silent background fine-tuning or unbounded logs, because that would create cost, safety, and truthfulness risks.
 - Revisit when: an approved 5090/RunPod training workflow and checkpoint registry are implemented.
+
+## ADR-025: Learning policy promotion uses reward-gated candidates, not silent weight training
+
+- Status: accepted
+- Context: The demo needed to show that “자가학습” is more than mock counters, while still avoiding false claims that vLLM/YOLO/PPO/LSTM weights are being live fine-tuned.
+- Decision: Add explicit policy candidates and a deterministic promotion gate to the JSON-backed learning loop. Recent trajectory/outcome signals produce candidate policy snapshots with before/after reward scores. A candidate becomes the active live policy only if the reward gate passes; otherwise it is rejected and the previous policy remains active. The UI exposes candidate counts, promoted/rejected counts, active policy version, and latest reward delta.
+- Consequences:
+  - The city can truthfully show persistent experience-driven policy adaptation and promotion history.
+  - Rejected candidates are visible, so the demo does not imply every experience blindly improves the system.
+  - This still does not train model weights; future real PPO/LSTM/vLLM fine-tuning must use a separate approved training/checkpoint promotion path.
+  - Docker remains excluded from the verified direct-process runtime strategy.
+- Rejected: Claiming background model-weight self-training from ordinary runtime events, because no verified training job, checkpoint registry, or rollback gate exists for that claim.
+- Revisit when: a real training worker and checkpoint promotion registry are implemented and verified on a GPU machine.

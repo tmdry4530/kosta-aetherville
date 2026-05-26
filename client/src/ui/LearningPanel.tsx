@@ -32,6 +32,16 @@ export function LearningPanel({ learning }: LearningPanelProps) {
     traffic_caution: learning.traffic_bias ?? 0,
     rain_delay_expectation: learning.weather_bias ?? 0
   };
+  const promotionGate = learning.promotion_gate ?? {
+    active_policy_version: learning.policy_version,
+    evaluator: 'deterministic_reward_gate',
+    candidate_count: 0,
+    promoted_count: 0,
+    rejected_count: 0,
+    last_decision: 'none',
+    rollback_available: false
+  };
+  const latestCandidate = (learning.policy_candidates ?? []).at(-1);
   const latestInsight = insights.at(-1) ?? '아직 충분한 학습 신호가 없습니다. God Mode 명령을 실행해 보세요.';
 
   return (
@@ -74,8 +84,24 @@ export function LearningPanel({ learning }: LearningPanelProps) {
         <span>traffic caution {percent(policyBias.traffic_caution)}</span>
         <span>rain delay {percent(policyBias.rain_delay_expectation)}</span>
       </div>
+      <div className={`promotionGate promotionGate-${promotionGate.last_decision}`} aria-label="Policy promotion gate">
+        <strong>Policy promotion gate</strong>
+        <span>{promotionGate.active_policy_version}</span>
+        <small>
+          후보 {promotionGate.candidate_count} · 승격 {promotionGate.promoted_count} · 보류{' '}
+          {promotionGate.rejected_count} · {promotionGate.evaluator}
+        </small>
+        {latestCandidate ? (
+          <small>
+            최근 {latestCandidate.candidate_version}:{' '}
+            {precisePercent(latestCandidate.score_before)} → {precisePercent(latestCandidate.score_after)}
+            {' · '}
+            {latestCandidate.promoted ? 'live policy 승격' : '기존 정책 유지'}
+          </small>
+        ) : null}
+      </div>
       <small className="learningInsight">
-        {latestInsight} · model-weight self-training: not verified, online policy-bias adaptation only.
+        {latestInsight} · model-weight self-training: not verified, online policy-bias adaptation and promotion-gated learning only.
       </small>
       {insights.length > 1 ? (
         <ul className="learningInsightList" aria-label="Recent learning insights">

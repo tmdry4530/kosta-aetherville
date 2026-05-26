@@ -309,6 +309,28 @@ export function createFallbackWorldState(tick = 0): WorldStatePayload {
         citizen_meeting_success_count: Math.floor(tick / 220),
         repeated_actor_memory_count: Math.floor(tick / 30),
         last_signal: 'Replay mode shows deterministic evolution sample; model weights are not self-trained.'
+      },
+      policy_candidates: [
+        {
+          id: `replay_candidate_${tick}`,
+          tick,
+          candidate_version: `adaptive-policy-candidate-v${Math.max(1, Math.floor(tick / 180))}`,
+          source_signal: 'fallback_path',
+          score_before: 0.52,
+          score_after: Math.min(0.88, 0.56 + Math.floor(tick / 180) * 0.04),
+          promoted: tick > 180,
+          reason: 'Replay fallback shows how reward-gated policy promotion is visualized.'
+        }
+      ],
+      promotion_gate: {
+        active_policy_version: `adaptive-policy-candidate-v${Math.max(1, Math.floor(tick / 180))}`,
+        evaluator: 'deterministic_reward_gate',
+        candidate_count: Math.max(1, Math.floor(tick / 180)),
+        promoted_count: tick > 180 ? Math.max(1, Math.floor(tick / 240)) : 0,
+        rejected_count: 0,
+        last_decision: tick > 180 ? 'promoted' : 'none',
+        last_promoted_version: tick > 180 ? `adaptive-policy-candidate-v${Math.max(1, Math.floor(tick / 180))}` : null,
+        rollback_available: tick > 180
       }
     },
     city_ai: {

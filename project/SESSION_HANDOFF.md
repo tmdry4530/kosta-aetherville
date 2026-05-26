@@ -1045,3 +1045,59 @@ python3 scripts/browser_demo_smoke.py --mode replay --url http://127.0.0.1:3000/
 Do not claim live LLM weight fine-tuning. The current self-learning claim is experience/reward/policy adaptation with JSON persistence and visible evolution metrics.
 
 Do not run Docker/Compose/DinD.
+
+## H100 policy promotion + dogfood handoff — 2026-05-26T23:37:58+09:00
+
+Current branch: `feat/llm-driven-city-loop`.
+
+Latest implemented slice:
+
+```text
+- Reward-gated policy candidate/promotion snapshots in learning state and UI.
+- Forced taxi-unavailable TaskGraph parsing/replan fix.
+- Browser impact smoke accepts taxi-deferred meeting event plus visual diff.
+```
+
+Live local/H100 endpoints currently used:
+
+```text
+orchestrator: http://127.0.0.1:18080
+vLLM:         http://127.0.0.1:18000/v1
+vision:       http://127.0.0.1:18001
+client:       http://127.0.0.1:3000/
+```
+
+Verified after H100 redeploy:
+
+```bash
+curl -fsS http://127.0.0.1:18080/api/v1/health | python3 -m json.tool
+python3 scripts/learning_evolution_smoke.py --orchestrator-url http://127.0.0.1:18080 --repeat 2 --wait-seconds 25
+python3 scripts/scenario_directive_smoke.py --orchestrator-url http://127.0.0.1:18080
+python3 scripts/city_ai_smoke.py --orchestrator-url http://127.0.0.1:18080 --wait-seconds 50
+python3 scripts/replanner_resilience_smoke.py --orchestrator-url http://127.0.0.1:18080 --wait-seconds 70
+python3 scripts/autonomous_city_dogfood_smoke.py --orchestrator-url http://127.0.0.1:18080
+python3 scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18080 --timeout-seconds 60
+python3 scripts/browser_demo_smoke.py --mode replay --url http://127.0.0.1:3000/replay --timeout-seconds 60
+python3 scripts/browser_visual_smoke.py --mode both --client-url http://127.0.0.1:3000 --expected-endpoint http://127.0.0.1:18080 --timeout-seconds 120
+python3 scripts/browser_impact_smoke.py --client-url http://127.0.0.1:3000/ --orchestrator-url http://127.0.0.1:18080 --wait-seconds 8 --timeout-seconds 120
+```
+
+Remaining before declaring the active master goal complete:
+
+```text
+1. Commit and push the final patch after checking git status.
+2. Keep H100 running only while demo/cost is intended; stop or delete the pod when no longer needed.
+```
+
+Do not run Docker/Compose/DinD. Do not print `.env.runpod`, SSH key paths, tokens, or secrets.
+
+### Final verification addendum — 2026-05-26T23:52:40+09:00
+
+The earlier WSL lint/build caveat is cleared:
+
+```bash
+pnpm lint
+NEXT_TELEMETRY_DISABLED=1 timeout 900 pnpm --filter @aetherville/client build
+```
+
+Both passed after filesystem warmup. Production Next is currently running at `http://127.0.0.1:3000/` with H100 tunnel env, and live/replay `browser_demo_smoke.py` passed against it.

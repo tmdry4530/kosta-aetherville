@@ -1,1189 +1,1213 @@
 {
-  "epic": "project-aetherville-codex-implementation",
-  "status": "h100_real_demo_runtime_live_verified",
-  "source_prd": "project/source/Project Aetherville PRD.pdf",
-  "tasks": [
-    {
-      "id": "M0-001",
-      "title": "Verify RunPod SSH, GPU, ports, and direct-process runtime capability",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/00-runpod-ssh-bootstrap.md",
-      "depends_on": [],
-      "last_checked_at": "2026-05-24T19:37:08+09:00",
-      "diagnostics": {
-        "ssh_connectivity": "passed",
-        "gpu_visibility": "passed_nvidia_rtx_4090",
-        "python": "Python 3.11.10",
-        "node": "missing_on_pod",
-        "pnpm": "missing_on_pod",
-        "uv": "missing_on_pod",
-        "redis_server": "missing_on_pod",
-        "docker_daemon": "unavailable",
-        "deployment_mode": "direct_process_runtime_for_next_cloud_goal",
-        "remote_workspace": "missing_deploy_script_will_create",
-        "deploy_dry_run": "passed_without_remote_changes",
-        "docker_policy": "verified_unavailable_skipped_by_current_direct_process_policy"
-      },
-      "completed_at": "2026-05-24T19:37:08+09:00"
-    },
-    {
-      "id": "M0-002",
-      "title": "Create pnpm + uv monorepo skeleton and shared schemas package",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/01-foundation-monorepo.md",
-      "depends_on": [
-        "M0-001"
-      ],
-      "last_checked_at": "2026-05-24T20:00:52+09:00",
-      "completed_at": "2026-05-24T20:00:52+09:00",
-      "diagnostics": {
-        "pnpm_workspace": "present",
-        "uv_workspace": "present",
-        "shared_schemas": "pydantic_models_and_generated_typescript_present",
-        "orchestrator_health": "passed_local_uvicorn_curl",
-        "client_placeholder": "next_app_router_r3f_placeholder_build_passed",
-        "python_tests": "7_passed",
-        "node_install": "pnpm_install_passed",
-        "node_lint_type_test_build": "passed",
-        "runpod_state": "not_touched_phase_01_previous_ssh_gpu_verified_direct_process_required"
-      }
-    },
-    {
-      "id": "M0-003",
-      "title": "Implement cloud direct-process service startup and health checks",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/02-cloud-services-docker-compose.md",
-      "depends_on": [
-        "M0-002"
-      ],
-      "unblocked_by": "M0-002",
-      "last_checked_at": "2026-05-24T20:16:05+09:00",
-      "completed_at": "2026-05-24T20:16:05+09:00",
-      "diagnostics": {
-        "direct_process_local": "passed_orchestrator_vision_vllm_fallback_memory_redis_health",
-        "runpod_deploy": "passed_actual_tar_over_ssh_sync_and_direct_start",
-        "runpod_services": "orchestrator_8080_vllm_fallback_8000_vision_18001_running",
-        "runpod_vision_default_port": "8001_occupied_by_template_nginx_use_18001_internal_fallback_until_port_mapping_resolved",
-        "runpod_redis": "memory_fallback_selected_redis_server_missing",
-        "runpod_vllm": "mock_openai_compatible_fallback_no_model_download_no_gpu_workload",
-        "runpod_sync": "remote_rsync_missing_tar_over_ssh_fallback_used",
-        "docker_daemon": "unavailable_on_runpod_no_blind_retry",
-        "docker_compose_artifacts": "future_portability_documentation_only_not_current_acceptance",
-        "runpod_execution_strategy": "direct_process_runtime_no_docker_setup_compose_dind_or_blind_retries",
-        "current_acceptance": "vllm_direct_or_fallback_orchestrator_uvicorn_vision_uvicorn_or_stub_sim_python_module_shell_managed_health_smokes_without_docker",
-        "script_policy": "verify_bootstrap_deploy_scripts_hardened_to_skip_or_reject_docker_execution"
-      }
-    },
-    {
-      "id": "M0-004",
-      "title": "Implement WS/REST contracts and schema tests",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/03-shared-schemas-api-ws.md",
-      "depends_on": [
-        "M0-002"
-      ],
-      "unblocked_by": "M0-003",
-      "last_checked_at": "2026-05-24T20:29:22+09:00",
-      "completed_at": "2026-05-24T20:29:22+09:00",
-      "diagnostics": {
-        "envelopes": "state_update_event_command_ack_error_parse_tests_passed",
-        "generated_typescript": "updated_from_generator_and_client_typecheck_passed",
-        "rest_contracts": "health_sim_status_god_command_use_shared_response_models",
-        "websocket_contract": "connect_emits_ack_and_state_update_command_emits_event",
-        "client_ws": "socket_bridge_imports_generated_types_and_applies_state_update",
-        "runpod_contract_smoke": "sim_status_god_command_socketio_polling_state_update_passed_in_pod"
-      }
-    },
-    {
-      "id": "M0-005",
-      "title": "Implement simulation engine tick loop and state snapshot API",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/04-simulation-engine.md",
-      "depends_on": [
-        "M0-004"
-      ],
-      "unblocked_by": "M0-004",
-      "last_checked_at": "2026-05-24T20:39:15+09:00",
-      "completed_at": "2026-05-24T20:39:15+09:00",
-      "diagnostics": {
-        "tick_scheduler": "deterministic_async_loop_broadcasts_10_sequential_ticks",
-        "world_state": "world_citizens_vehicles_drones_traffic_lights_forecast_present",
-        "rest_control": "start_stop_reset_status_state_timeline_endpoints_passed",
-        "websocket": "state_update_broadcast_at_configurable_tick_rate_passed_runpod_polling_smoke",
-        "runpod": "redeployed_direct_process_services_no_gpu_workload"
-      }
-    },
-    {
-      "id": "M1-001",
-      "title": "Implement browser 3D city shell and connection status",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/05-client-city-scene.md",
-      "depends_on": [
-        "M0-005"
-      ],
-      "unblocked_by": "M0-005",
-      "last_checked_at": "2026-05-24T20:50:11+09:00",
-      "completed_at": "2026-05-24T20:50:11+09:00",
-      "diagnostics": {
-        "city_scene": "main_page_renders_r3f_city_from_live_or_fallback_WorldStatePayload",
-        "connection_ui": "connection_card_and_scene_status_show_state_tick_weather",
-        "side_panels": "memory_vehicle_cam_traffic_chart_god_mode_placeholders_present",
-        "replay_route": "client_src_app_replay_page_tsx_uses_ReplayDriver_deterministic_fallback_state",
-        "verification": "pnpm_lint_typecheck_test_and_client_build_passed",
-        "runpod": "not_touched_phase_05_existing_direct_process_state_unchanged"
-      }
-    },
-    {
-      "id": "M2-001",
-      "title": "Implement citizen memory/planning minimal slice",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/06-citizen-agents.md",
-      "depends_on": [
-        "M0-004"
-      ],
-      "last_checked_at": "2026-05-24T21:00:54+09:00",
-      "completed_at": "2026-05-24T21:00:54+09:00",
-      "unblocked_by": "M1-001",
-      "diagnostics": {
-        "personas": "20_deterministic_CitizenPersona_fixtures_generated_and_exposed_via_REST",
-        "memory_retrieval": "token_overlap_plus_importance_retrieval_score_tested",
-        "plan_tree": "CachedLLMPlanner_daily_plan_tree_exists_for_each_citizen",
-        "dialogue_memory_events": "dialogue_reflection_memory_endpoints_emit_aetherville_event_envelopes",
-        "llm_policy": "cached_event_driven_facade_no_per_tick_llm_calls",
-        "client_memory_panel": "client_src_ui_MemoryPanel_uses_generated_MemoryRecord_contract",
-        "verification": "uv_pytest_goal_scope_pnpm_test_ruff_mypy_full_pytest_client_lint_typecheck_build_passed",
-        "runpod": "not_touched_phase_06_existing_direct_process_state_unchanged"
-      }
-    },
-    {
-      "id": "M3-001",
-      "title": "Implement vehicles plus mock/real vision service path",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/07-vehicles-vision.md",
-      "depends_on": [
-        "M1-001",
-        "M2-001"
-      ],
-      "unblocked_by": "M1-001,M2-001",
-      "last_checked_at": "2026-05-24T21:13:21+09:00",
-      "completed_at": "2026-05-24T21:13:21+09:00",
-      "diagnostics": {
-        "pathfinding": "A_star_grid_pathfinding_tested_with_obstacle_and_unreachable_cases",
-        "vehicle_movement": "VehicleController_follows_A_star_path_and_loops_demo_route",
-        "trip_manager": "TripManager_assigns_demo_trip_to_v01_with_path_contract",
-        "vision_detect": "Vision_detect_uses_shared_VisionDetectRequest_Response_and_schema_valid_mock_detections",
-        "vehicle_state": "WorldState_vehicle_embeds_YoloDetection_and_slows_for_pedestrian_or_red_light_hazard",
-        "camera_panel": "client_src_ui_VehicleCamPanel_overlays_detection_boxes_from_yolo_detections",
-        "runpod": "direct_process_services_restarted_after_sync_remote_vehicle_camera_and_vision_detect_smoke_passed",
-        "gpu_cost": "no_real_yolo_model_download_training_or_gpu_inference_started"
-      }
-    },
-    {
-      "id": "M4-001",
-      "title": "Implement traffic baseline, RL wrapper, and chart payloads",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/08-traffic-ai.md",
-      "depends_on": [
-        "M3-001"
-      ],
-      "unblocked_by": "M3-001",
-      "last_checked_at": "2026-05-24T21:27:19+09:00",
-      "completed_at": "2026-05-24T21:27:19+09:00",
-      "diagnostics": {
-        "baseline": "FixedCycleController_generates_ns_ew_green_yellow_red_cycle",
-        "env": "TrafficSignalEnv_reset_step_tested_with_reward_queue_info",
-        "ppo_wrapper": "TrafficPolicyWrapper_loads_json_checkpoint_when_present_and_falls_back_to_baseline",
-        "forecast": "LstmForecastWrapper_returns_5_10_15_minute_TrafficForecastPoint_payloads",
-        "metrics": "traffic_ai.metrics_compare_policies_script_available",
-        "client": "client_src_ui_TrafficChartPanel_renders_forecast_payload",
-        "runpod": "direct_process_services_synced_restarted_and_remote_traffic_smoke_passed",
-        "gpu_cost": "no_PPO_training_LSTM_training_or_GPU_inference_started"
-      }
-    },
-    {
-      "id": "M5-001",
-      "title": "Implement God Mode text command then voice pipeline",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/09-god-mode.md",
-      "depends_on": [
-        "M3-001"
-      ],
-      "unblocked_by": "M4-001",
-      "last_checked_at": "2026-05-24T21:41:03+09:00",
-      "completed_at": "2026-05-24T21:41:03+09:00",
-      "diagnostics": {
-        "text_command": "GodCommandDispatcher_environment_text_command_changes_weather_and_world_active_event",
-        "categories": "environment_event_person_infrastructure_relationship_supported",
-        "broadcast": "REST_and_WS_emit_all_event_envelopes_then_state_update",
-        "memory_injection": "person_and_relationship_commands_create_memory_added_events",
-        "voice": "VoiceCommandStub_and_disabled_client_voice_button_document_optional_path",
-        "client": "client_src_ui_GodModeMicPanel_text_input_macro_buttons_and_status_present",
-        "runpod": "direct_process_services_synced_restarted_and_remote_relationship_command_smoke_passed",
-        "gpu_cost": "no_STT_model_download_or_GPU_inference_started"
-      }
-    },
-    {
-      "id": "M6-001",
-      "title": "Polish demo, replay mode, and metrics report",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/10-polish-demo.md",
-      "depends_on": [
-        "M4-001",
-        "M5-001"
-      ],
-      "unblocked_by": "M5-001",
-      "last_checked_at": "2026-05-24T21:49:41+09:00",
-      "completed_at": "2026-05-24T21:49:41+09:00",
-      "diagnostics": {
-        "replay": "replay_route_exists_and_pnpm_test_e2e_static_fallback_passed",
-        "metrics": "docs_metrics_report_md_filled_with_current_verification_snapshot",
-        "demo_scenario": "docs_demo_scenario_md_and_demo_readiness_checklist_present",
-        "architecture": "docs_architecture_diagram_md_mermaid_placeholder_present",
-        "failure_fallback": "RunPod_failure_fallback_documented_and_replay_route_verified_without_ConnectionBridge",
-        "readme": "README_demo_commands_and_routes_updated",
-        "verification": "uv_pytest_pnpm_lint_typecheck_test_test_e2e_build_ruff_mypy_passed",
-        "runpod": "not_touched_phase_10_existing_phase09_direct_process_state_unchanged"
-      }
-    },
-    {
-      "id": "M7-001",
-      "title": "Final integrated demo audit and acceptance report",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/99-final-audit.md",
-      "depends_on": [
-        "M6-001"
-      ],
-      "unblocked_by": "M6-001",
-      "last_checked_at": "2026-05-24T22:39:21+09:00",
-      "completed_at": "2026-05-24T21:57:21+09:00",
-      "diagnostics": {
-        "task_statuses": "all_M0_to_M7_tasks_done_and_goal_files_accounted_for",
-        "local_verification": "git_status_uv_pytest_uv_full_pytest_ruff_mypy_pnpm_lint_typecheck_test_test_e2e_build_passed",
-        "runpod_verification": "ssh_gpu_direct_health_and_final_in_pod_rest_vision_godmode_socketio_smoke_passed",
-        "client": "playable_city_state_and_replay_route_build_verified",
-        "server": "world_state_rest_and_socketio_state_update_verified_on_runpod",
-        "fallback": "replay_route_e2e_verified_and_documented",
-        "residual_risks": "docker_unavailable_vision_8001_blocked_public_urls_not_configured_real_models_deferred",
-        "client_start_smoke": "next_start_port_3100_home_and_replay_curl_passed",
-        "reaudit_after_direct_process_patch": "local_full_suite_runpod_verify_direct_deploy_health_integration_smoke_client_start_passed_no_docker_commands"
-      }
-    },
-    {
-      "id": "M7-002",
-      "title": "Patch goal documents for verified direct-process RunPod runtime",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/MASTER_AETHERVILLE_FULL_DELIVERY.md",
-      "depends_on": [
-        "M7-001"
-      ],
-      "unblocked_by": "M7-001",
-      "last_checked_at": "2026-05-24T22:14:49+09:00",
-      "completed_at": "2026-05-24T22:14:49+09:00",
-      "diagnostics": {
-        "goal_02": "documented_as_Cloud_Services_Direct_Process_Runtime_filename_retained_for_compatibility",
-        "runtime_strategy": "RunPod_pod_is_execution_environment_direct_process_runtime_active",
-        "docker_policy": "docker_optional_packaging_only_no_docker_execution_required_no_daemon_setup_compose_dind_or_blind_retries",
-        "acceptance": "vllm_direct_path_or_fallback_orchestrator_uvicorn_vision_uvicorn_or_stub_sim_package_shell_process_management_health_smokes_without_docker",
-        "adr": "ADR_009_added_for_verified_RunPod_direct_process_strategy",
-        "secrets": "no_env_runpod_or_secret_material_added",
-        "follow_up": "direct_process_policy_enforced_in_runpod_scripts_and_docs_during_M7_003"
-      }
-    },
-    {
-      "id": "M7-003",
-      "title": "Re-run final audit after direct-process runtime hardening",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/99-final-audit.md",
-      "depends_on": [
-        "M7-002"
-      ],
-      "unblocked_by": "M7-002",
-      "last_checked_at": "2026-05-24T22:39:21+09:00",
-      "completed_at": "2026-05-24T22:39:21+09:00",
-      "diagnostics": {
-        "next_incomplete_phase": "Phase_99_reaudit_selected_because_strategy_patch_changed_goal_runtime_docs_after_prior_final_audit",
-        "script_hardening": "verify_runpod_skips_docker_commands_bootstrap_prints_direct_commands_deploy_compose_mode_rejected",
-        "local_verification": "git_status_bash_n_json_uv_pytest_uv_full_pytest_ruff_mypy_pnpm_lint_typecheck_test_test_e2e_build_client_start_smoke_passed",
-        "runpod_verification": "ssh_gpu_verify_passed_without_docker_commands_direct_deploy_health_passed",
-        "integration_smoke": "remote_rest_vision_god_command_socketio_polling_state_update_passed_after_correct_shared_schema_payload",
-        "failed_then_fixed": "initial_remote_smoke_used_invalid_god_command_payload_and_returned_422_corrected_to_shared_GodCommand_schema",
-        "docker_policy": "no_docker_daemon_setup_no_docker_compose_no_dind_no_blind_retry",
-        "secrets": "no_env_runpod_or_secret_material_added_or_committed"
-      }
-    },
-    {
-      "id": "M7-004",
-      "title": "Create final live demo freeze runbook and checklist",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "docs/live-demo-runbook.md",
-      "depends_on": [
-        "M7-003"
-      ],
-      "unblocked_by": "M7-003",
-      "last_checked_at": "2026-05-24T23:11:38+09:00",
-      "completed_at": "2026-05-24T23:11:38+09:00",
-      "diagnostics": {
-        "scope": "docs_and_runtime_command_freeze_no_master_phase_reopen",
-        "runbook": "Mode_A_public_RunPod_endpoint_and_Mode_B_SSH_tunnel_documented",
-        "vision_port": "verified_18001_used_for_live_demo_commands_and_examples",
-        "client_config": "NEXT_PUBLIC_ORCHESTRATOR_URL_and_NEXT_PUBLIC_SOCKET_URL_documented_for_public_or_tunnel_modes",
-        "smoke": "REST_health_demo_smoke_and_SocketIO_polling_smoke_commands_documented",
-        "checklist": "final_freeze_checklist_added_to_demo_readiness",
-        "script": "docs_demo_script_15min_md_added",
-        "runtime_adjustment": "direct_process_script_defaults_updated_to_vision_18001_for_verified_pod",
-        "docker_policy": "no_docker_commands_no_compose_no_dind",
-        "secrets": "no_env_runpod_values_or_key_paths_committed",
-        "verification": "json_bash_n_diff_check_pnpm_typecheck_client_build_demo_smoke_via_ssh_tunnel_passed",
-        "commit_ready": "all_lightweight_freeze_checks_passed"
-      }
-    },
-    {
-      "id": "M7-005",
-      "title": "Record user acceptance of final demo operational risks",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "docs/risk-register.md",
-      "depends_on": [
-        "M7-004"
-      ],
-      "unblocked_by": "M7-004",
-      "last_checked_at": "2026-05-24T23:51:11+09:00",
-      "completed_at": "2026-05-24T23:51:11+09:00",
-      "diagnostics": {
-        "accepted_public_urls": "public_RunPod_REST_WSS_not_tracked_use_local_env_or_ssh_tunnel",
-        "accepted_vision_port": "current_pod_demo_uses_verified_18001_because_8001_blocked",
-        "accepted_model_policy": "real_vllm_yolo_ppo_lstm_stt_remain_opt_in_no_start_without_separate_explicit_request",
-        "accepted_sync_policy": "remote_rsync_unavailable_tar_over_ssh_fallback_accepted",
-        "side_effects": "documentation_status_only_no_runpod_change_no_model_download_no_docker"
-      }
-    },
-    {
-      "id": "M7-006",
-      "title": "Run gstack and dogfood QA audit for playable demo",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "docs/gstack-dogfood-audit.md",
-      "depends_on": [
-        "M7-005"
-      ],
-      "unblocked_by": "M7-005",
-      "last_checked_at": "2026-05-25T00:36:00+09:00",
-      "completed_at": "2026-05-25T00:36:00+09:00",
-      "diagnostics": {
-        "scope": "report_only_ui_ux_project_completeness_functional_audit",
-        "gstack": "gstack_repo_found_original_qa_rubric_used_later_global_codex_skills_registered_and_browse_host_issue_repaired",
-        "dogfood": "agent_browser_session_collected_screenshots_video_console_curl_smoke_evidence",
-        "runtime_pass": "home_replay_orchestrator_health_sim_status_vision_18001_socketio_polling_demo_smoke_passed",
-        "major_finding": "god_mode_browser_command_blocked_by_cors_preflight_and_client_server_payload_schema_mismatch",
-        "non_blocking_findings": "replay_route_not_discoverable_websocket_upgrade_warning_mobile_layout_crowding",
-        "docker_policy": "no_docker_commands_no_compose_no_dind",
-        "secrets": "no_env_runpod_or_secret_material_printed_or_committed"
-      }
-    },
-    {
-      "id": "M7-007",
-      "title": "Resolve gstack/dogfood demo risk findings",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "docs/gstack-dogfood-audit.md",
-      "depends_on": [
-        "M7-006"
-      ],
-      "unblocked_by": "M7-006",
-      "last_checked_at": "2026-05-25T01:24:00+09:00",
-      "completed_at": "2026-05-25T01:24:00+09:00",
-      "diagnostics": {
-        "god_mode": "fastapi_cors_local_demo_origins_added_client_uses_shared_GodCommand_payload_remote_browser_macro_passed",
-        "replay_discoverability": "live_page_replay_link_and_replay_page_live_return_link_added",
-        "socket_console": "default_socket_transport_polling_with_env_override_and_ui_transport_label_no_console_errors_after_browser_submit",
-        "mobile_polish": "mobile_connection_card_static_between_hero_and_scene_hero_scale_reduced",
-        "deploy_hardening": "direct_deploy_excludes_local_qa_artifacts_and_restarts_repo_managed_processes_after_sync",
-        "runpod": "direct_process_redeployed_restarted_health_passed_no_docker",
-        "secrets": "no_env_runpod_or_secret_material_printed_or_committed",
-        "gstack_tooling_followup": "global_gstack_codex_skills_and_browse_command_verified_after_resolution"
-      }
-    },
-    {
-      "id": "M7-008",
-      "title": "Repair global gstack tooling follow-up",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "docs/gstack-dogfood-audit.md",
-      "depends_on": [
-        "M7-007"
-      ],
-      "unblocked_by": "M7-007",
-      "last_checked_at": "2026-05-25T02:22:00+09:00",
-      "completed_at": "2026-05-25T02:22:00+09:00",
-      "diagnostics": {
-        "global_registration": "codex_gstack_namespaced_skills_linked_under_home_codex_skills",
-        "browser_tooling": "browse_resolves_to_gstack_binary_and_status_health_passes",
-        "bun_runtime": "user_level_non_snap_bun_precedes_snap_bun_on_path",
-        "project_runtime": "no_project_runtime_change_no_docker_no_secrets",
-        "client_endpoint_docs": "runbook_and_checklist_document_next_public_build_time_env_behavior_and_prefer_pnpm_dev_for_demo"
-      }
-    },
-    {
-      "id": "M7-009",
-      "title": "Clarify city actor visual categories for live demo",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "client/src/components/CityPlaceholder.tsx",
-      "depends_on": [
-        "M7-008"
-      ],
-      "unblocked_by": "M7-008",
-      "last_checked_at": "2026-05-25T02:52:00+09:00",
-      "completed_at": "2026-05-25T02:52:00+09:00",
-      "diagnostics": {
-        "citizens": "two_part_human_marker_with_pink_head_teal_body_and_halo",
-        "vehicles": "yellow_taxi_body_blue_cab_black_wheels_roof_light",
-        "traffic_lights": "three_lamp_signal_head_on_pole_with_active_emissive_state",
-        "drones": "octahedron_with_purple_propeller_arms",
-        "legend": "dom_scene_legend_lists_actor_categories_and_visual_signatures",
-        "runtime": "frontend_only_no_runpod_runtime_change_no_docker"
-      }
-    },
-    {
-      "id": "M7-010",
-      "title": "Replace circular actor motion with waypoint routes",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "server/src/aetherville_server/agents/citizens.py",
-      "depends_on": [
-        "M7-009"
-      ],
-      "unblocked_by": "M7-009",
-      "last_checked_at": "2026-05-25T03:21:00+09:00",
-      "completed_at": "2026-05-25T03:21:00+09:00",
-      "diagnostics": {
-        "server_citizens": "deterministic_sidewalk_crosswalk_waypoint_routes_replace_orbit_formula",
-        "client_fallback": "replay_citizens_taxi_drone_use_poseOnRoute_waypoint_interpolation_no_angle_sine_cosine_orbits",
-        "verification": "runpod_direct_redeploy_sim_start_state_samples_show_actor_positions_advancing_between_waypoints",
-        "runtime": "direct_process_only_no_docker_no_secret_output"
-      }
-    },
-    {
-      "id": "M7-011",
-      "title": "Switch demo UI from left-right split to top-bottom layout",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "client/src/app/globals.css",
-      "depends_on": [
-        "M7-010"
-      ],
-      "unblocked_by": "M7-010",
-      "last_checked_at": "2026-05-25T03:47:00+09:00",
-      "completed_at": "2026-05-25T03:47:00+09:00",
-      "diagnostics": {
-        "layout": "shell_single_column_top_hero_bottom_city_scene",
-        "hero": "full_width_top_banner_with_tighter_title_and_compact_endpoint_cards",
-        "city": "full_width_scene_below_hero_with_panel_deck_under_canvas",
-        "runtime": "client_css_only_no_runpod_restart_no_docker"
-      }
-    },
-    {
-      "id": "M7-012",
-      "title": "Add tagged 4x4 city grid, meeting scenario, taxi call, and larger demo city stage",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "client/src/components/CityPlaceholder.tsx",
-      "depends_on": [
-        "M7-011"
-      ],
-      "unblocked_by": "M7-011",
-      "last_checked_at": "2026-05-25T06:05:46+09:00",
-      "completed_at": "2026-05-25T06:05:46+09:00",
-      "diagnostics": {
-        "world_density": "4x4_grid_16_building_blocks_7_citizens_3_vehicles_4_traffic_lights",
-        "movement_policy": "citizens_follow_sidewalk_routes_vehicles_follow_road_waypoint_routes_no_orbits",
-        "labels": "display_tags_shared_schema_added_for_citizens_vehicles_traffic_lights_and_rendered_as_billboard_tags",
-        "god_mode_meeting": "민지랑_민수가_만난다_sets_c01_c02_meeting_tags_and_talking_to_state",
-        "god_mode_taxi": "민지가_택시를_불러줘_sets_v01_taxi_call_display_tag_and_trip_requested_event",
-        "city_scale": "top_hero_compacted_city_panel_min_height_clamp_560px_78vh_880px_visual_verdict_score_94",
-        "verification": "shared_schema_generator_uv_pytest_ruff_mypy_client_test_typecheck_lint_browser_smoke_passed",
-        "runpod": "direct_process_redeployed_uv_bootstrap_enabled_sim_started_rest_health_status_state_godmode_socketio_polling_passed",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
-        "secrets": "no_env_runpod_or_secret_material_printed_or_committed"
-      }
-    },
-    {
-      "id": "M7-013",
-      "title": "Make God Mode rain, taxi, and traffic surge visibly change city behavior",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "server/src/aetherville_server/sim/engine.py",
-      "depends_on": [
-        "M7-012"
-      ],
-      "unblocked_by": "M7-012",
-      "last_checked_at": "2026-05-25T07:29:15+09:00",
-      "completed_at": "2026-05-25T07:29:15+09:00",
-      "diagnostics": {
-        "video_audit": "Video_Project_8_mp4_frames_showed_event_effects_read_as_loop_without_stronger_feedback",
-        "rain": "God_Mode_rain_locks_weather_for_demo_window_and_client_renders_animated_rain_sheet_plus_RAIN_ACTIVE_badge",
-        "taxi": "taxi_call_now_dispatches_v01_toward_passenger_pickup_and_changes_tags_to_moving_pickup_waiting_or_passenger_onboard",
-        "traffic": "traffic_jam_now_sets_congestion_status_slows_vehicle_routes_adds_low_speed_tags_raises_forecast_to_high_congestion_and_renders_red_surge_overlay",
-        "verification": "uv_pytest_ruff_mypy_client_test_typecheck_lint_build_git_diff_check_browser_smoke_passed",
-        "runpod": "direct_process_redeployed_with_uv_bootstrap_mock_vllm_memory_redis_no_docker_and_runtime_smoke_passed",
-        "browser": "http_WSL_IP_3000_event_feedback_final_connected_tick_rain_rainOverlay_trafficOverlay_taxiTag_true",
-        "secrets": "no_env_runpod_or_secret_material_printed_or_committed"
-      }
-    },
-    {
-      "id": "M7-014",
-      "title": "Polish live city scene toward mini-GTA motion and visible God Mode consequences",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/99-final-audit.md",
-      "depends_on": [
-        "M7-013"
-      ],
-      "last_checked_at": "2026-05-25T08:44:38+09:00",
-      "completed_at": "2026-05-25T08:44:38+09:00",
-      "diagnostics": {
-        "client_scene": "added smooth game camera, street lights, lane dashes, mini-map HUD, animated pedestrian rigs, wheel-spinning vehicles, drone rotors, 3D rain streaks, and traffic-jam vehicle queues",
-        "godmode_classification_fix": "교통량/혼잡/막혀/차량 commands now classify as infrastructure and trigger traffic_jam effects",
-        "runpod_direct_process": "redeployed with direct-process runtime, Docker skipped, tar-over-SSH fallback used",
-        "runtime_smoke": "rain true, traffic congestion active, taxi dispatch tags visible, v02 정체/저속 tags visible, forecast indices 1.0",
-        "browser_smoke": "local client connected via polling, rain/traffic/taxi overlays true, canvas and four panels present",
-        "screenshot": "/tmp/aetherville-mini-gta-envbuild.png"
-      }
-    },
-    {
-      "id": "M8-001",
-      "title": "Add persistent deterministic online adaptation loop for demo self-learning",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "server/src/aetherville_server/learning.py",
-      "depends_on": [
-        "M7-014"
-      ],
-      "unblocked_by": "M7-014",
-      "last_checked_at": "2026-05-25T12:06:00+09:00",
-      "completed_at": "2026-05-25T11:47:49+09:00",
-      "diagnostics": {
-        "schema": "LearningSnapshot_and_LearningStatusResponse_added_to_shared_schemas_and_WorldStatePayload",
-        "server": "LearningStore_persists_event_experience_to_JSON_and_exposes_api_v1_learning_status",
-        "simulation": "God_Mode_and_auto_events_record_experience_policy_version_epoch_traffic_bias_taxi_success_weather_memory_signals",
-        "feedback": "learned_state_affects_forecast_queue_pressure_vehicle_speed_factor_traffic_light_tags_and_client_learning_panel",
-        "truthfulness": "persistent_demo_adaptation_only_not_real_vllm_yolo_ppo_lstm_stt_training",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
-        "runpod": "direct_process_redeployed_health_learning_status_godmode_learning_smoke_passed_no_docker",
-        "client": "production_client_rebuilt_with_tunnel_envs_restarted_on_3000_AI_learning_panel_rendered",
-        "verification": "json_bash_gitdiff_pytest_ruff_mypy_pnpm_lint_typecheck_test_e2e_build_runpod_smoke_passed"
-      }
-    },
-    {
-      "id": "M8-002",
-      "title": "Activate real 4090-backed vLLM and connect citizen reflection",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "infra/runpod/start_direct_processes.sh",
-      "depends_on": [
-        "M8-001"
-      ],
-      "unblocked_by": "user_approved_all_gpu_workloads",
-      "last_checked_at": "2026-05-25T13:02:41+09:00",
-      "completed_at": "2026-05-25T13:02:41+09:00",
-      "diagnostics": {
-        "push": "previous_demo_adaptation_commit_pushed_to_origin_master_ea506b1",
-        "vllm": "Qwen_Qwen2_5_14B_Instruct_AWQ_served_by_vllm_0_10_2_on_RTX_4090_direct_process_port_8000",
-        "compat": "transformers_4_55_4_and_CUDA_12_8_compatible_torch_2_8_selected_after_latest_vllm_CUDA_13_failure",
-        "llm_integration": "OpenAICompatiblePlanner_uses_vLLM_for_citizen_reflection_with_cached_fallback",
-        "smoke": "v1_models_chat_completions_orchestrator_health_and_citizen_reflect_passed",
-        "gpu": "real_vllm_loaded_about_22_5GiB_VRAM_after_smoke",
-        "docker_policy": "no_docker_no_compose_no_dind"
-      }
-    },
-    {
-      "id": "M8-003",
-      "title": "Activate real 4090-backed YOLO vision inference",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "server/src/aetherville_server/vision.py",
-      "depends_on": [
-        "M8-002"
-      ],
-      "unblocked_by": "user_approved_all_gpu_workloads",
-      "last_checked_at": "2026-05-25T13:14:53+09:00",
-      "completed_at": "2026-05-25T13:14:53+09:00",
-      "diagnostics": {
-        "vision": "AETHERVILLE_VISION_MODE_real_uses_optional_Ultralytics_YOLO_boundary_with_mock_fallback",
-        "runpod": "ultralytics_8_4_53_installed_yolo11n_pt_started_on_RTX_4090_device_0",
-        "smoke": "vision_health_yolo_ok_and_detect_mode_real_passed_on_synthetic_road_frame",
-        "gpu": "combined_real_vllm_plus_yolo_smoke_used_about_23_1GiB_VRAM",
-        "filter": "traffic_relevant_COCO_labels_kept_by_default",
-        "docker_policy": "no_docker_no_compose_no_dind"
-      }
-    },
-    {
-      "id": "M8-004",
-      "title": "Connect real RunPod YOLO detections to vehicle camera endpoint and browser panel",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/07-vehicles-vision.md",
-      "depends_on": [
-        "M8-003"
-      ],
-      "unblocked_by": "user_requested_immediate_reactive_demo_improvement",
-      "last_checked_at": "2026-05-25T13:35:02+09:00",
-      "completed_at": "2026-05-25T13:35:02+09:00",
-      "diagnostics": {
-        "schema": "VehicleCameraFrame now carries mock_or_real mode and generated TypeScript was refreshed",
-        "backend": "orchestrator camera endpoint enriches camera frames through vision /detect when AETHERVILLE_CAMERA_VISION_MODE=real",
-        "client": "local_next_dev_started_on_3000_with_tunnel_NEXT_PUBLIC_urls; index_and_replay_http_smokes_passed_after_compile",
-        "runpod_script": "direct-process orchestrator inherits AETHERVILLE_CAMERA_VISION_MODE from vision mode",
-        "fallback": "state embedded mock detections remain available if camera endpoint or real YOLO is unavailable",
-        "docker_policy": "no_docker_no_compose_no_dind",
-        "runpod": "sync_only_deploy_then_orchestrator_restart_preserved_existing_real_vllm_and_yolo_processes",
-        "smoke": "local_tunnel_camera_endpoint_returned_mode_real_with_traffic_light_detection; god_rain_taxi_traffic_state_smokes_passed"
-      }
-    },
-    {
-      "id": "M8-005",
-      "title": "Train and load real 4090-backed traffic policy checkpoint",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/08-traffic-ai.md",
-      "depends_on": [
-        "M8-004"
-      ],
-      "unblocked_by": "user_approved_all_gpu_workloads",
-      "last_checked_at": "2026-05-25T13:50:33+09:00",
-      "completed_at": "2026-05-25T13:50:33+09:00",
-      "diagnostics": {
-        "schema": "WorldStatePayload now includes TrafficAiSnapshot with checkpoint/gpu/metric fields",
-        "backend": "Simulation loads AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT and drives traffic lights with checkpoint action when present",
-        "training": "RunPod .venv python trained linear traffic policy with torch_cuda on RTX_4090 for 320 episodes horizon_80",
-        "metrics": "checkpoint avg_queue 32.913 vs fixed_cycle 48.138 = 31.628 percent queue reduction",
-        "runtime": "orchestrator restarted with checkpoint path; sim state reports mode_checkpoint trained_on_gpu_true training_backend_torch_cuda",
-        "client": "Traffic panel displays GPU POLICY badge and queue cut percentage from shared traffic_ai state",
-        "docker_policy": "no_docker_no_compose_no_dind"
-      }
-    },
-    {
-      "id": "M8-006",
-      "title": "Train and load real 4090-backed LSTM traffic forecast checkpoint",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/08-traffic-ai.md",
-      "depends_on": [
-        "M8-005"
-      ],
-      "unblocked_by": "user_approved_all_gpu_workloads",
-      "last_checked_at": "2026-05-25T14:09:29+09:00",
-      "completed_at": "2026-05-25T14:09:29+09:00",
-      "diagnostics": {
-        "schema": "WorldStatePayload now includes TrafficForecastAiSnapshot with lstm checkpoint gpu and metric fields",
-        "backend": "LstmForecastWrapper loads AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT and runs pure_python exported LSTM inference without torch in orchestrator",
-        "training": "RunPod .venv python trained LSTM forecast with torch_cuda on RTX_4090 samples_960 epochs_180 sequence_12 hidden_10",
-        "metrics": "checkpoint reported MAPE 11.84 percent and training_loss 2.911555",
-        "runtime": "orchestrator restarted with forecast checkpoint; sim state reports traffic_forecast_ai mode_lstm_checkpoint trained_on_gpu_true backend_torch_cuda",
-        "client": "Traffic panel displays LSTM FORECAST badge and MAPE from shared traffic_forecast_ai state",
-        "docker_policy": "no_docker_no_compose_no_dind"
-      }
-    },
-    {
-      "id": "M8-007",
-      "title": "Connect God Mode text commands to real 4090 vLLM interpretation with safe rule fallback",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/09-god-mode.md",
-      "depends_on": [
-        "M8-006"
-      ],
-      "unblocked_by": "user_requested_immediate_extreme_4090_progress",
-      "last_checked_at": "2026-05-25T14:42:00+09:00",
-      "completed_at": "2026-05-25T14:42:00+09:00",
-      "diagnostics": {
-        "schema": "GodCommandResponse exposes ai_mode ai_confidence and ai_reason; generated TypeScript refreshed",
-        "backend": "GodCommandDispatcher can call a constrained OpenAI-compatible vLLM classifier when AETHERVILLE_GOD_MODE_LLM=vllm and falls back to deterministic rules on timeout invalid output or disabled mode",
-        "safety": "vLLM output only selects a fixed safe action vocabulary before existing deterministic effects are applied",
-        "client": "local production Next server restarted on port_3000 with tunnel NEXT_PUBLIC urls; index_and_replay_http_smokes_passed",
-        "runpod_script": "direct-process startup passes AETHERVILLE_GOD_MODE_LLM into the orchestrator without using Docker",
-        "verification": "json_bash_gitdiff_pytest_ruff_mypy_pnpm_lint_test_typecheck_e2e_build_passed",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
-        "runpod": "sync_only_deploy_then_orchestrator_only_restart_preserved_existing_real_vllm_and_real_yolo; direct health passed with AETHERVILLE_VLLM_MODE=real; local tunnel God command returned ai_mode_vllm action_traffic_jam"
-      }
-    },
-    {
-      "id": "M8-008",
-      "title": "Expand God Mode into bounded vLLM multi-action city direction",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/09-god-mode.md",
-      "depends_on": [
-        "M8-007"
-      ],
-      "unblocked_by": "active_master_goal_extreme_4090_demo_continuation",
-      "last_checked_at": "2026-05-25T15:08:57+09:00",
-      "completed_at": "2026-05-25T15:08:57+09:00",
-      "diagnostics": {
-        "schema": "GodCommandResponse now carries ai_actions so the client can show decomposed command plans",
-        "backend": "vLLM interpretation accepts one_to_four safe actions and dispatcher aggregates deterministic sub_effects before recording one multi_action summary event",
-        "fallback": "rules path also decomposes obvious multi_intent Korean commands such as rain_plus_taxi_plus_traffic",
-        "client": "local_next_start_restarted_on_port_3000_with_tunnel_NEXT_PUBLIC_urls; index_and_replay_http_smokes_passed",
-        "verification": "json_bash_gitdiff_pytest_ruff_mypy_pnpm_lint_test_typecheck_e2e_build_passed",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
-        "runpod": "sync_only_deploy_then_orchestrator_only_restart_preserved_real_vllm_yolo; multi_action_smoke_returned_ai_mode_vllm_ai_actions_rain_traffic_jam_taxi_call_meeting_event_count_9_and_world_state_rain_congestion_taxi_meeting"
-      }
-    },
-    {
-      "id": "M8-009",
-      "title": "Add God Mode voice capture and optional faster-whisper STT path",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/09-god-mode.md",
-      "depends_on": [
-        "M8-008"
-      ],
-      "unblocked_by": "text_god_mode_is_stable_and_user_approved_4090_runtime",
-      "last_checked_at": "2026-05-25T15:38:00+09:00",
-      "completed_at": "2026-05-25T15:38:00+09:00",
-      "diagnostics": {
-        "schema": "VoiceCommandRequest and VoiceCommandResponse added to shared contracts and generated TypeScript",
-        "backend": "/api/v1/god/voice transcribes audio through env-selected provider then routes transcript through the same God Mode dispatcher",
-        "stt": "stub fallback is default; optional faster-whisper provider is lazy-loaded with AETHERVILLE_STT_MODE=faster_whisper",
-        "client": "GodModeMicPanel now records microphone audio with MediaRecorder and posts voice commands with typed transcript fallback",
-        "runpod_script": "direct-process startup can bootstrap faster-whisper and passes STT env into orchestrator",
-        "verification": "python3_json_tool_bash_n_git_diff_check_uv_pytest_ruff_mypy_pnpm_lint_typecheck_test_e2e_client_build_passed_2026-05-25T15:38KST",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
-        "runpod": "direct_process_synced_by_tar_over_ssh_orchestrator_restarted_only_real_vllm_real_yolo_traffic_policy_lstm_forecast_preserved_stt_health_ok_faster_whisper",
-        "voice_smoke": "local_tunnel_POST_api_v1_god_voice_without_audio_returned_stt_status_fallback_stt_mode_fallback_command_accepted_ai_mode_vllm_actions_rain_taxi_call",
-        "client_runtime": "local_next_start_rebuilt_and_restarted_on_3000_with_tunnel_NEXT_PUBLIC_values_home_and_replay_http_smokes_passed",
-        "truthfulness": "real_faster_whisper_package_configured_but_real_audio_transcription_not_claimed_until_stt_status_ok_from_audio_blob",
-        "simulation": "POST_api_v1_sim_start_set_running_true_and_status_advanced_tick_0_to_16"
-      }
-    },
-    {
-      "id": "M8-010",
-      "title": "Verify real audio STT through RunPod faster-whisper",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/09-god-mode.md",
-      "depends_on": [
-        "M8-009"
-      ],
-      "unblocked_by": "optional_faster_whisper_stt_configured_on_direct_process_runpod",
-      "last_checked_at": "2026-05-25T15:49:00+09:00",
-      "completed_at": "2026-05-25T15:49:00+09:00",
-      "diagnostics": {
-        "script": "scripts/voice_stt_smoke.py posts existing audio files to /api/v1/god/voice and asserts expected stt_status",
-        "runpod": "orchestrator_health_stt_ok_faster_whisper_model_base_device_cuda_real_vllm_yolo_policy_lstm_preserved",
-        "real_audio_smoke": "temporary_korean_tts_wav_outside_repo_returned_stt_status_ok_stt_mode_faster_whisper_transcript_match_command_accepted_ai_mode_vllm_actions_rain_taxi_call",
-        "truthfulness": "server_side_real_audio_stt_verified; human_browser_microphone_still_requires_ui_response_stt_status_ok",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      }
-    },
-    {
-      "id": "M10-004",
-      "title": "Harden production browser demo endpoint runtime smoke",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/10-polish-demo.md",
-      "depends_on": [
-        "M8-010"
-      ],
-      "unblocked_by": "headless_chromium_demo_audit_found_stale_endpoint_risk",
-      "last_checked_at": "2026-05-25T16:12:00+09:00",
-      "completed_at": "2026-05-25T16:12:00+09:00",
-      "diagnostics": {
-        "client_runtime": "live_page_force_dynamic_and_runtime_orchestrator_url_passed_to_side_panels_vehicle_camera_god_mode",
-        "replay": "replay_route_passes_orchestratorUrl_null_to_prevent_live_endpoint_calls",
-        "browser_smoke": "scripts_browser_demo_smoke_py_verified_live_route_expected_endpoint_panels_no_application_error_and_replay_route_panels_no_application_error",
-        "build": "pnpm_filter_client_build_reports_live_route_dynamic_server_rendered_on_demand",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      }
-    },
-    {
-      "id": "M10-005",
-      "title": "Add full presenter rehearsal smoke for RunPod and browser demo",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/10-polish-demo.md",
-      "depends_on": [
-        "M10-004"
-      ],
-      "unblocked_by": "live_browser_smoke_and_runpod_ai_paths_verified_individually",
-      "last_checked_at": "2026-05-25T16:22:00+09:00",
-      "completed_at": "2026-05-25T16:22:00+09:00",
-      "diagnostics": {
-        "script": "scripts/demo_rehearsal.py verifies orchestrator dependencies simulation start traffic policy lstm forecast real camera learning god mode visible effects and live_replay_browser_smokes",
-        "runpod": "rehearsal_passed_against_http_127_0_0_1_18080_with_vllm_yolo_stt_traffic_policy_lstm_all_ok",
-        "god_mode": "multi_action_command_returned_ai_mode_vllm_actions_rain_traffic_jam_taxi_call_meeting_and_visible_state_effects",
-        "browser": "live_and_replay_headless_chromium_smokes_passed_with_expected_endpoint_and_no_application_error",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      }
-    },
-    {
-      "id": "M10-006",
-      "title": "Add Scene Director live impact presentation UI",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/10-polish-demo.md",
-      "depends_on": [
-        "M10-005"
-      ],
-      "unblocked_by": "full_rehearsal_passed_and_visual_effects_needed_clearer_presentation_signposting",
-      "last_checked_at": "2026-05-25T16:35:00+09:00",
-      "completed_at": "2026-05-25T16:35:00+09:00",
-      "diagnostics": {
-        "city_hud": "SCENE_DIRECTOR_LIVE_IMPACT_HUD_shows_rain_traffic_taxi_meeting_gpu_policy_lstm_forecast_labels_from_world_state",
-        "panel": "SceneImpactPanel_Live_impact_board_shows_active_cards_and_learning_evidence",
-        "browser_smoke": "scripts_browser_demo_smoke_requires_scene_director_and_live_impact_markers_for_live_and_replay",
-        "presentation": "demo_script_checklist_runbook_updated_to_call_out_HUD_and_cards_after_God_Mode",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      }
-    },
-    {
-      "id": "M10-007",
-      "title": "Add screenshot-based browser visual smoke gate",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/10-polish-demo.md",
-      "depends_on": [
-        "M10-006"
-      ],
-      "unblocked_by": "visual_demo_gate_needed_after_scene_director_polish",
-      "last_checked_at": "2026-05-25T17:08:33+09:00",
-      "completed_at": "2026-05-25T17:08:33+09:00",
-      "diagnostics": {
-        "script": "scripts/browser_visual_smoke.py captures live and replay headless Chromium screenshots, validates PNG dimensions, file size, color diversity, luminance range, and DOM smoke markers",
-        "integration": "scripts/demo_rehearsal.py now includes visual smoke by default unless --skip-visual-smoke is set",
-        "artifacts": "screenshots are written under ignored dogfood-output/visual-smoke and are not committed",
-        "evidence": "live screenshot 942655 bytes unique_colors_1454 luma_range_236; replay screenshot 946968 bytes unique_colors_1750 luma_range_236",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      }
-    },
-    {
-      "id": "M10-008",
-      "title": "Add before-after browser impact smoke for God Mode demo proof",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/10-polish-demo.md",
-      "depends_on": [
-        "M10-007"
-      ],
-      "unblocked_by": "need_to_prove_demo_is_dynamic_not_static_looping_video",
-      "last_checked_at": "2026-05-25T17:33:28+09:00",
-      "completed_at": "2026-05-25T17:33:28+09:00",
-      "diagnostics": {
-        "client": "live Next page now fetches initial RunPod /api/v1/sim/state server-side so first screenshot reflects current world state before socket hydration",
-        "script": "scripts/browser_impact_smoke.py resets to clear baseline, captures before screenshot, sends vLLM multi-action God Mode command, captures after screenshot, and verifies state effects plus sampled screenshot delta",
-        "rehearsal": "scripts/demo_rehearsal.py now runs impact smoke by default unless --skip-impact-smoke is set",
-        "evidence": "impact smoke passed: before_weather_clear after_weather_rain ai_mode_vllm actions_rain_traffic_jam_taxi_call_meeting mean_rgb_delta_11.036 changed_sample_ratio_0.4531",
-        "artifacts": "before/after screenshots are written under ignored dogfood-output/impact-smoke and are not committed",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      }
-    },
-    {
-      "id": "M10-009",
-      "title": "Add browser RunPod 4090 AI proof panel",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/10-polish-demo.md",
-      "depends_on": [
-        "M10-008"
-      ],
-      "unblocked_by": "need_visible_proof_that_4090_runpod_ai_services_are_active_in_the_demo_ui",
-      "last_checked_at": "2026-05-25T17:53:50+09:00",
-      "completed_at": "2026-05-25T17:53:50+09:00",
-      "diagnostics": {
-        "client": "RunPodProofPanel shows vLLM YOLO STT 4090 traffic policy 4090 LSTM adaptive loop and direct-process runtime evidence from health plus world state",
-        "first_paint": "SidePanels now receive the server-fetched initial RunPod world state so proof panels do not start from replay fallback on live route first paint",
-        "browser_smoke": "scripts/browser_demo_smoke.py now requires RunPod AI proof and 4090 실행 증거 markers for live and replay routes",
-        "truthfulness": "Panel shows fallback/offline states instead of claiming unavailable services; direct-process/no-Docker runtime is explicit",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
-        "verification": "full_demo_rehearsal_passed_with_RunPod_AI_proof_markers_dom_bytes_live_27711_replay_14047_and_impact_smoke_mean_rgb_delta_22.062_changed_sample_ratio_0.6373"
-      }
-    },
-    {
-      "id": "M11-001",
-      "title": "Add interval-scoped vLLM autonomous City AI planning loop",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "active-thread-goal: llm-driven-city-loop",
-      "depends_on": [
-        "M10-009"
-      ],
-      "unblocked_by": "user_requested_real_ai_driven_city_after_looping_demo_feedback",
-      "last_checked_at": "2026-05-25T21:37:47+09:00",
-      "completed_at": "2026-05-25T21:37:47+09:00",
-      "diagnostics": {
-        "schemas": "CityWorldContext CityAiAction CityAiPlan CityAiSnapshot added to shared Pydantic source and generated TypeScript; WorldStatePayload.city_ai and city_ai_plan event are in the contract",
-        "backend": "SimulationEngine builds CityWorldContext, calls vLLM or rules planner on interval, validates bounded JSON actions, and executes citizen movement taxi meeting memory traffic and weather through Python executors",
-        "client": "3D city and Scene Director now surface CITY AI PLAN, city AI status, actor focus, and AI계획/taxi markers from shared world state",
-        "runpod_runtime": "targeted sync deployed changes; orchestrator restarted direct-process only with AETHERVILLE_CITY_AI_MODE=vllm and existing real vLLM/YOLO/STT/traffic paths preserved",
-        "smoke": "RunPod city_ai_smoke passed mode_vllm status_applied actions_call_taxi_meet_then_local_tunnel_passed actions_move_citizen_call_taxi with movement markers",
-        "verification": "uv_run_pytest_47_passed ruff_passed mypy_passed pnpm_lint_passed pnpm_typecheck_passed pnpm_test_passed pnpm_test_e2e_passed client_build_passed browser_live_smoke_passed git_diff_check_passed",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      }
-    },
-    {
-      "id": "M11-002",
-      "title": "Add bounded Scenario Director for complex audience story commands",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "active-thread-goal: scenario-director-dogfood",
-      "depends_on": [
-        "M11-001"
-      ],
-      "unblocked_by": "user_required_any_situation_to_show_visible_actor_taxi_drone_movement",
-      "last_checked_at": "2026-05-26T03:18:28+09:00",
-      "completed_at": "2026-05-26T03:18:28+09:00",
-      "diagnostics": {
-        "schemas": "ScenarioDirective and ScenarioStep added to shared Pydantic source and generated TypeScript; WorldStatePayload.scenario and GodCommandResponse.scenario expose active/completed scenario state.",
-        "backend": "God Mode complex Korean story commands compile to bounded steps for citizen movement, meeting, taxi call/drive, drone movement, and group rendezvous; SimulationEngine advances steps over ticks without raw LLM coordinate mutation.",
-        "client": "ScenarioDirectorPanel shows current step timeline; 3D scene HUD/camera focus ScenarioDirective progress and God Mode macro/result exposes 연쇄 상황.",
-        "docs": "README, live demo runbook, demo script, readiness checklist, DECISIONS, PROGRESS, and handoff updated with Scenario Director truthfulness constraints.",
-        "dogfood": "agent-browser dogfood passed against local browser http://127.0.0.1:3000 connected to local orchestrator http://127.0.0.1:18088; report at dogfood-output/scenario-director-dogfood/report.md; no reproducible issues found.",
-        "verification": "uv_run_pytest_48_passed ruff_passed mypy_passed pnpm_lint_passed pnpm_typecheck_passed pnpm_test_passed pnpm_test_e2e_passed scenario_directive_smoke_passed browser_demo_smoke_passed git_diff_check_passed; next_build_attempt_SIGTERM_after_WSL_hang_documented",
-        "runpod_runtime": "RunPod SSH/GPU verified and targeted backend/schema/script sync completed; Docker skipped; remote orchestrator restart not required for local dogfood and not performed via Docker.",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      }
-    },
-    {
-      "id": "M11-003",
-      "title": "Reflect Scenario Director changes into RunPod remote demo runtime",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "active-thread-goal: runpod-remote-demo-reflect",
-      "depends_on": [
-        "M11-002"
-      ],
-      "unblocked_by": "scenario_director_local_dogfood_passed_and_user_requested_runpod_remote_demo_reflection",
-      "last_checked_at": "2026-05-26T03:58:00+09:00",
-      "completed_at": "2026-05-26T03:58:00+09:00",
-      "diagnostics": {
-        "sync": "targeted tar-over-SSH sync of shared schemas, generated TypeScript, server package, and smoke scripts completed; full repo sync avoided because remote rsync is unavailable and full tar can hang",
-        "runpod_runtime": "remote orchestrator direct process restarted only; existing real vLLM, real YOLO vision on 18001, faster-whisper STT, and memory Redis fallback preserved",
-        "health": "local tunnel health passed for orchestrator, sim status, vision 18001, and vLLM models endpoint; remote orchestrator in-pod health passed immediately after restart",
-        "scenario_smoke": "scripts/scenario_directive_smoke.py passed against http://127.0.0.1:18080 with six scenario step types and visible running/completed movement states",
-        "client_runtime": "local Next dev restarted on 0.0.0.0:3000 with NEXT_PUBLIC_ORCHESTRATOR_URL and NEXT_PUBLIC_SOCKET_URL set to http://127.0.0.1:18080; first compile was slow on WSL but route served the tunnel endpoint after warmup",
-        "browser_smoke": "scripts/browser_demo_smoke.py passed for live route against http://127.0.0.1:3000 with expected endpoint http://127.0.0.1:18080; replay route curl marker passed after compile warmup",
-        "truthfulness": "scenario execution is bounded Python simulation driven by ScenarioDirective and vLLM high-level plans; no claim of direct frame-by-frame LLM animation or model-weight self-training",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      }
-    },
-    {
-      "id": "M12-001",
-      "title": "Implement TaskGraph Planner for arbitrary Korean multi-actor situations",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/12-taskgraph-planner.md",
-      "depends_on": [
-        "M11-003"
-      ],
-      "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
-      "last_checked_at": "2026-05-26T04:50:58+09:00",
-      "diagnostics": {
-        "schemas": "TaskGraph TaskNode TaskEdge TaskCondition TaskGraphPlan TaskGraphExecutionSnapshot added to Pydantic source and generated TypeScript.",
-        "backend": "God Mode text compiles through deterministic TaskGraph fallback; complex accepted graphs drive ScenarioDirective steps; hard unknown/circular graphs reject safely.",
-        "fixtures": "10 Korean fixture families cover meeting, taxi, group rendezvous, drone delivery plus movement, rain, traffic surge, unknown actor, ambiguous actor, circular ordering, and long 6-step chain.",
-        "client": "ScenarioDirectorPanel reads worldState.task_graph and shows status, current node, assumptions, and rejection reason while preserving ScenarioDirective display.",
-        "verification": "pytest_goal12_56_passed ruff_passed mypy_passed pnpm_typecheck_passed pnpm_test_3_passed json_tool_passed git_diff_check_passed",
-        "backup": "local archive created at .omx/backups/aetherville-goal12-taskgraph-20260526-045058.tar.gz; sha256 at .omx/backups/aetherville-goal12-taskgraph-20260526-045058.tar.gz.sha256; secrets/env files excluded",
-        "runpod_runtime": "RunPod not touched for this local Goal 12 implementation turn.",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      },
-      "completed_at": "2026-05-26T04:50:58+09:00"
-    },
-    {
-      "id": "M13-001",
-      "title": "Implement inspectable Entity Brain Runtime for citizens vehicles taxis and drones",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/13-entity-brain-runtime.md",
-      "depends_on": [
-        "M12-001"
-      ],
-      "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
-      "last_checked_at": "2026-05-26T09:56:20+09:00",
-      "diagnostics": {
-        "shared_contracts": "EntityBrainState_EntityGoal_EntityConstraint_EntityProgress_EntityBlocker_added_and_generated_typescript",
-        "world_state": "WorldStatePayload_entity_brains_added_for_citizens_taxi_vehicles_drones_traffic_lights",
-        "ui": "AiOperationsPanel_entity_intent_inspector_added_replay_fallback_includes_brains",
-        "tests": "packages_shared_schema_and_server_sim_tests_passed"
-      },
-      "completed_at": "2026-05-26T09:56:20+09:00"
-    },
-    {
-      "id": "M14-001",
-      "title": "Implement bounded Replanner and Resilience Runtime for stuck or impossible tasks",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/14-replanner-resilience-runtime.md",
-      "depends_on": [
-        "M13-001"
-      ],
-      "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
-      "last_checked_at": "2026-05-26T09:56:20+09:00",
-      "diagnostics": {
-        "blockers": "stuck_actor_stuck_vehicle_target_unreachable_taxi_unavailable_pickup_timeout_group_timeout_drone_delay_low_battery_traffic_delay_dependency_deadlock_forced_tests",
-        "events": "task_blocked_task_replanned_task_recovered_and_ReplanRecord_feed",
-        "smoke": "replanner_resilience_smoke_passed_local_direct_process_18081",
-        "max_attempts": "bounded_two_attempts_then_fallback_complete_no_infinite_loop"
-      },
-      "completed_at": "2026-05-26T09:56:20+09:00"
-    },
-    {
-      "id": "M15-001",
-      "title": "Implement Persistent Learning and Evolution Loop without overclaiming model-weight self-training",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/15-memory-learning-evolution-loop.md",
-      "depends_on": [
-        "M14-001"
-      ],
-      "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
-      "last_checked_at": "2026-05-26T09:56:20+09:00",
-      "diagnostics": {
-        "contracts": "TrajectoryEvent_TaskOutcomeScore_LearningSignal_PolicyBiasSnapshot_EvolutionSnapshot_added",
-        "persistence": "JSON_learning_state_with_reset_endpoint_and_policy_bias_snapshot",
-        "truthfulness": "deterministic_online_adaptation_only_no_model_weight_self_training_claim",
-        "smoke": "learning_evolution_smoke_passed_experience_0_to_8_json_persistence"
-      },
-      "completed_at": "2026-05-26T09:56:20+09:00"
-    },
-    {
-      "id": "M16-001",
-      "title": "Implement Causal AI UI and observability for graph intent replan learning and proof states",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/16-causal-ai-ui-observability.md",
-      "depends_on": [
-        "M15-001"
-      ],
-      "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
-      "last_checked_at": "2026-05-26T09:56:20+09:00",
-      "diagnostics": {
-        "ui_surfaces": "AI_operations_entity_intent_replan_feed_causal_chain_evolution_state_learning_truthfulness",
-        "replay": "mockWorld_includes_task_graph_entity_brains_replans_learning_evolution_samples",
-        "browser_contract": "browser_demo_smoke_markers_and_client_contract_tests_require_new_panels",
-        "copy": "model_weight_self_training_not_verified_wording_added"
-      },
-      "completed_at": "2026-05-26T09:56:20+09:00"
-    },
-    {
-      "id": "M17-001",
-      "title": "Run autonomous city dogfood audit and final truthfulness gate",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/17-autonomous-city-dogfood-audit.md",
-      "depends_on": [
-        "M16-001"
-      ],
-      "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
-      "last_checked_at": "2026-05-26T09:56:20+09:00",
-      "diagnostics": {
-        "audit_doc": "docs/autonomous-city-evolution-audit.md",
-        "dogfood": "autonomous_city_dogfood_smoke_passed_10_scenarios_local_direct_process_18081",
-        "runpod_health": "current_18080_tunnel_health_reachable_but_goal13_17_remote_redeploy_still_recommended_before_demo",
-        "portability": "docs/rtx-5090-autonomous-evolution-portability.md_and_final_backup_required"
-      },
-      "completed_at": "2026-05-26T09:56:20+09:00"
-    },
-    {
-      "id": "M17-002",
-      "title": "Finalize autonomous city evolution verification backup and push readiness",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": ".codex/goals/17-autonomous-city-dogfood-audit.md",
-      "depends_on": [
-        "M17-001"
-      ],
-      "unblocked_by": "goal13_17_smokes_browser_checks_and_production_build_passed",
-      "last_checked_at": "2026-05-26T10:19:15+09:00",
-      "completed_at": "2026-05-26T10:19:15+09:00",
-      "diagnostics": {
-        "final_build": "pnpm_filter_aetherville_client_build_passed",
-        "browser": "live_replay_browser_demo_smoke_visual_smoke_and_pnpm_test_e2e_passed",
-        "backup": ".omx/backups/aetherville-goals13-17-autonomous-city-20260526-101816.tar.gz sha256 a628885b3b6729114069a6d8c5040584147f5aa100d57abf9e02a79fc03cbe1c secret_path_scan_passed_env_example_whitelisted",
-        "runpod_runtime": "current_18080_tunnel_reachable_but_goal13_17_remote_redeploy_recommended_before_demo_claims",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      }
-    },
-    {
-      "id": "OPS-ROOT-001",
-      "title": "Organize tracked root artifacts into project infra and GitHub metadata folders",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "project/SESSION_HANDOFF.md",
-      "depends_on": [
-        "M17-002"
-      ],
-      "unblocked_by": "user_requested_clean_root_structure_after_agent_docs_untracked",
-      "last_checked_at": "2026-05-26T21:20:00+09:00",
-      "completed_at": "2026-05-26T21:20:00+09:00",
-      "diagnostics": {
-        "moved_docs": "project_SPEC_TEST_PLAN_DECISIONS_PROGRESS_SESSION_HANDOFF_TASKS_and_source_PRD",
-        "moved_runtime_docs": "infra/docker_compose_artifacts_for_future_portability_only",
-        "moved_github": "github_issue_template_to_dot_github_issue_template",
-        "local_only_ignored": "dot_codex_dot_agents_codex_docs_left_in_place_to_preserve_local_agent_runtime",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      }
-    },
-    {
-      "id": "OPS-5090-001",
-      "title": "Prepare RTX 5090 direct-process migration and current-pod handoff backup",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "project/RTX5090_MIGRATION_RUNBOOK.md",
-      "depends_on": [
-        "OPS-ROOT-001"
-      ],
-      "unblocked_by": "user_has_limited_4090_time_and_needs_5090_ready_deploy_path",
-      "last_checked_at": "2026-05-26T21:31:31+09:00",
-      "completed_at": "2026-05-26T21:31:31+09:00",
-      "diagnostics": {
-        "runbook": "project/RTX5090_MIGRATION_RUNBOOK.md",
-        "scripts": "infra/runpod/create_remote_handoff_backup.sh_and_infra/runpod/deploy_5090_direct.sh",
-        "remote_backup": ".omx/backups/runpod-remote-handoff-20260526-213131",
-        "remote_backup_archive_sha256": "92af4c5911d9d6633c8e34b227917f2eb00a8837cc7c8c21b360be87a810835b",
-        "remote_backup_scope": "workspace_plus_tmp_aetherville_learning_state_no_secrets_no_model_cache_no_full_pod_image",
-        "deploy_profiles": "safe_smoke_no_model_download_and_real_demo_guarded_by_AETHERVILLE_APPROVE_REAL_AI",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      }
-    },
-    {
-      "id": "OPS-H100-001",
-      "title": "Bring up H100 direct-process real-demo runtime with vLLM YOLO and learning smokes",
-      "status": "done",
-      "owner": "codex",
-      "goal_file": "project/SESSION_HANDOFF.md",
-      "depends_on": [
-        "OPS-5090-001"
-      ],
-      "unblocked_by": "user_provided_h100_runpod_ssh_and_approved_fast_work",
-      "last_checked_at": "2026-05-26T22:11:00+09:00",
-      "completed_at": "2026-05-26T22:11:00+09:00",
-      "diagnostics": {
-        "gpu": "NVIDIA_H100_80GB_HBM3_driver_580_126_09_cuda_13_0",
-        "runtime": "direct_process_safe_smoke_then_real_demo_passed",
-        "vllm": "Qwen_Qwen2_5_14B_Instruct_AWQ_on_local_tunnel_18000",
-        "vision": "real_Ultralytics_YOLO_yolo11n_on_verified_port_18001",
-        "orchestrator": "health_ok_simulation_running_local_tunnel_18080",
-        "learning": "json_backed_deterministic_online_adaptation_evolution_active",
-        "smokes": "scenario_replanner_learning_autonomous_dogfood_browser_live_browser_replay_passed",
-        "test_fix": "replanner_smoke_refetches_world_state_after_timeline_recovery_event",
-        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
-      }
-    }
-  ]
+    "epic": "project-aetherville-codex-implementation",
+    "status": "h100_policy_promotion_dogfood_verified",
+    "source_prd": "project/source/Project Aetherville PRD.pdf",
+    "tasks": [
+        {
+            "id": "M0-001",
+            "title": "Verify RunPod SSH, GPU, ports, and direct-process runtime capability",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/00-runpod-ssh-bootstrap.md",
+            "depends_on": [],
+            "last_checked_at": "2026-05-24T19:37:08+09:00",
+            "diagnostics": {
+                "ssh_connectivity": "passed",
+                "gpu_visibility": "passed_nvidia_rtx_4090",
+                "python": "Python 3.11.10",
+                "node": "missing_on_pod",
+                "pnpm": "missing_on_pod",
+                "uv": "missing_on_pod",
+                "redis_server": "missing_on_pod",
+                "docker_daemon": "unavailable",
+                "deployment_mode": "direct_process_runtime_for_next_cloud_goal",
+                "remote_workspace": "missing_deploy_script_will_create",
+                "deploy_dry_run": "passed_without_remote_changes",
+                "docker_policy": "verified_unavailable_skipped_by_current_direct_process_policy"
+            },
+            "completed_at": "2026-05-24T19:37:08+09:00"
+        },
+        {
+            "id": "M0-002",
+            "title": "Create pnpm + uv monorepo skeleton and shared schemas package",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/01-foundation-monorepo.md",
+            "depends_on": [
+                "M0-001"
+            ],
+            "last_checked_at": "2026-05-24T20:00:52+09:00",
+            "completed_at": "2026-05-24T20:00:52+09:00",
+            "diagnostics": {
+                "pnpm_workspace": "present",
+                "uv_workspace": "present",
+                "shared_schemas": "pydantic_models_and_generated_typescript_present",
+                "orchestrator_health": "passed_local_uvicorn_curl",
+                "client_placeholder": "next_app_router_r3f_placeholder_build_passed",
+                "python_tests": "7_passed",
+                "node_install": "pnpm_install_passed",
+                "node_lint_type_test_build": "passed",
+                "runpod_state": "not_touched_phase_01_previous_ssh_gpu_verified_direct_process_required"
+            }
+        },
+        {
+            "id": "M0-003",
+            "title": "Implement cloud direct-process service startup and health checks",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/02-cloud-services-docker-compose.md",
+            "depends_on": [
+                "M0-002"
+            ],
+            "unblocked_by": "M0-002",
+            "last_checked_at": "2026-05-24T20:16:05+09:00",
+            "completed_at": "2026-05-24T20:16:05+09:00",
+            "diagnostics": {
+                "direct_process_local": "passed_orchestrator_vision_vllm_fallback_memory_redis_health",
+                "runpod_deploy": "passed_actual_tar_over_ssh_sync_and_direct_start",
+                "runpod_services": "orchestrator_8080_vllm_fallback_8000_vision_18001_running",
+                "runpod_vision_default_port": "8001_occupied_by_template_nginx_use_18001_internal_fallback_until_port_mapping_resolved",
+                "runpod_redis": "memory_fallback_selected_redis_server_missing",
+                "runpod_vllm": "mock_openai_compatible_fallback_no_model_download_no_gpu_workload",
+                "runpod_sync": "remote_rsync_missing_tar_over_ssh_fallback_used",
+                "docker_daemon": "unavailable_on_runpod_no_blind_retry",
+                "docker_compose_artifacts": "future_portability_documentation_only_not_current_acceptance",
+                "runpod_execution_strategy": "direct_process_runtime_no_docker_setup_compose_dind_or_blind_retries",
+                "current_acceptance": "vllm_direct_or_fallback_orchestrator_uvicorn_vision_uvicorn_or_stub_sim_python_module_shell_managed_health_smokes_without_docker",
+                "script_policy": "verify_bootstrap_deploy_scripts_hardened_to_skip_or_reject_docker_execution"
+            }
+        },
+        {
+            "id": "M0-004",
+            "title": "Implement WS/REST contracts and schema tests",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/03-shared-schemas-api-ws.md",
+            "depends_on": [
+                "M0-002"
+            ],
+            "unblocked_by": "M0-003",
+            "last_checked_at": "2026-05-24T20:29:22+09:00",
+            "completed_at": "2026-05-24T20:29:22+09:00",
+            "diagnostics": {
+                "envelopes": "state_update_event_command_ack_error_parse_tests_passed",
+                "generated_typescript": "updated_from_generator_and_client_typecheck_passed",
+                "rest_contracts": "health_sim_status_god_command_use_shared_response_models",
+                "websocket_contract": "connect_emits_ack_and_state_update_command_emits_event",
+                "client_ws": "socket_bridge_imports_generated_types_and_applies_state_update",
+                "runpod_contract_smoke": "sim_status_god_command_socketio_polling_state_update_passed_in_pod"
+            }
+        },
+        {
+            "id": "M0-005",
+            "title": "Implement simulation engine tick loop and state snapshot API",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/04-simulation-engine.md",
+            "depends_on": [
+                "M0-004"
+            ],
+            "unblocked_by": "M0-004",
+            "last_checked_at": "2026-05-24T20:39:15+09:00",
+            "completed_at": "2026-05-24T20:39:15+09:00",
+            "diagnostics": {
+                "tick_scheduler": "deterministic_async_loop_broadcasts_10_sequential_ticks",
+                "world_state": "world_citizens_vehicles_drones_traffic_lights_forecast_present",
+                "rest_control": "start_stop_reset_status_state_timeline_endpoints_passed",
+                "websocket": "state_update_broadcast_at_configurable_tick_rate_passed_runpod_polling_smoke",
+                "runpod": "redeployed_direct_process_services_no_gpu_workload"
+            }
+        },
+        {
+            "id": "M1-001",
+            "title": "Implement browser 3D city shell and connection status",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/05-client-city-scene.md",
+            "depends_on": [
+                "M0-005"
+            ],
+            "unblocked_by": "M0-005",
+            "last_checked_at": "2026-05-24T20:50:11+09:00",
+            "completed_at": "2026-05-24T20:50:11+09:00",
+            "diagnostics": {
+                "city_scene": "main_page_renders_r3f_city_from_live_or_fallback_WorldStatePayload",
+                "connection_ui": "connection_card_and_scene_status_show_state_tick_weather",
+                "side_panels": "memory_vehicle_cam_traffic_chart_god_mode_placeholders_present",
+                "replay_route": "client_src_app_replay_page_tsx_uses_ReplayDriver_deterministic_fallback_state",
+                "verification": "pnpm_lint_typecheck_test_and_client_build_passed",
+                "runpod": "not_touched_phase_05_existing_direct_process_state_unchanged"
+            }
+        },
+        {
+            "id": "M2-001",
+            "title": "Implement citizen memory/planning minimal slice",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/06-citizen-agents.md",
+            "depends_on": [
+                "M0-004"
+            ],
+            "last_checked_at": "2026-05-24T21:00:54+09:00",
+            "completed_at": "2026-05-24T21:00:54+09:00",
+            "unblocked_by": "M1-001",
+            "diagnostics": {
+                "personas": "20_deterministic_CitizenPersona_fixtures_generated_and_exposed_via_REST",
+                "memory_retrieval": "token_overlap_plus_importance_retrieval_score_tested",
+                "plan_tree": "CachedLLMPlanner_daily_plan_tree_exists_for_each_citizen",
+                "dialogue_memory_events": "dialogue_reflection_memory_endpoints_emit_aetherville_event_envelopes",
+                "llm_policy": "cached_event_driven_facade_no_per_tick_llm_calls",
+                "client_memory_panel": "client_src_ui_MemoryPanel_uses_generated_MemoryRecord_contract",
+                "verification": "uv_pytest_goal_scope_pnpm_test_ruff_mypy_full_pytest_client_lint_typecheck_build_passed",
+                "runpod": "not_touched_phase_06_existing_direct_process_state_unchanged"
+            }
+        },
+        {
+            "id": "M3-001",
+            "title": "Implement vehicles plus mock/real vision service path",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/07-vehicles-vision.md",
+            "depends_on": [
+                "M1-001",
+                "M2-001"
+            ],
+            "unblocked_by": "M1-001,M2-001",
+            "last_checked_at": "2026-05-24T21:13:21+09:00",
+            "completed_at": "2026-05-24T21:13:21+09:00",
+            "diagnostics": {
+                "pathfinding": "A_star_grid_pathfinding_tested_with_obstacle_and_unreachable_cases",
+                "vehicle_movement": "VehicleController_follows_A_star_path_and_loops_demo_route",
+                "trip_manager": "TripManager_assigns_demo_trip_to_v01_with_path_contract",
+                "vision_detect": "Vision_detect_uses_shared_VisionDetectRequest_Response_and_schema_valid_mock_detections",
+                "vehicle_state": "WorldState_vehicle_embeds_YoloDetection_and_slows_for_pedestrian_or_red_light_hazard",
+                "camera_panel": "client_src_ui_VehicleCamPanel_overlays_detection_boxes_from_yolo_detections",
+                "runpod": "direct_process_services_restarted_after_sync_remote_vehicle_camera_and_vision_detect_smoke_passed",
+                "gpu_cost": "no_real_yolo_model_download_training_or_gpu_inference_started"
+            }
+        },
+        {
+            "id": "M4-001",
+            "title": "Implement traffic baseline, RL wrapper, and chart payloads",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/08-traffic-ai.md",
+            "depends_on": [
+                "M3-001"
+            ],
+            "unblocked_by": "M3-001",
+            "last_checked_at": "2026-05-24T21:27:19+09:00",
+            "completed_at": "2026-05-24T21:27:19+09:00",
+            "diagnostics": {
+                "baseline": "FixedCycleController_generates_ns_ew_green_yellow_red_cycle",
+                "env": "TrafficSignalEnv_reset_step_tested_with_reward_queue_info",
+                "ppo_wrapper": "TrafficPolicyWrapper_loads_json_checkpoint_when_present_and_falls_back_to_baseline",
+                "forecast": "LstmForecastWrapper_returns_5_10_15_minute_TrafficForecastPoint_payloads",
+                "metrics": "traffic_ai.metrics_compare_policies_script_available",
+                "client": "client_src_ui_TrafficChartPanel_renders_forecast_payload",
+                "runpod": "direct_process_services_synced_restarted_and_remote_traffic_smoke_passed",
+                "gpu_cost": "no_PPO_training_LSTM_training_or_GPU_inference_started"
+            }
+        },
+        {
+            "id": "M5-001",
+            "title": "Implement God Mode text command then voice pipeline",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/09-god-mode.md",
+            "depends_on": [
+                "M3-001"
+            ],
+            "unblocked_by": "M4-001",
+            "last_checked_at": "2026-05-24T21:41:03+09:00",
+            "completed_at": "2026-05-24T21:41:03+09:00",
+            "diagnostics": {
+                "text_command": "GodCommandDispatcher_environment_text_command_changes_weather_and_world_active_event",
+                "categories": "environment_event_person_infrastructure_relationship_supported",
+                "broadcast": "REST_and_WS_emit_all_event_envelopes_then_state_update",
+                "memory_injection": "person_and_relationship_commands_create_memory_added_events",
+                "voice": "VoiceCommandStub_and_disabled_client_voice_button_document_optional_path",
+                "client": "client_src_ui_GodModeMicPanel_text_input_macro_buttons_and_status_present",
+                "runpod": "direct_process_services_synced_restarted_and_remote_relationship_command_smoke_passed",
+                "gpu_cost": "no_STT_model_download_or_GPU_inference_started"
+            }
+        },
+        {
+            "id": "M6-001",
+            "title": "Polish demo, replay mode, and metrics report",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/10-polish-demo.md",
+            "depends_on": [
+                "M4-001",
+                "M5-001"
+            ],
+            "unblocked_by": "M5-001",
+            "last_checked_at": "2026-05-24T21:49:41+09:00",
+            "completed_at": "2026-05-24T21:49:41+09:00",
+            "diagnostics": {
+                "replay": "replay_route_exists_and_pnpm_test_e2e_static_fallback_passed",
+                "metrics": "docs_metrics_report_md_filled_with_current_verification_snapshot",
+                "demo_scenario": "docs_demo_scenario_md_and_demo_readiness_checklist_present",
+                "architecture": "docs_architecture_diagram_md_mermaid_placeholder_present",
+                "failure_fallback": "RunPod_failure_fallback_documented_and_replay_route_verified_without_ConnectionBridge",
+                "readme": "README_demo_commands_and_routes_updated",
+                "verification": "uv_pytest_pnpm_lint_typecheck_test_test_e2e_build_ruff_mypy_passed",
+                "runpod": "not_touched_phase_10_existing_phase09_direct_process_state_unchanged"
+            }
+        },
+        {
+            "id": "M7-001",
+            "title": "Final integrated demo audit and acceptance report",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/99-final-audit.md",
+            "depends_on": [
+                "M6-001"
+            ],
+            "unblocked_by": "M6-001",
+            "last_checked_at": "2026-05-24T22:39:21+09:00",
+            "completed_at": "2026-05-24T21:57:21+09:00",
+            "diagnostics": {
+                "task_statuses": "all_M0_to_M7_tasks_done_and_goal_files_accounted_for",
+                "local_verification": "git_status_uv_pytest_uv_full_pytest_ruff_mypy_pnpm_lint_typecheck_test_test_e2e_build_passed",
+                "runpod_verification": "ssh_gpu_direct_health_and_final_in_pod_rest_vision_godmode_socketio_smoke_passed",
+                "client": "playable_city_state_and_replay_route_build_verified",
+                "server": "world_state_rest_and_socketio_state_update_verified_on_runpod",
+                "fallback": "replay_route_e2e_verified_and_documented",
+                "residual_risks": "docker_unavailable_vision_8001_blocked_public_urls_not_configured_real_models_deferred",
+                "client_start_smoke": "next_start_port_3100_home_and_replay_curl_passed",
+                "reaudit_after_direct_process_patch": "local_full_suite_runpod_verify_direct_deploy_health_integration_smoke_client_start_passed_no_docker_commands"
+            }
+        },
+        {
+            "id": "M7-002",
+            "title": "Patch goal documents for verified direct-process RunPod runtime",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/MASTER_AETHERVILLE_FULL_DELIVERY.md",
+            "depends_on": [
+                "M7-001"
+            ],
+            "unblocked_by": "M7-001",
+            "last_checked_at": "2026-05-24T22:14:49+09:00",
+            "completed_at": "2026-05-24T22:14:49+09:00",
+            "diagnostics": {
+                "goal_02": "documented_as_Cloud_Services_Direct_Process_Runtime_filename_retained_for_compatibility",
+                "runtime_strategy": "RunPod_pod_is_execution_environment_direct_process_runtime_active",
+                "docker_policy": "docker_optional_packaging_only_no_docker_execution_required_no_daemon_setup_compose_dind_or_blind_retries",
+                "acceptance": "vllm_direct_path_or_fallback_orchestrator_uvicorn_vision_uvicorn_or_stub_sim_package_shell_process_management_health_smokes_without_docker",
+                "adr": "ADR_009_added_for_verified_RunPod_direct_process_strategy",
+                "secrets": "no_env_runpod_or_secret_material_added",
+                "follow_up": "direct_process_policy_enforced_in_runpod_scripts_and_docs_during_M7_003"
+            }
+        },
+        {
+            "id": "M7-003",
+            "title": "Re-run final audit after direct-process runtime hardening",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/99-final-audit.md",
+            "depends_on": [
+                "M7-002"
+            ],
+            "unblocked_by": "M7-002",
+            "last_checked_at": "2026-05-24T22:39:21+09:00",
+            "completed_at": "2026-05-24T22:39:21+09:00",
+            "diagnostics": {
+                "next_incomplete_phase": "Phase_99_reaudit_selected_because_strategy_patch_changed_goal_runtime_docs_after_prior_final_audit",
+                "script_hardening": "verify_runpod_skips_docker_commands_bootstrap_prints_direct_commands_deploy_compose_mode_rejected",
+                "local_verification": "git_status_bash_n_json_uv_pytest_uv_full_pytest_ruff_mypy_pnpm_lint_typecheck_test_test_e2e_build_client_start_smoke_passed",
+                "runpod_verification": "ssh_gpu_verify_passed_without_docker_commands_direct_deploy_health_passed",
+                "integration_smoke": "remote_rest_vision_god_command_socketio_polling_state_update_passed_after_correct_shared_schema_payload",
+                "failed_then_fixed": "initial_remote_smoke_used_invalid_god_command_payload_and_returned_422_corrected_to_shared_GodCommand_schema",
+                "docker_policy": "no_docker_daemon_setup_no_docker_compose_no_dind_no_blind_retry",
+                "secrets": "no_env_runpod_or_secret_material_added_or_committed"
+            }
+        },
+        {
+            "id": "M7-004",
+            "title": "Create final live demo freeze runbook and checklist",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "docs/live-demo-runbook.md",
+            "depends_on": [
+                "M7-003"
+            ],
+            "unblocked_by": "M7-003",
+            "last_checked_at": "2026-05-24T23:11:38+09:00",
+            "completed_at": "2026-05-24T23:11:38+09:00",
+            "diagnostics": {
+                "scope": "docs_and_runtime_command_freeze_no_master_phase_reopen",
+                "runbook": "Mode_A_public_RunPod_endpoint_and_Mode_B_SSH_tunnel_documented",
+                "vision_port": "verified_18001_used_for_live_demo_commands_and_examples",
+                "client_config": "NEXT_PUBLIC_ORCHESTRATOR_URL_and_NEXT_PUBLIC_SOCKET_URL_documented_for_public_or_tunnel_modes",
+                "smoke": "REST_health_demo_smoke_and_SocketIO_polling_smoke_commands_documented",
+                "checklist": "final_freeze_checklist_added_to_demo_readiness",
+                "script": "docs_demo_script_15min_md_added",
+                "runtime_adjustment": "direct_process_script_defaults_updated_to_vision_18001_for_verified_pod",
+                "docker_policy": "no_docker_commands_no_compose_no_dind",
+                "secrets": "no_env_runpod_values_or_key_paths_committed",
+                "verification": "json_bash_n_diff_check_pnpm_typecheck_client_build_demo_smoke_via_ssh_tunnel_passed",
+                "commit_ready": "all_lightweight_freeze_checks_passed"
+            }
+        },
+        {
+            "id": "M7-005",
+            "title": "Record user acceptance of final demo operational risks",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "docs/risk-register.md",
+            "depends_on": [
+                "M7-004"
+            ],
+            "unblocked_by": "M7-004",
+            "last_checked_at": "2026-05-24T23:51:11+09:00",
+            "completed_at": "2026-05-24T23:51:11+09:00",
+            "diagnostics": {
+                "accepted_public_urls": "public_RunPod_REST_WSS_not_tracked_use_local_env_or_ssh_tunnel",
+                "accepted_vision_port": "current_pod_demo_uses_verified_18001_because_8001_blocked",
+                "accepted_model_policy": "real_vllm_yolo_ppo_lstm_stt_remain_opt_in_no_start_without_separate_explicit_request",
+                "accepted_sync_policy": "remote_rsync_unavailable_tar_over_ssh_fallback_accepted",
+                "side_effects": "documentation_status_only_no_runpod_change_no_model_download_no_docker"
+            }
+        },
+        {
+            "id": "M7-006",
+            "title": "Run gstack and dogfood QA audit for playable demo",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "docs/gstack-dogfood-audit.md",
+            "depends_on": [
+                "M7-005"
+            ],
+            "unblocked_by": "M7-005",
+            "last_checked_at": "2026-05-25T00:36:00+09:00",
+            "completed_at": "2026-05-25T00:36:00+09:00",
+            "diagnostics": {
+                "scope": "report_only_ui_ux_project_completeness_functional_audit",
+                "gstack": "gstack_repo_found_original_qa_rubric_used_later_global_codex_skills_registered_and_browse_host_issue_repaired",
+                "dogfood": "agent_browser_session_collected_screenshots_video_console_curl_smoke_evidence",
+                "runtime_pass": "home_replay_orchestrator_health_sim_status_vision_18001_socketio_polling_demo_smoke_passed",
+                "major_finding": "god_mode_browser_command_blocked_by_cors_preflight_and_client_server_payload_schema_mismatch",
+                "non_blocking_findings": "replay_route_not_discoverable_websocket_upgrade_warning_mobile_layout_crowding",
+                "docker_policy": "no_docker_commands_no_compose_no_dind",
+                "secrets": "no_env_runpod_or_secret_material_printed_or_committed"
+            }
+        },
+        {
+            "id": "M7-007",
+            "title": "Resolve gstack/dogfood demo risk findings",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "docs/gstack-dogfood-audit.md",
+            "depends_on": [
+                "M7-006"
+            ],
+            "unblocked_by": "M7-006",
+            "last_checked_at": "2026-05-25T01:24:00+09:00",
+            "completed_at": "2026-05-25T01:24:00+09:00",
+            "diagnostics": {
+                "god_mode": "fastapi_cors_local_demo_origins_added_client_uses_shared_GodCommand_payload_remote_browser_macro_passed",
+                "replay_discoverability": "live_page_replay_link_and_replay_page_live_return_link_added",
+                "socket_console": "default_socket_transport_polling_with_env_override_and_ui_transport_label_no_console_errors_after_browser_submit",
+                "mobile_polish": "mobile_connection_card_static_between_hero_and_scene_hero_scale_reduced",
+                "deploy_hardening": "direct_deploy_excludes_local_qa_artifacts_and_restarts_repo_managed_processes_after_sync",
+                "runpod": "direct_process_redeployed_restarted_health_passed_no_docker",
+                "secrets": "no_env_runpod_or_secret_material_printed_or_committed",
+                "gstack_tooling_followup": "global_gstack_codex_skills_and_browse_command_verified_after_resolution"
+            }
+        },
+        {
+            "id": "M7-008",
+            "title": "Repair global gstack tooling follow-up",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "docs/gstack-dogfood-audit.md",
+            "depends_on": [
+                "M7-007"
+            ],
+            "unblocked_by": "M7-007",
+            "last_checked_at": "2026-05-25T02:22:00+09:00",
+            "completed_at": "2026-05-25T02:22:00+09:00",
+            "diagnostics": {
+                "global_registration": "codex_gstack_namespaced_skills_linked_under_home_codex_skills",
+                "browser_tooling": "browse_resolves_to_gstack_binary_and_status_health_passes",
+                "bun_runtime": "user_level_non_snap_bun_precedes_snap_bun_on_path",
+                "project_runtime": "no_project_runtime_change_no_docker_no_secrets",
+                "client_endpoint_docs": "runbook_and_checklist_document_next_public_build_time_env_behavior_and_prefer_pnpm_dev_for_demo"
+            }
+        },
+        {
+            "id": "M7-009",
+            "title": "Clarify city actor visual categories for live demo",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "client/src/components/CityPlaceholder.tsx",
+            "depends_on": [
+                "M7-008"
+            ],
+            "unblocked_by": "M7-008",
+            "last_checked_at": "2026-05-25T02:52:00+09:00",
+            "completed_at": "2026-05-25T02:52:00+09:00",
+            "diagnostics": {
+                "citizens": "two_part_human_marker_with_pink_head_teal_body_and_halo",
+                "vehicles": "yellow_taxi_body_blue_cab_black_wheels_roof_light",
+                "traffic_lights": "three_lamp_signal_head_on_pole_with_active_emissive_state",
+                "drones": "octahedron_with_purple_propeller_arms",
+                "legend": "dom_scene_legend_lists_actor_categories_and_visual_signatures",
+                "runtime": "frontend_only_no_runpod_runtime_change_no_docker"
+            }
+        },
+        {
+            "id": "M7-010",
+            "title": "Replace circular actor motion with waypoint routes",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "server/src/aetherville_server/agents/citizens.py",
+            "depends_on": [
+                "M7-009"
+            ],
+            "unblocked_by": "M7-009",
+            "last_checked_at": "2026-05-25T03:21:00+09:00",
+            "completed_at": "2026-05-25T03:21:00+09:00",
+            "diagnostics": {
+                "server_citizens": "deterministic_sidewalk_crosswalk_waypoint_routes_replace_orbit_formula",
+                "client_fallback": "replay_citizens_taxi_drone_use_poseOnRoute_waypoint_interpolation_no_angle_sine_cosine_orbits",
+                "verification": "runpod_direct_redeploy_sim_start_state_samples_show_actor_positions_advancing_between_waypoints",
+                "runtime": "direct_process_only_no_docker_no_secret_output"
+            }
+        },
+        {
+            "id": "M7-011",
+            "title": "Switch demo UI from left-right split to top-bottom layout",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "client/src/app/globals.css",
+            "depends_on": [
+                "M7-010"
+            ],
+            "unblocked_by": "M7-010",
+            "last_checked_at": "2026-05-25T03:47:00+09:00",
+            "completed_at": "2026-05-25T03:47:00+09:00",
+            "diagnostics": {
+                "layout": "shell_single_column_top_hero_bottom_city_scene",
+                "hero": "full_width_top_banner_with_tighter_title_and_compact_endpoint_cards",
+                "city": "full_width_scene_below_hero_with_panel_deck_under_canvas",
+                "runtime": "client_css_only_no_runpod_restart_no_docker"
+            }
+        },
+        {
+            "id": "M7-012",
+            "title": "Add tagged 4x4 city grid, meeting scenario, taxi call, and larger demo city stage",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "client/src/components/CityPlaceholder.tsx",
+            "depends_on": [
+                "M7-011"
+            ],
+            "unblocked_by": "M7-011",
+            "last_checked_at": "2026-05-25T06:05:46+09:00",
+            "completed_at": "2026-05-25T06:05:46+09:00",
+            "diagnostics": {
+                "world_density": "4x4_grid_16_building_blocks_7_citizens_3_vehicles_4_traffic_lights",
+                "movement_policy": "citizens_follow_sidewalk_routes_vehicles_follow_road_waypoint_routes_no_orbits",
+                "labels": "display_tags_shared_schema_added_for_citizens_vehicles_traffic_lights_and_rendered_as_billboard_tags",
+                "god_mode_meeting": "민지랑_민수가_만난다_sets_c01_c02_meeting_tags_and_talking_to_state",
+                "god_mode_taxi": "민지가_택시를_불러줘_sets_v01_taxi_call_display_tag_and_trip_requested_event",
+                "city_scale": "top_hero_compacted_city_panel_min_height_clamp_560px_78vh_880px_visual_verdict_score_94",
+                "verification": "shared_schema_generator_uv_pytest_ruff_mypy_client_test_typecheck_lint_browser_smoke_passed",
+                "runpod": "direct_process_redeployed_uv_bootstrap_enabled_sim_started_rest_health_status_state_godmode_socketio_polling_passed",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
+                "secrets": "no_env_runpod_or_secret_material_printed_or_committed"
+            }
+        },
+        {
+            "id": "M7-013",
+            "title": "Make God Mode rain, taxi, and traffic surge visibly change city behavior",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "server/src/aetherville_server/sim/engine.py",
+            "depends_on": [
+                "M7-012"
+            ],
+            "unblocked_by": "M7-012",
+            "last_checked_at": "2026-05-25T07:29:15+09:00",
+            "completed_at": "2026-05-25T07:29:15+09:00",
+            "diagnostics": {
+                "video_audit": "Video_Project_8_mp4_frames_showed_event_effects_read_as_loop_without_stronger_feedback",
+                "rain": "God_Mode_rain_locks_weather_for_demo_window_and_client_renders_animated_rain_sheet_plus_RAIN_ACTIVE_badge",
+                "taxi": "taxi_call_now_dispatches_v01_toward_passenger_pickup_and_changes_tags_to_moving_pickup_waiting_or_passenger_onboard",
+                "traffic": "traffic_jam_now_sets_congestion_status_slows_vehicle_routes_adds_low_speed_tags_raises_forecast_to_high_congestion_and_renders_red_surge_overlay",
+                "verification": "uv_pytest_ruff_mypy_client_test_typecheck_lint_build_git_diff_check_browser_smoke_passed",
+                "runpod": "direct_process_redeployed_with_uv_bootstrap_mock_vllm_memory_redis_no_docker_and_runtime_smoke_passed",
+                "browser": "http_WSL_IP_3000_event_feedback_final_connected_tick_rain_rainOverlay_trafficOverlay_taxiTag_true",
+                "secrets": "no_env_runpod_or_secret_material_printed_or_committed"
+            }
+        },
+        {
+            "id": "M7-014",
+            "title": "Polish live city scene toward mini-GTA motion and visible God Mode consequences",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/99-final-audit.md",
+            "depends_on": [
+                "M7-013"
+            ],
+            "last_checked_at": "2026-05-25T08:44:38+09:00",
+            "completed_at": "2026-05-25T08:44:38+09:00",
+            "diagnostics": {
+                "client_scene": "added smooth game camera, street lights, lane dashes, mini-map HUD, animated pedestrian rigs, wheel-spinning vehicles, drone rotors, 3D rain streaks, and traffic-jam vehicle queues",
+                "godmode_classification_fix": "교통량/혼잡/막혀/차량 commands now classify as infrastructure and trigger traffic_jam effects",
+                "runpod_direct_process": "redeployed with direct-process runtime, Docker skipped, tar-over-SSH fallback used",
+                "runtime_smoke": "rain true, traffic congestion active, taxi dispatch tags visible, v02 정체/저속 tags visible, forecast indices 1.0",
+                "browser_smoke": "local client connected via polling, rain/traffic/taxi overlays true, canvas and four panels present",
+                "screenshot": "/tmp/aetherville-mini-gta-envbuild.png"
+            }
+        },
+        {
+            "id": "M8-001",
+            "title": "Add persistent deterministic online adaptation loop for demo self-learning",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "server/src/aetherville_server/learning.py",
+            "depends_on": [
+                "M7-014"
+            ],
+            "unblocked_by": "M7-014",
+            "last_checked_at": "2026-05-25T12:06:00+09:00",
+            "completed_at": "2026-05-25T11:47:49+09:00",
+            "diagnostics": {
+                "schema": "LearningSnapshot_and_LearningStatusResponse_added_to_shared_schemas_and_WorldStatePayload",
+                "server": "LearningStore_persists_event_experience_to_JSON_and_exposes_api_v1_learning_status",
+                "simulation": "God_Mode_and_auto_events_record_experience_policy_version_epoch_traffic_bias_taxi_success_weather_memory_signals",
+                "feedback": "learned_state_affects_forecast_queue_pressure_vehicle_speed_factor_traffic_light_tags_and_client_learning_panel",
+                "truthfulness": "persistent_demo_adaptation_only_not_real_vllm_yolo_ppo_lstm_stt_training",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
+                "runpod": "direct_process_redeployed_health_learning_status_godmode_learning_smoke_passed_no_docker",
+                "client": "production_client_rebuilt_with_tunnel_envs_restarted_on_3000_AI_learning_panel_rendered",
+                "verification": "json_bash_gitdiff_pytest_ruff_mypy_pnpm_lint_typecheck_test_e2e_build_runpod_smoke_passed"
+            }
+        },
+        {
+            "id": "M8-002",
+            "title": "Activate real 4090-backed vLLM and connect citizen reflection",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "infra/runpod/start_direct_processes.sh",
+            "depends_on": [
+                "M8-001"
+            ],
+            "unblocked_by": "user_approved_all_gpu_workloads",
+            "last_checked_at": "2026-05-25T13:02:41+09:00",
+            "completed_at": "2026-05-25T13:02:41+09:00",
+            "diagnostics": {
+                "push": "previous_demo_adaptation_commit_pushed_to_origin_master_ea506b1",
+                "vllm": "Qwen_Qwen2_5_14B_Instruct_AWQ_served_by_vllm_0_10_2_on_RTX_4090_direct_process_port_8000",
+                "compat": "transformers_4_55_4_and_CUDA_12_8_compatible_torch_2_8_selected_after_latest_vllm_CUDA_13_failure",
+                "llm_integration": "OpenAICompatiblePlanner_uses_vLLM_for_citizen_reflection_with_cached_fallback",
+                "smoke": "v1_models_chat_completions_orchestrator_health_and_citizen_reflect_passed",
+                "gpu": "real_vllm_loaded_about_22_5GiB_VRAM_after_smoke",
+                "docker_policy": "no_docker_no_compose_no_dind"
+            }
+        },
+        {
+            "id": "M8-003",
+            "title": "Activate real 4090-backed YOLO vision inference",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "server/src/aetherville_server/vision.py",
+            "depends_on": [
+                "M8-002"
+            ],
+            "unblocked_by": "user_approved_all_gpu_workloads",
+            "last_checked_at": "2026-05-25T13:14:53+09:00",
+            "completed_at": "2026-05-25T13:14:53+09:00",
+            "diagnostics": {
+                "vision": "AETHERVILLE_VISION_MODE_real_uses_optional_Ultralytics_YOLO_boundary_with_mock_fallback",
+                "runpod": "ultralytics_8_4_53_installed_yolo11n_pt_started_on_RTX_4090_device_0",
+                "smoke": "vision_health_yolo_ok_and_detect_mode_real_passed_on_synthetic_road_frame",
+                "gpu": "combined_real_vllm_plus_yolo_smoke_used_about_23_1GiB_VRAM",
+                "filter": "traffic_relevant_COCO_labels_kept_by_default",
+                "docker_policy": "no_docker_no_compose_no_dind"
+            }
+        },
+        {
+            "id": "M8-004",
+            "title": "Connect real RunPod YOLO detections to vehicle camera endpoint and browser panel",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/07-vehicles-vision.md",
+            "depends_on": [
+                "M8-003"
+            ],
+            "unblocked_by": "user_requested_immediate_reactive_demo_improvement",
+            "last_checked_at": "2026-05-25T13:35:02+09:00",
+            "completed_at": "2026-05-25T13:35:02+09:00",
+            "diagnostics": {
+                "schema": "VehicleCameraFrame now carries mock_or_real mode and generated TypeScript was refreshed",
+                "backend": "orchestrator camera endpoint enriches camera frames through vision /detect when AETHERVILLE_CAMERA_VISION_MODE=real",
+                "client": "local_next_dev_started_on_3000_with_tunnel_NEXT_PUBLIC_urls; index_and_replay_http_smokes_passed_after_compile",
+                "runpod_script": "direct-process orchestrator inherits AETHERVILLE_CAMERA_VISION_MODE from vision mode",
+                "fallback": "state embedded mock detections remain available if camera endpoint or real YOLO is unavailable",
+                "docker_policy": "no_docker_no_compose_no_dind",
+                "runpod": "sync_only_deploy_then_orchestrator_restart_preserved_existing_real_vllm_and_yolo_processes",
+                "smoke": "local_tunnel_camera_endpoint_returned_mode_real_with_traffic_light_detection; god_rain_taxi_traffic_state_smokes_passed"
+            }
+        },
+        {
+            "id": "M8-005",
+            "title": "Train and load real 4090-backed traffic policy checkpoint",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/08-traffic-ai.md",
+            "depends_on": [
+                "M8-004"
+            ],
+            "unblocked_by": "user_approved_all_gpu_workloads",
+            "last_checked_at": "2026-05-25T13:50:33+09:00",
+            "completed_at": "2026-05-25T13:50:33+09:00",
+            "diagnostics": {
+                "schema": "WorldStatePayload now includes TrafficAiSnapshot with checkpoint/gpu/metric fields",
+                "backend": "Simulation loads AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT and drives traffic lights with checkpoint action when present",
+                "training": "RunPod .venv python trained linear traffic policy with torch_cuda on RTX_4090 for 320 episodes horizon_80",
+                "metrics": "checkpoint avg_queue 32.913 vs fixed_cycle 48.138 = 31.628 percent queue reduction",
+                "runtime": "orchestrator restarted with checkpoint path; sim state reports mode_checkpoint trained_on_gpu_true training_backend_torch_cuda",
+                "client": "Traffic panel displays GPU POLICY badge and queue cut percentage from shared traffic_ai state",
+                "docker_policy": "no_docker_no_compose_no_dind"
+            }
+        },
+        {
+            "id": "M8-006",
+            "title": "Train and load real 4090-backed LSTM traffic forecast checkpoint",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/08-traffic-ai.md",
+            "depends_on": [
+                "M8-005"
+            ],
+            "unblocked_by": "user_approved_all_gpu_workloads",
+            "last_checked_at": "2026-05-25T14:09:29+09:00",
+            "completed_at": "2026-05-25T14:09:29+09:00",
+            "diagnostics": {
+                "schema": "WorldStatePayload now includes TrafficForecastAiSnapshot with lstm checkpoint gpu and metric fields",
+                "backend": "LstmForecastWrapper loads AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT and runs pure_python exported LSTM inference without torch in orchestrator",
+                "training": "RunPod .venv python trained LSTM forecast with torch_cuda on RTX_4090 samples_960 epochs_180 sequence_12 hidden_10",
+                "metrics": "checkpoint reported MAPE 11.84 percent and training_loss 2.911555",
+                "runtime": "orchestrator restarted with forecast checkpoint; sim state reports traffic_forecast_ai mode_lstm_checkpoint trained_on_gpu_true backend_torch_cuda",
+                "client": "Traffic panel displays LSTM FORECAST badge and MAPE from shared traffic_forecast_ai state",
+                "docker_policy": "no_docker_no_compose_no_dind"
+            }
+        },
+        {
+            "id": "M8-007",
+            "title": "Connect God Mode text commands to real 4090 vLLM interpretation with safe rule fallback",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/09-god-mode.md",
+            "depends_on": [
+                "M8-006"
+            ],
+            "unblocked_by": "user_requested_immediate_extreme_4090_progress",
+            "last_checked_at": "2026-05-25T14:42:00+09:00",
+            "completed_at": "2026-05-25T14:42:00+09:00",
+            "diagnostics": {
+                "schema": "GodCommandResponse exposes ai_mode ai_confidence and ai_reason; generated TypeScript refreshed",
+                "backend": "GodCommandDispatcher can call a constrained OpenAI-compatible vLLM classifier when AETHERVILLE_GOD_MODE_LLM=vllm and falls back to deterministic rules on timeout invalid output or disabled mode",
+                "safety": "vLLM output only selects a fixed safe action vocabulary before existing deterministic effects are applied",
+                "client": "local production Next server restarted on port_3000 with tunnel NEXT_PUBLIC urls; index_and_replay_http_smokes_passed",
+                "runpod_script": "direct-process startup passes AETHERVILLE_GOD_MODE_LLM into the orchestrator without using Docker",
+                "verification": "json_bash_gitdiff_pytest_ruff_mypy_pnpm_lint_test_typecheck_e2e_build_passed",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
+                "runpod": "sync_only_deploy_then_orchestrator_only_restart_preserved_existing_real_vllm_and_real_yolo; direct health passed with AETHERVILLE_VLLM_MODE=real; local tunnel God command returned ai_mode_vllm action_traffic_jam"
+            }
+        },
+        {
+            "id": "M8-008",
+            "title": "Expand God Mode into bounded vLLM multi-action city direction",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/09-god-mode.md",
+            "depends_on": [
+                "M8-007"
+            ],
+            "unblocked_by": "active_master_goal_extreme_4090_demo_continuation",
+            "last_checked_at": "2026-05-25T15:08:57+09:00",
+            "completed_at": "2026-05-25T15:08:57+09:00",
+            "diagnostics": {
+                "schema": "GodCommandResponse now carries ai_actions so the client can show decomposed command plans",
+                "backend": "vLLM interpretation accepts one_to_four safe actions and dispatcher aggregates deterministic sub_effects before recording one multi_action summary event",
+                "fallback": "rules path also decomposes obvious multi_intent Korean commands such as rain_plus_taxi_plus_traffic",
+                "client": "local_next_start_restarted_on_port_3000_with_tunnel_NEXT_PUBLIC_urls; index_and_replay_http_smokes_passed",
+                "verification": "json_bash_gitdiff_pytest_ruff_mypy_pnpm_lint_test_typecheck_e2e_build_passed",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
+                "runpod": "sync_only_deploy_then_orchestrator_only_restart_preserved_real_vllm_yolo; multi_action_smoke_returned_ai_mode_vllm_ai_actions_rain_traffic_jam_taxi_call_meeting_event_count_9_and_world_state_rain_congestion_taxi_meeting"
+            }
+        },
+        {
+            "id": "M8-009",
+            "title": "Add God Mode voice capture and optional faster-whisper STT path",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/09-god-mode.md",
+            "depends_on": [
+                "M8-008"
+            ],
+            "unblocked_by": "text_god_mode_is_stable_and_user_approved_4090_runtime",
+            "last_checked_at": "2026-05-25T15:38:00+09:00",
+            "completed_at": "2026-05-25T15:38:00+09:00",
+            "diagnostics": {
+                "schema": "VoiceCommandRequest and VoiceCommandResponse added to shared contracts and generated TypeScript",
+                "backend": "/api/v1/god/voice transcribes audio through env-selected provider then routes transcript through the same God Mode dispatcher",
+                "stt": "stub fallback is default; optional faster-whisper provider is lazy-loaded with AETHERVILLE_STT_MODE=faster_whisper",
+                "client": "GodModeMicPanel now records microphone audio with MediaRecorder and posts voice commands with typed transcript fallback",
+                "runpod_script": "direct-process startup can bootstrap faster-whisper and passes STT env into orchestrator",
+                "verification": "python3_json_tool_bash_n_git_diff_check_uv_pytest_ruff_mypy_pnpm_lint_typecheck_test_e2e_client_build_passed_2026-05-25T15:38KST",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
+                "runpod": "direct_process_synced_by_tar_over_ssh_orchestrator_restarted_only_real_vllm_real_yolo_traffic_policy_lstm_forecast_preserved_stt_health_ok_faster_whisper",
+                "voice_smoke": "local_tunnel_POST_api_v1_god_voice_without_audio_returned_stt_status_fallback_stt_mode_fallback_command_accepted_ai_mode_vllm_actions_rain_taxi_call",
+                "client_runtime": "local_next_start_rebuilt_and_restarted_on_3000_with_tunnel_NEXT_PUBLIC_values_home_and_replay_http_smokes_passed",
+                "truthfulness": "real_faster_whisper_package_configured_but_real_audio_transcription_not_claimed_until_stt_status_ok_from_audio_blob",
+                "simulation": "POST_api_v1_sim_start_set_running_true_and_status_advanced_tick_0_to_16"
+            }
+        },
+        {
+            "id": "M8-010",
+            "title": "Verify real audio STT through RunPod faster-whisper",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/09-god-mode.md",
+            "depends_on": [
+                "M8-009"
+            ],
+            "unblocked_by": "optional_faster_whisper_stt_configured_on_direct_process_runpod",
+            "last_checked_at": "2026-05-25T15:49:00+09:00",
+            "completed_at": "2026-05-25T15:49:00+09:00",
+            "diagnostics": {
+                "script": "scripts/voice_stt_smoke.py posts existing audio files to /api/v1/god/voice and asserts expected stt_status",
+                "runpod": "orchestrator_health_stt_ok_faster_whisper_model_base_device_cuda_real_vllm_yolo_policy_lstm_preserved",
+                "real_audio_smoke": "temporary_korean_tts_wav_outside_repo_returned_stt_status_ok_stt_mode_faster_whisper_transcript_match_command_accepted_ai_mode_vllm_actions_rain_taxi_call",
+                "truthfulness": "server_side_real_audio_stt_verified; human_browser_microphone_still_requires_ui_response_stt_status_ok",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            }
+        },
+        {
+            "id": "M10-004",
+            "title": "Harden production browser demo endpoint runtime smoke",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/10-polish-demo.md",
+            "depends_on": [
+                "M8-010"
+            ],
+            "unblocked_by": "headless_chromium_demo_audit_found_stale_endpoint_risk",
+            "last_checked_at": "2026-05-25T16:12:00+09:00",
+            "completed_at": "2026-05-25T16:12:00+09:00",
+            "diagnostics": {
+                "client_runtime": "live_page_force_dynamic_and_runtime_orchestrator_url_passed_to_side_panels_vehicle_camera_god_mode",
+                "replay": "replay_route_passes_orchestratorUrl_null_to_prevent_live_endpoint_calls",
+                "browser_smoke": "scripts_browser_demo_smoke_py_verified_live_route_expected_endpoint_panels_no_application_error_and_replay_route_panels_no_application_error",
+                "build": "pnpm_filter_client_build_reports_live_route_dynamic_server_rendered_on_demand",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            }
+        },
+        {
+            "id": "M10-005",
+            "title": "Add full presenter rehearsal smoke for RunPod and browser demo",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/10-polish-demo.md",
+            "depends_on": [
+                "M10-004"
+            ],
+            "unblocked_by": "live_browser_smoke_and_runpod_ai_paths_verified_individually",
+            "last_checked_at": "2026-05-25T16:22:00+09:00",
+            "completed_at": "2026-05-25T16:22:00+09:00",
+            "diagnostics": {
+                "script": "scripts/demo_rehearsal.py verifies orchestrator dependencies simulation start traffic policy lstm forecast real camera learning god mode visible effects and live_replay_browser_smokes",
+                "runpod": "rehearsal_passed_against_http_127_0_0_1_18080_with_vllm_yolo_stt_traffic_policy_lstm_all_ok",
+                "god_mode": "multi_action_command_returned_ai_mode_vllm_actions_rain_traffic_jam_taxi_call_meeting_and_visible_state_effects",
+                "browser": "live_and_replay_headless_chromium_smokes_passed_with_expected_endpoint_and_no_application_error",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            }
+        },
+        {
+            "id": "M10-006",
+            "title": "Add Scene Director live impact presentation UI",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/10-polish-demo.md",
+            "depends_on": [
+                "M10-005"
+            ],
+            "unblocked_by": "full_rehearsal_passed_and_visual_effects_needed_clearer_presentation_signposting",
+            "last_checked_at": "2026-05-25T16:35:00+09:00",
+            "completed_at": "2026-05-25T16:35:00+09:00",
+            "diagnostics": {
+                "city_hud": "SCENE_DIRECTOR_LIVE_IMPACT_HUD_shows_rain_traffic_taxi_meeting_gpu_policy_lstm_forecast_labels_from_world_state",
+                "panel": "SceneImpactPanel_Live_impact_board_shows_active_cards_and_learning_evidence",
+                "browser_smoke": "scripts_browser_demo_smoke_requires_scene_director_and_live_impact_markers_for_live_and_replay",
+                "presentation": "demo_script_checklist_runbook_updated_to_call_out_HUD_and_cards_after_God_Mode",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            }
+        },
+        {
+            "id": "M10-007",
+            "title": "Add screenshot-based browser visual smoke gate",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/10-polish-demo.md",
+            "depends_on": [
+                "M10-006"
+            ],
+            "unblocked_by": "visual_demo_gate_needed_after_scene_director_polish",
+            "last_checked_at": "2026-05-25T17:08:33+09:00",
+            "completed_at": "2026-05-25T17:08:33+09:00",
+            "diagnostics": {
+                "script": "scripts/browser_visual_smoke.py captures live and replay headless Chromium screenshots, validates PNG dimensions, file size, color diversity, luminance range, and DOM smoke markers",
+                "integration": "scripts/demo_rehearsal.py now includes visual smoke by default unless --skip-visual-smoke is set",
+                "artifacts": "screenshots are written under ignored dogfood-output/visual-smoke and are not committed",
+                "evidence": "live screenshot 942655 bytes unique_colors_1454 luma_range_236; replay screenshot 946968 bytes unique_colors_1750 luma_range_236",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            }
+        },
+        {
+            "id": "M10-008",
+            "title": "Add before-after browser impact smoke for God Mode demo proof",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/10-polish-demo.md",
+            "depends_on": [
+                "M10-007"
+            ],
+            "unblocked_by": "need_to_prove_demo_is_dynamic_not_static_looping_video",
+            "last_checked_at": "2026-05-25T17:33:28+09:00",
+            "completed_at": "2026-05-25T17:33:28+09:00",
+            "diagnostics": {
+                "client": "live Next page now fetches initial RunPod /api/v1/sim/state server-side so first screenshot reflects current world state before socket hydration",
+                "script": "scripts/browser_impact_smoke.py resets to clear baseline, captures before screenshot, sends vLLM multi-action God Mode command, captures after screenshot, and verifies state effects plus sampled screenshot delta",
+                "rehearsal": "scripts/demo_rehearsal.py now runs impact smoke by default unless --skip-impact-smoke is set",
+                "evidence": "impact smoke passed: before_weather_clear after_weather_rain ai_mode_vllm actions_rain_traffic_jam_taxi_call_meeting mean_rgb_delta_11.036 changed_sample_ratio_0.4531",
+                "artifacts": "before/after screenshots are written under ignored dogfood-output/impact-smoke and are not committed",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            }
+        },
+        {
+            "id": "M10-009",
+            "title": "Add browser RunPod 4090 AI proof panel",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/10-polish-demo.md",
+            "depends_on": [
+                "M10-008"
+            ],
+            "unblocked_by": "need_visible_proof_that_4090_runpod_ai_services_are_active_in_the_demo_ui",
+            "last_checked_at": "2026-05-25T17:53:50+09:00",
+            "completed_at": "2026-05-25T17:53:50+09:00",
+            "diagnostics": {
+                "client": "RunPodProofPanel shows vLLM YOLO STT 4090 traffic policy 4090 LSTM adaptive loop and direct-process runtime evidence from health plus world state",
+                "first_paint": "SidePanels now receive the server-fetched initial RunPod world state so proof panels do not start from replay fallback on live route first paint",
+                "browser_smoke": "scripts/browser_demo_smoke.py now requires RunPod AI proof and 4090 실행 증거 markers for live and replay routes",
+                "truthfulness": "Panel shows fallback/offline states instead of claiming unavailable services; direct-process/no-Docker runtime is explicit",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
+                "verification": "full_demo_rehearsal_passed_with_RunPod_AI_proof_markers_dom_bytes_live_27711_replay_14047_and_impact_smoke_mean_rgb_delta_22.062_changed_sample_ratio_0.6373"
+            }
+        },
+        {
+            "id": "M11-001",
+            "title": "Add interval-scoped vLLM autonomous City AI planning loop",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "active-thread-goal: llm-driven-city-loop",
+            "depends_on": [
+                "M10-009"
+            ],
+            "unblocked_by": "user_requested_real_ai_driven_city_after_looping_demo_feedback",
+            "last_checked_at": "2026-05-25T21:37:47+09:00",
+            "completed_at": "2026-05-25T21:37:47+09:00",
+            "diagnostics": {
+                "schemas": "CityWorldContext CityAiAction CityAiPlan CityAiSnapshot added to shared Pydantic source and generated TypeScript; WorldStatePayload.city_ai and city_ai_plan event are in the contract",
+                "backend": "SimulationEngine builds CityWorldContext, calls vLLM or rules planner on interval, validates bounded JSON actions, and executes citizen movement taxi meeting memory traffic and weather through Python executors",
+                "client": "3D city and Scene Director now surface CITY AI PLAN, city AI status, actor focus, and AI계획/taxi markers from shared world state",
+                "runpod_runtime": "targeted sync deployed changes; orchestrator restarted direct-process only with AETHERVILLE_CITY_AI_MODE=vllm and existing real vLLM/YOLO/STT/traffic paths preserved",
+                "smoke": "RunPod city_ai_smoke passed mode_vllm status_applied actions_call_taxi_meet_then_local_tunnel_passed actions_move_citizen_call_taxi with movement markers",
+                "verification": "uv_run_pytest_47_passed ruff_passed mypy_passed pnpm_lint_passed pnpm_typecheck_passed pnpm_test_passed pnpm_test_e2e_passed client_build_passed browser_live_smoke_passed git_diff_check_passed",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            }
+        },
+        {
+            "id": "M11-002",
+            "title": "Add bounded Scenario Director for complex audience story commands",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "active-thread-goal: scenario-director-dogfood",
+            "depends_on": [
+                "M11-001"
+            ],
+            "unblocked_by": "user_required_any_situation_to_show_visible_actor_taxi_drone_movement",
+            "last_checked_at": "2026-05-26T03:18:28+09:00",
+            "completed_at": "2026-05-26T03:18:28+09:00",
+            "diagnostics": {
+                "schemas": "ScenarioDirective and ScenarioStep added to shared Pydantic source and generated TypeScript; WorldStatePayload.scenario and GodCommandResponse.scenario expose active/completed scenario state.",
+                "backend": "God Mode complex Korean story commands compile to bounded steps for citizen movement, meeting, taxi call/drive, drone movement, and group rendezvous; SimulationEngine advances steps over ticks without raw LLM coordinate mutation.",
+                "client": "ScenarioDirectorPanel shows current step timeline; 3D scene HUD/camera focus ScenarioDirective progress and God Mode macro/result exposes 연쇄 상황.",
+                "docs": "README, live demo runbook, demo script, readiness checklist, DECISIONS, PROGRESS, and handoff updated with Scenario Director truthfulness constraints.",
+                "dogfood": "agent-browser dogfood passed against local browser http://127.0.0.1:3000 connected to local orchestrator http://127.0.0.1:18088; report at dogfood-output/scenario-director-dogfood/report.md; no reproducible issues found.",
+                "verification": "uv_run_pytest_48_passed ruff_passed mypy_passed pnpm_lint_passed pnpm_typecheck_passed pnpm_test_passed pnpm_test_e2e_passed scenario_directive_smoke_passed browser_demo_smoke_passed git_diff_check_passed; next_build_attempt_SIGTERM_after_WSL_hang_documented",
+                "runpod_runtime": "RunPod SSH/GPU verified and targeted backend/schema/script sync completed; Docker skipped; remote orchestrator restart not required for local dogfood and not performed via Docker.",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            }
+        },
+        {
+            "id": "M11-003",
+            "title": "Reflect Scenario Director changes into RunPod remote demo runtime",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "active-thread-goal: runpod-remote-demo-reflect",
+            "depends_on": [
+                "M11-002"
+            ],
+            "unblocked_by": "scenario_director_local_dogfood_passed_and_user_requested_runpod_remote_demo_reflection",
+            "last_checked_at": "2026-05-26T03:58:00+09:00",
+            "completed_at": "2026-05-26T03:58:00+09:00",
+            "diagnostics": {
+                "sync": "targeted tar-over-SSH sync of shared schemas, generated TypeScript, server package, and smoke scripts completed; full repo sync avoided because remote rsync is unavailable and full tar can hang",
+                "runpod_runtime": "remote orchestrator direct process restarted only; existing real vLLM, real YOLO vision on 18001, faster-whisper STT, and memory Redis fallback preserved",
+                "health": "local tunnel health passed for orchestrator, sim status, vision 18001, and vLLM models endpoint; remote orchestrator in-pod health passed immediately after restart",
+                "scenario_smoke": "scripts/scenario_directive_smoke.py passed against http://127.0.0.1:18080 with six scenario step types and visible running/completed movement states",
+                "client_runtime": "local Next dev restarted on 0.0.0.0:3000 with NEXT_PUBLIC_ORCHESTRATOR_URL and NEXT_PUBLIC_SOCKET_URL set to http://127.0.0.1:18080; first compile was slow on WSL but route served the tunnel endpoint after warmup",
+                "browser_smoke": "scripts/browser_demo_smoke.py passed for live route against http://127.0.0.1:3000 with expected endpoint http://127.0.0.1:18080; replay route curl marker passed after compile warmup",
+                "truthfulness": "scenario execution is bounded Python simulation driven by ScenarioDirective and vLLM high-level plans; no claim of direct frame-by-frame LLM animation or model-weight self-training",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            }
+        },
+        {
+            "id": "M12-001",
+            "title": "Implement TaskGraph Planner for arbitrary Korean multi-actor situations",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/12-taskgraph-planner.md",
+            "depends_on": [
+                "M11-003"
+            ],
+            "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
+            "last_checked_at": "2026-05-26T04:50:58+09:00",
+            "diagnostics": {
+                "schemas": "TaskGraph TaskNode TaskEdge TaskCondition TaskGraphPlan TaskGraphExecutionSnapshot added to Pydantic source and generated TypeScript.",
+                "backend": "God Mode text compiles through deterministic TaskGraph fallback; complex accepted graphs drive ScenarioDirective steps; hard unknown/circular graphs reject safely.",
+                "fixtures": "10 Korean fixture families cover meeting, taxi, group rendezvous, drone delivery plus movement, rain, traffic surge, unknown actor, ambiguous actor, circular ordering, and long 6-step chain.",
+                "client": "ScenarioDirectorPanel reads worldState.task_graph and shows status, current node, assumptions, and rejection reason while preserving ScenarioDirective display.",
+                "verification": "pytest_goal12_56_passed ruff_passed mypy_passed pnpm_typecheck_passed pnpm_test_3_passed json_tool_passed git_diff_check_passed",
+                "backup": "local archive created at .omx/backups/aetherville-goal12-taskgraph-20260526-045058.tar.gz; sha256 at .omx/backups/aetherville-goal12-taskgraph-20260526-045058.tar.gz.sha256; secrets/env files excluded",
+                "runpod_runtime": "RunPod not touched for this local Goal 12 implementation turn.",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            },
+            "completed_at": "2026-05-26T04:50:58+09:00"
+        },
+        {
+            "id": "M13-001",
+            "title": "Implement inspectable Entity Brain Runtime for citizens vehicles taxis and drones",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/13-entity-brain-runtime.md",
+            "depends_on": [
+                "M12-001"
+            ],
+            "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
+            "last_checked_at": "2026-05-26T09:56:20+09:00",
+            "diagnostics": {
+                "shared_contracts": "EntityBrainState_EntityGoal_EntityConstraint_EntityProgress_EntityBlocker_added_and_generated_typescript",
+                "world_state": "WorldStatePayload_entity_brains_added_for_citizens_taxi_vehicles_drones_traffic_lights",
+                "ui": "AiOperationsPanel_entity_intent_inspector_added_replay_fallback_includes_brains",
+                "tests": "packages_shared_schema_and_server_sim_tests_passed"
+            },
+            "completed_at": "2026-05-26T09:56:20+09:00"
+        },
+        {
+            "id": "M14-001",
+            "title": "Implement bounded Replanner and Resilience Runtime for stuck or impossible tasks",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/14-replanner-resilience-runtime.md",
+            "depends_on": [
+                "M13-001"
+            ],
+            "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
+            "last_checked_at": "2026-05-26T09:56:20+09:00",
+            "diagnostics": {
+                "blockers": "stuck_actor_stuck_vehicle_target_unreachable_taxi_unavailable_pickup_timeout_group_timeout_drone_delay_low_battery_traffic_delay_dependency_deadlock_forced_tests",
+                "events": "task_blocked_task_replanned_task_recovered_and_ReplanRecord_feed",
+                "smoke": "replanner_resilience_smoke_passed_local_direct_process_18081",
+                "max_attempts": "bounded_two_attempts_then_fallback_complete_no_infinite_loop"
+            },
+            "completed_at": "2026-05-26T09:56:20+09:00"
+        },
+        {
+            "id": "M15-001",
+            "title": "Implement Persistent Learning and Evolution Loop without overclaiming model-weight self-training",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/15-memory-learning-evolution-loop.md",
+            "depends_on": [
+                "M14-001"
+            ],
+            "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
+            "last_checked_at": "2026-05-26T09:56:20+09:00",
+            "diagnostics": {
+                "contracts": "TrajectoryEvent_TaskOutcomeScore_LearningSignal_PolicyBiasSnapshot_EvolutionSnapshot_added",
+                "persistence": "JSON_learning_state_with_reset_endpoint_and_policy_bias_snapshot",
+                "truthfulness": "deterministic_online_adaptation_only_no_model_weight_self_training_claim",
+                "smoke": "learning_evolution_smoke_passed_experience_0_to_8_json_persistence"
+            },
+            "completed_at": "2026-05-26T09:56:20+09:00"
+        },
+        {
+            "id": "M16-001",
+            "title": "Implement Causal AI UI and observability for graph intent replan learning and proof states",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/16-causal-ai-ui-observability.md",
+            "depends_on": [
+                "M15-001"
+            ],
+            "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
+            "last_checked_at": "2026-05-26T09:56:20+09:00",
+            "diagnostics": {
+                "ui_surfaces": "AI_operations_entity_intent_replan_feed_causal_chain_evolution_state_learning_truthfulness",
+                "replay": "mockWorld_includes_task_graph_entity_brains_replans_learning_evolution_samples",
+                "browser_contract": "browser_demo_smoke_markers_and_client_contract_tests_require_new_panels",
+                "copy": "model_weight_self_training_not_verified_wording_added"
+            },
+            "completed_at": "2026-05-26T09:56:20+09:00"
+        },
+        {
+            "id": "M17-001",
+            "title": "Run autonomous city dogfood audit and final truthfulness gate",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/17-autonomous-city-dogfood-audit.md",
+            "depends_on": [
+                "M16-001"
+            ],
+            "unblocked_by": "user_requested_goal_breakdown_for_fully_evolved_ai_city",
+            "last_checked_at": "2026-05-26T09:56:20+09:00",
+            "diagnostics": {
+                "audit_doc": "docs/autonomous-city-evolution-audit.md",
+                "dogfood": "autonomous_city_dogfood_smoke_passed_10_scenarios_local_direct_process_18081",
+                "runpod_health": "current_18080_tunnel_health_reachable_but_goal13_17_remote_redeploy_still_recommended_before_demo",
+                "portability": "docs/rtx-5090-autonomous-evolution-portability.md_and_final_backup_required"
+            },
+            "completed_at": "2026-05-26T09:56:20+09:00"
+        },
+        {
+            "id": "M17-002",
+            "title": "Finalize autonomous city evolution verification backup and push readiness",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": ".codex/goals/17-autonomous-city-dogfood-audit.md",
+            "depends_on": [
+                "M17-001"
+            ],
+            "unblocked_by": "goal13_17_smokes_browser_checks_and_production_build_passed",
+            "last_checked_at": "2026-05-26T10:19:15+09:00",
+            "completed_at": "2026-05-26T10:19:15+09:00",
+            "diagnostics": {
+                "final_build": "pnpm_filter_aetherville_client_build_passed",
+                "browser": "live_replay_browser_demo_smoke_visual_smoke_and_pnpm_test_e2e_passed",
+                "backup": ".omx/backups/aetherville-goals13-17-autonomous-city-20260526-101816.tar.gz sha256 a628885b3b6729114069a6d8c5040584147f5aa100d57abf9e02a79fc03cbe1c secret_path_scan_passed_env_example_whitelisted",
+                "runpod_runtime": "current_18080_tunnel_reachable_but_goal13_17_remote_redeploy_recommended_before_demo_claims",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            }
+        },
+        {
+            "id": "OPS-ROOT-001",
+            "title": "Organize tracked root artifacts into project infra and GitHub metadata folders",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "project/SESSION_HANDOFF.md",
+            "depends_on": [
+                "M17-002"
+            ],
+            "unblocked_by": "user_requested_clean_root_structure_after_agent_docs_untracked",
+            "last_checked_at": "2026-05-26T21:20:00+09:00",
+            "completed_at": "2026-05-26T21:20:00+09:00",
+            "diagnostics": {
+                "moved_docs": "project_SPEC_TEST_PLAN_DECISIONS_PROGRESS_SESSION_HANDOFF_TASKS_and_source_PRD",
+                "moved_runtime_docs": "infra/docker_compose_artifacts_for_future_portability_only",
+                "moved_github": "github_issue_template_to_dot_github_issue_template",
+                "local_only_ignored": "dot_codex_dot_agents_codex_docs_left_in_place_to_preserve_local_agent_runtime",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            }
+        },
+        {
+            "id": "OPS-5090-001",
+            "title": "Prepare RTX 5090 direct-process migration and current-pod handoff backup",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "project/RTX5090_MIGRATION_RUNBOOK.md",
+            "depends_on": [
+                "OPS-ROOT-001"
+            ],
+            "unblocked_by": "user_has_limited_4090_time_and_needs_5090_ready_deploy_path",
+            "last_checked_at": "2026-05-26T21:31:31+09:00",
+            "completed_at": "2026-05-26T21:31:31+09:00",
+            "diagnostics": {
+                "runbook": "project/RTX5090_MIGRATION_RUNBOOK.md",
+                "scripts": "infra/runpod/create_remote_handoff_backup.sh_and_infra/runpod/deploy_5090_direct.sh",
+                "remote_backup": ".omx/backups/runpod-remote-handoff-20260526-213131",
+                "remote_backup_archive_sha256": "92af4c5911d9d6633c8e34b227917f2eb00a8837cc7c8c21b360be87a810835b",
+                "remote_backup_scope": "workspace_plus_tmp_aetherville_learning_state_no_secrets_no_model_cache_no_full_pod_image",
+                "deploy_profiles": "safe_smoke_no_model_download_and_real_demo_guarded_by_AETHERVILLE_APPROVE_REAL_AI",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            }
+        },
+        {
+            "id": "OPS-H100-001",
+            "title": "Bring up H100 direct-process real-demo runtime with vLLM YOLO and learning smokes",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "project/SESSION_HANDOFF.md",
+            "depends_on": [
+                "OPS-5090-001"
+            ],
+            "unblocked_by": "user_provided_h100_runpod_ssh_and_approved_fast_work",
+            "last_checked_at": "2026-05-26T22:11:00+09:00",
+            "completed_at": "2026-05-26T22:11:00+09:00",
+            "diagnostics": {
+                "gpu": "NVIDIA_H100_80GB_HBM3_driver_580_126_09_cuda_13_0",
+                "runtime": "direct_process_safe_smoke_then_real_demo_passed",
+                "vllm": "Qwen_Qwen2_5_14B_Instruct_AWQ_on_local_tunnel_18000",
+                "vision": "real_Ultralytics_YOLO_yolo11n_on_verified_port_18001",
+                "orchestrator": "health_ok_simulation_running_local_tunnel_18080",
+                "learning": "json_backed_deterministic_online_adaptation_evolution_active",
+                "smokes": "scenario_replanner_learning_autonomous_dogfood_browser_live_browser_replay_passed",
+                "test_fix": "replanner_smoke_refetches_world_state_after_timeline_recovery_event",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+            }
+        },
+        {
+            "id": "OPS-H100-002",
+            "title": "Add reward-gated policy promotion and verify H100 browser dogfood runtime",
+            "status": "done",
+            "owner": "codex",
+            "goal_file": "active-thread-goal: final-ai-city-verification",
+            "depends_on": [
+                "OPS-H100-001"
+            ],
+            "unblocked_by": "user_requested_final_goal_implementation_and_local_api_dogfood",
+            "last_checked_at": "2026-05-26T23:52:40+09:00",
+            "completed_at": "2026-05-26T23:52:40+09:00",
+            "diagnostics": {
+                "learning": "PolicyCandidateSnapshot_and_PolicyPromotionSnapshot_added; LearningSnapshot exposes policy_candidates and promotion_gate; reward gate promotes or rejects candidate policies from persisted trajectory/outcome signals.",
+                "fallback_fix": "TaskGraph taxi availability marker parsing now ignores the condition marker when finding the real taxi action; forced taxi_unavailable commands replan immediately; taxi_drive timeout now returns pickup_timeout_or_traffic_delay.",
+                "h100_runtime": "direct_process_real_demo_redeployed_on_H100; health_ok_vllm_ok_vision_18001_ok_simulation_running_memory_redis_fallback",
+                "h100_smokes": "learning_evolution_scenario_directive_city_ai_replanner_autonomous_city_dogfood_browser_live_browser_replay_visual_both_impact_smoke_passed",
+                "browser": "local Next dev connected to http://127.0.0.1:18080; live and replay routes rendered; visual screenshots passed color/luma gates; impact before_after_diff passed and recorded taxi_deferred_meeting_event.",
+                "local_verification": "uv_pytest_52_passed ruff_targeted_passed mypy_server_packages_and_browser_impact_passed pnpm_lint_passed pnpm_typecheck_passed pnpm_test_passed client_build_passed git_diff_check_passed",
+                "verification_caveat": "cleared_after_retry_pnpm_lint_and_client_build_passed_on_warmed_WSL_filesystem",
+                "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry",
+                "production_client": "Next production server started on http://127.0.0.1:3000 with H100 tunnel env; browser_demo_smoke live and replay passed after build."
+            }
+        }
+    ]
 }

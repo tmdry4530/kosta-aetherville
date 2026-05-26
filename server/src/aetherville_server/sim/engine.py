@@ -1173,7 +1173,7 @@ class SimulationEngine:
         if step.type in {"move_actor_to_actor", "move_actor_to_location"}:
             return "stuck_actor"
         if step.type == "taxi_drive_to_actor":
-            (
+            return (
                 "traffic_delay"
                 if self.vehicles.congestion_active(self.tick)
                 else "pickup_timeout"

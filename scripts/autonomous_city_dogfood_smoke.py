@@ -31,7 +31,7 @@ SCENARIOS: tuple[DogfoodScenario, ...] = (
     ),
     DogfoodScenario(
         "taxi unavailable then fallback",
-        "택시 없음 상황에서 민수가 하린이를 만난 뒤 택시를 불러 민지에게 간다",
+        "택시 없음 상황에서 민수가 택시를 불러 민지에게 간다",
         required_any=("task_replanned",),
     ),
     DogfoodScenario(

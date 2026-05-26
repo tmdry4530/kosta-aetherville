@@ -78,6 +78,11 @@ def main() -> int:
     evolution = after.get("evolution") or {}
     if not evolution.get("version"):
         raise SystemExit("evolution snapshot missing")
+    promotion_gate = after.get("promotion_gate") or {}
+    if promotion_gate.get("candidate_count", 0) < 1:
+        raise SystemExit("policy promotion gate did not evaluate any candidates")
+    if not after.get("policy_candidates"):
+        raise SystemExit("policy candidates missing")
     if after.get("storage") != "json_persistence":
         raise SystemExit(f"unexpected learning storage: {after.get('storage')}")
 
@@ -90,6 +95,8 @@ def main() -> int:
                 "policy_version": after.get("policy_version"),
                 "signals": after.get("signals", [])[-4:],
                 "evolution": evolution,
+                "promotion_gate": promotion_gate,
+                "policy_candidates": after.get("policy_candidates", [])[-2:],
             },
             ensure_ascii=False,
         )

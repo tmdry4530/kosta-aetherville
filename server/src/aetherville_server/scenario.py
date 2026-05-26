@@ -670,8 +670,11 @@ def compile_scenario_directive(raw_text: str, *, created_tick: int) -> ScenarioD
     action_count = _action_count(text)
     mentioned_ids = _mentioned_actor_ids(text)
     complex_markers = ("뒤", "그리고", "드론", "만나러", "합류", "픽업", "전달", "배송")
+    forced_blocker = _has_forced_blocker_marker(text)
     is_complex = not (action_count < 2 and len(mentioned_ids) < 3) and (
-        len(mentioned_ids) >= 3 or any(marker in text for marker in complex_markers)
+        len(mentioned_ids) >= 3
+        or forced_blocker
+        or any(marker in text for marker in complex_markers)
     )
     if not is_complex:
         return None
@@ -738,8 +741,45 @@ def _mentions_traffic_surge(text: str) -> bool:
     return any(marker in text for marker in ("교통량", "정체", "혼잡", "차량 많"))
 
 
+FORCED_BLOCKER_HINT_MARKERS: tuple[str, ...] = (
+    "택시 없음",
+    "택시가 없음",
+    "택시 불가",
+    "도착 불가",
+    "갈 수 없",
+    "픽업 지연",
+    "픽업 실패",
+    "교통 지연",
+    "정체 지연",
+    "드론 지연",
+    "배터리 부족",
+    "합류 지연",
+    "의존성 막힘",
+    "차량 멈춤",
+)
+
+
+def _has_forced_blocker_marker(text: str) -> bool:
+    lowered = text.lower()
+    return any(marker.lower() in lowered for marker in FORCED_BLOCKER_HINT_MARKERS)
+
+
+def _taxi_action_text(text: str) -> str:
+    """Remove taxi-availability condition markers before parsing taxi actor/target.
+
+    Presenter prompts often start with "택시 없음 상황에서 ... 택시를 불러 ...".
+    Splitting on the first raw "택시" would otherwise treat the condition marker
+    as the action verb and lose the actual caller.
+    """
+
+    cleaned = text
+    for marker in ("택시 없음", "택시가 없음", "택시 불가", "taxi unavailable"):
+        cleaned = cleaned.replace(marker, "")
+    return " ".join(cleaned.split())
+
+
 def _first_meeting_pair(text: str) -> tuple[str, str] | None:
-    before_taxi = text.split("택시", maxsplit=1)[0]
+    before_taxi = _taxi_action_text(text).split("택시", maxsplit=1)[0]
     if "만나" not in before_taxi and "만난" not in before_taxi:
         return None
 
@@ -756,9 +796,12 @@ def _taxi_actor(
 ) -> str | None:
     if "택시" not in text:
         return None
+    action_text = _taxi_action_text(text)
+    if "택시" not in action_text:
+        return None
     if first_meeting is not None:
         return first_meeting[0]
-    before_taxi = text.split("택시", maxsplit=1)[0]
+    before_taxi = action_text.split("택시", maxsplit=1)[0]
     names_before = _names_in_order(before_taxi)
     if names_before:
         return NAME_TO_CITIZEN_ID[names_before[-1]]
@@ -770,7 +813,10 @@ def _taxi_actor(
 def _taxi_target(text: str, taxi_actor: str | None, mentioned_ids: list[str]) -> str | None:
     if taxi_actor is None or "택시" not in text:
         return None
-    after_taxi = text.split("택시", maxsplit=1)[1]
+    action_text = _taxi_action_text(text)
+    if "택시" not in action_text:
+        return None
+    after_taxi = action_text.split("택시", maxsplit=1)[1]
     names_after = [
         NAME_TO_CITIZEN_ID[name]
         for name in _names_in_order(after_taxi)

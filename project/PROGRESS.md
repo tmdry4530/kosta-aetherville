@@ -1118,3 +1118,26 @@ Verification update — 2026-05-25T18:04:10+09:00:
 - `scripts/replanner_resilience_smoke.py` was hardened to re-fetch world state after timeline recovery events so it no longer races state snapshot propagation.
 - Current truthful state: H100 is running real vLLM + real YOLO + deterministic JSON-backed learning/evolution. This is policy/experience self-learning, not live LLM weight fine-tuning.
 - Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not run.
+
+## OPS-H100-002 — Reward-gated policy promotion and H100 dogfood verification — 2026-05-26T23:37:58+09:00
+
+- Status: implemented and verified against the H100 direct-process demo runtime; WSL lint/build caveat cleared after retry.
+- Added policy candidate/promotion contracts to shared schemas and generated TypeScript: `PolicyCandidateSnapshot`, `PolicyPromotionSnapshot`, `LearningSnapshot.policy_candidates`, and `LearningSnapshot.promotion_gate`.
+- Extended the JSON-backed learning loop with a deterministic reward gate. Every candidate evaluation scores recent taxi/replan/scenario/fallback/weather/traffic experience, records a candidate, and promotes only if the reward improves enough; otherwise the current live policy is retained. UI now shows the active policy, candidate count, promoted/rejected count, latest reward delta, and truthful “promotion-gated learning” copy.
+- Fixed a demo-critical fallback gap: commands like “택시 없음 상황에서 민수가 택시를 불러 민지에게 간다” now parse the actual taxi action instead of the availability condition marker, compile into a TaskGraph/ScenarioDirective, and trigger immediate `taxi_unavailable` replan/recovery. Also fixed `taxi_drive_to_actor` timeout blocker return.
+- Updated browser impact smoke so a taxi-deferred meeting event counts as valid evidence when the command intentionally schedules a meeting after taxi arrival; visual before/after diff remains required.
+- H100 direct-process runtime was redeployed without Docker. Health passed through the local tunnel: orchestrator ok, vLLM ok, vision `18001` ok, simulation running, Redis memory fallback.
+- H100/API verification passed: `learning_evolution_smoke`, `scenario_directive_smoke`, `city_ai_smoke`, `replanner_resilience_smoke`, and `autonomous_city_dogfood_smoke` all passed against `http://127.0.0.1:18080`.
+- Local browser dogfood/smoke passed after warming slow WSL Next dev compilation: live route DOM smoke, replay route DOM smoke, visual smoke for live/replay screenshots, and impact smoke with before/after visual delta passed against local browser `http://127.0.0.1:3000/` connected to H100 tunnel `http://127.0.0.1:18080`.
+- Local validation passed: `uv run pytest -q` (52 passed), targeted/full ruff checks after fixes, `uv run mypy server packages scripts/browser_impact_smoke.py`, `pnpm typecheck`, `pnpm test`, `python3 -m json.tool project/TASKS.json`, and `git diff --check`.
+- Verification caveat cleared: after warmup, `pnpm lint` and `pnpm --filter @aetherville/client build` both passed on the WSL `/mnt/d` workspace.
+- Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not run.
+
+### OPS-H100-002 final verification addendum — 2026-05-26T23:52:40+09:00
+
+- WSL warm retry succeeded: `pnpm lint` passed and `NEXT_TELEMETRY_DISABLED=1 timeout 900 pnpm --filter @aetherville/client build` passed.
+- Production Next server started with H100 tunnel env on `http://127.0.0.1:3000`.
+- Final production browser smokes passed:
+  - `python3 scripts/browser_demo_smoke.py --mode live --url http://127.0.0.1:3000/ --expected-endpoint http://127.0.0.1:18080 --timeout-seconds 60`
+  - `python3 scripts/browser_demo_smoke.py --mode replay --url http://127.0.0.1:3000/replay --timeout-seconds 60`
+- H100 health remained ok after production browser smoke.

@@ -90,6 +90,8 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(learningPanelSource, /AI 학습 루프/);
   assert.match(learningPanelSource, /learningMetrics/);
   assert.match(learningPanelSource, /Evolution state/);
+  assert.match(learningPanelSource, /Policy promotion gate/);
+  assert.match(learningPanelSource, /promotion-gated learning/);
   assert.match(learningPanelSource, /model-weight self-training: not verified/);
   assert.match(aiOperationsSource, /AI operations/);
   assert.match(aiOperationsSource, /Entity intent/);
@@ -142,6 +144,7 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(cssSource, /trafficAiBadge-active/);
   assert.match(cssSource, /learningMetrics/);
   assert.match(cssSource, /learningMeter/);
+  assert.match(cssSource, /promotionGate/);
   assert.match(cssSource, /aiOperationsPanel/);
   assert.match(cssSource, /entityIntent/);
   assert.match(cssSource, /replanRecord/);
@@ -185,6 +188,8 @@ test('client socket bridge listens for generated state_update envelope', () => {
   assert.match(typesSource, /traffic_ai: TrafficAiSnapshot/);
   assert.match(typesSource, /traffic_forecast_ai: TrafficForecastAiSnapshot/);
   assert.match(typesSource, /learning: LearningSnapshot/);
+  assert.ok(typesSource.includes('policy_candidates: PolicyCandidateSnapshot[]'));
+  assert.match(typesSource, /promotion_gate: PolicyPromotionSnapshot/);
   assert.match(typesSource, /scenario\\?: ScenarioDirective \\| null/);
   assert.match(typesSource, /task_graph\\?: TaskGraphExecutionSnapshot \\| null/);
 });

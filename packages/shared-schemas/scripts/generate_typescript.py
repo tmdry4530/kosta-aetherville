@@ -246,7 +246,10 @@ export interface LearningSignal {
     | 'traffic_delay'
     | 'citizen_meeting'
     | 'actor_memory'
-    | 'fallback_path';
+    | 'fallback_path'
+    | 'policy_candidate'
+    | 'policy_promoted'
+    | 'policy_rejected';
   value: number;
   entity_id?: string | null;
   description: string;
@@ -277,6 +280,28 @@ export interface EvolutionSnapshot {
   last_signal?: string | null;
 }
 
+export interface PolicyCandidateSnapshot {
+  id: string;
+  tick: number;
+  candidate_version: string;
+  source_signal: string;
+  score_before: number;
+  score_after: number;
+  promoted: boolean;
+  reason: string;
+}
+
+export interface PolicyPromotionSnapshot {
+  active_policy_version: string;
+  evaluator: string;
+  candidate_count: number;
+  promoted_count: number;
+  rejected_count: number;
+  last_decision: 'none' | 'promoted' | 'rejected';
+  last_promoted_version?: string | null;
+  rollback_available: boolean;
+}
+
 export interface LearningSnapshot {
   mode: 'deterministic_online_adaptation';
   storage: 'json_persistence' | 'memory';
@@ -294,6 +319,8 @@ export interface LearningSnapshot {
   signals: LearningSignal[];
   policy_bias: PolicyBiasSnapshot;
   evolution: EvolutionSnapshot;
+  policy_candidates: PolicyCandidateSnapshot[];
+  promotion_gate: PolicyPromotionSnapshot;
 }
 
 export interface LearningStatusResponse {

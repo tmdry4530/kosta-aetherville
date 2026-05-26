@@ -47,6 +47,10 @@ def test_generated_typescript_contract_exists() -> None:
     assert "display_tags: string[]" in text
     assert "policy_bias: PolicyBiasSnapshot" in text
     assert "trajectory_events: TrajectoryEvent[]" in text
+    assert "export interface PolicyCandidateSnapshot" in text
+    assert "export interface PolicyPromotionSnapshot" in text
+    assert "policy_candidates: PolicyCandidateSnapshot[]" in text
+    assert "promotion_gate: PolicyPromotionSnapshot" in text
     assert "replans: ReplanRecord[]" in text
     assert "entity_brains: EntityBrainState[]" in text
     assert "export interface EvolutionSnapshot" in text
