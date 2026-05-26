@@ -1065,3 +1065,22 @@ Verification update — 2026-05-25T18:04:10+09:00:
 - Local 5090 portability backup created at `.omx/backups/aetherville-goals13-17-autonomous-city-20260526-101816.tar.gz` with checksum `a628885b3b6729114069a6d8c5040584147f5aa100d57abf9e02a79fc03cbe1c`; backup path scan passed for secret/env/key filenames, with only the tracked env example file whitelisted.
 - Current RunPod tunnel health remains reachable, but Goal 13–17 current-branch code was not redeployed remotely in this final local pass; sync/restart RunPod before presenting remote entity-brain/replan/evolution evidence.
 - Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not run.
+
+
+## RunPod orchestrator restart and local server bring-up — 2026-05-26T19:30:13+09:00
+
+- Status: complete on branch `feat/llm-driven-city-loop`.
+- Synced latest committed Goal 13–17 files to RunPod using targeted tar-over-SSH fallback after full repository tar sync showed the known no-output hang pattern. Remote `rsync` remains unavailable.
+- Restarted only the RunPod direct-process orchestrator; existing real vLLM on `8000` and real YOLO vision on verified port `18001` were preserved. Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not used.
+- Verified local tunnel health:
+  - `http://127.0.0.1:18080/api/v1/health` reports orchestrator ok, vLLM ok, vision ok, faster-whisper STT ok, JSON learning ok, Redis memory fallback.
+  - `http://127.0.0.1:18001/health` reports real Ultralytics YOLO enabled.
+  - `http://127.0.0.1:18000/v1/models` reports the real vLLM model endpoint.
+- Verified current remote Goal 13–17 state through the tunnel: `city_ai.mode=vllm`, `entity_brains=13`, `learning.evolution` present.
+- Remote smokes passed against `http://127.0.0.1:18080`:
+  - `scripts/scenario_directive_smoke.py`
+  - `scripts/replanner_resilience_smoke.py`
+  - `scripts/learning_evolution_smoke.py`
+  - `scripts/autonomous_city_dogfood_smoke.py`
+- Local browser server is running with tunnel endpoint envs at `http://127.0.0.1:3000/`; WSL network URL observed as `http://172.22.251.143:3000/` for same-machine LAN/Windows access.
+- Browser smokes passed for live and replay routes against the local server.
