@@ -1,6 +1,6 @@
 {
   "epic": "project-aetherville-codex-implementation",
-  "status": "repo_root_cleaned_agent_docs_untracked",
+  "status": "rtx5090_migration_ready_with_remote_handoff_backup",
   "source_prd": "project/source/Project Aetherville PRD.pdf",
   "tasks": [
     {
@@ -1136,6 +1136,28 @@
         "moved_runtime_docs": "infra/docker_compose_artifacts_for_future_portability_only",
         "moved_github": "github_issue_template_to_dot_github_issue_template",
         "local_only_ignored": "dot_codex_dot_agents_codex_docs_left_in_place_to_preserve_local_agent_runtime",
+        "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
+      }
+    },
+    {
+      "id": "OPS-5090-001",
+      "title": "Prepare RTX 5090 direct-process migration and current-pod handoff backup",
+      "status": "done",
+      "owner": "codex",
+      "goal_file": "project/RTX5090_MIGRATION_RUNBOOK.md",
+      "depends_on": [
+        "OPS-ROOT-001"
+      ],
+      "unblocked_by": "user_has_limited_4090_time_and_needs_5090_ready_deploy_path",
+      "last_checked_at": "2026-05-26T21:31:31+09:00",
+      "completed_at": "2026-05-26T21:31:31+09:00",
+      "diagnostics": {
+        "runbook": "project/RTX5090_MIGRATION_RUNBOOK.md",
+        "scripts": "infra/runpod/create_remote_handoff_backup.sh_and_infra/runpod/deploy_5090_direct.sh",
+        "remote_backup": ".omx/backups/runpod-remote-handoff-20260526-213131",
+        "remote_backup_archive_sha256": "92af4c5911d9d6633c8e34b227917f2eb00a8837cc7c8c21b360be87a810835b",
+        "remote_backup_scope": "workspace_plus_tmp_aetherville_learning_state_no_secrets_no_model_cache_no_full_pod_image",
+        "deploy_profiles": "safe_smoke_no_model_download_and_real_demo_guarded_by_AETHERVILLE_APPROVE_REAL_AI",
         "docker_policy": "no_docker_no_compose_no_dind_no_blind_retry"
       }
     }

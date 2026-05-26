@@ -1093,3 +1093,15 @@ Verification update — 2026-05-25T18:04:10+09:00:
 - Updated `AGENTS.md`, `README.md`, `project/TASKS.json`, and status docs to reference the new paths.
 - Local-only `.codex/`, `.agents/`, `codex/`, and `docs/` remain ignored and were not moved to avoid breaking local Codex/OMX/runtime surfaces.
 - Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not run.
+
+## RTX 5090 migration readiness — 2026-05-26T21:31:31+09:00
+
+- Status: prepared on branch `feat/llm-driven-city-loop`; final commit/push follows.
+- Added `project/RTX5090_MIGRATION_RUNBOOK.md` with the 4090-before-stop backup gate, 5090 `.env.runpod` setup, safe-smoke deploy, real-demo opt-in deploy, tunnel, health, and smoke gates.
+- Added `infra/runpod/create_remote_handoff_backup.sh` to capture the current RunPod workspace and `/tmp/aetherville/learning_state.json` without secrets/model caches/dependency caches.
+- Added `infra/runpod/deploy_5090_direct.sh` with `safe-smoke` and guarded `real-demo` profiles. `real-demo` requires `AETHERVILLE_APPROVE_REAL_AI=1` before vLLM/YOLO bootstrap.
+- Hardened `infra/runpod/deploy_over_ssh.sh` so repository sync excludes `.omx` backups/caches and dry-run does not incorrectly require local rsync when tar-over-SSH fallback is available.
+- Current 4090 SSH/GPU verification passed: RTX 4090 visible, remote workspace present, Docker intentionally skipped, direct-process policy unchanged.
+- Remote handoff backup completed locally at `.omx/backups/runpod-remote-handoff-20260526-213131`; archive sha256 `92af4c5911d9d6633c8e34b227917f2eb00a8837cc7c8c21b360be87a810835b`; secret-like path scan passed. The remote archive includes the current remote workspace and runtime learning state, but not model caches or a full pod image.
+- Important caveat: 5090 정상작동은 새 5090 팟에서 safe-smoke 및 real-demo health/smoke가 통과한 뒤에만 확정할 수 있다.
+- Docker, Docker Compose, Docker-in-Docker, and blind Docker retries were not run.

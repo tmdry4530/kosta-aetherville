@@ -372,6 +372,7 @@ python3 scripts/demo_rehearsal.py \
 - `project/SESSION_HANDOFF.md` — 현재 운영 handoff
 - `project/TASKS.json` — 작업/마일스톤 상태
 - `project/source/Project Aetherville PRD.pdf` — 원본 PRD 자료
+- `project/RTX5090_MIGRATION_RUNBOOK.md` — 4090 종료 전 백업과 5090 direct-process 이관 절차
 - `infra/docker/` — Docker Compose 포터빌리티 참고 자료. 현재 RunPod 실행 경로는 direct-process입니다.
 
 ## 주의 사항

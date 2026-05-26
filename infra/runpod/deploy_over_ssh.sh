@@ -39,12 +39,40 @@ case "$DEPLOY_MODE" in
 esac
 
 ENV_FILE="infra/runpod/.env.runpod"
+# Shell-provided values should override defaults copied from .env.runpod. This
+# matters for wrappers such as deploy_5090_direct.sh, where real-demo exports
+# runtime variables while .env.runpod may still contain safe-smoke defaults.
+ENV_OVERRIDE_NAMES=(
+  RUNPOD_HOST RUNPOD_SSH_PORT RUNPOD_USER RUNPOD_SSH_KEY RUNPOD_REMOTE_DIR
+  AETHERVILLE_VLLM_MODE AETHERVILLE_LLM_MODE AETHERVILLE_VISION_MODE
+  AETHERVILLE_BOOTSTRAP_UV AETHERVILLE_BOOTSTRAP_VLLM AETHERVILLE_FORCE_VLLM_INSTALL
+  AETHERVILLE_BOOTSTRAP_YOLO AETHERVILLE_BOOTSTRAP_STT AETHERVILLE_SKIP_UV_SYNC
+  AETHERVILLE_REDIS_MODE AETHERVILLE_MODEL_CACHE_DIR AETHERVILLE_VLLM_INSTALL_PACKAGE
+  AETHERVILLE_VLLM_COMPAT_PACKAGE AETHERVILLE_YOLO_INSTALL_PACKAGE AETHERVILLE_YOLO_MODEL
+  AETHERVILLE_YOLO_DEVICE AETHERVILLE_GOD_MODE_LLM AETHERVILLE_CITY_AI_MODE
+  AETHERVILLE_CITY_AI_INTERVAL_TICKS AETHERVILLE_CITY_AI_LLM_TIMEOUT_SEC
+  AETHERVILLE_STT_MODE AETHERVILLE_STT_INSTALL_PACKAGE AETHERVILLE_STT_MODEL
+  AETHERVILLE_STT_DEVICE AETHERVILLE_STT_COMPUTE_TYPE
+  AETHERVILLE_TRAFFIC_POLICY_CHECKPOINT AETHERVILLE_TRAFFIC_FORECAST_CHECKPOINT
+  AETHERVILLE_ORCHESTRATOR_PORT AETHERVILLE_VISION_PORT AETHERVILLE_VLLM_PORT
+  AETHERVILLE_RESTART_PROCESSES AETHERVILLE_HEALTH_RETRIES AETHERVILLE_HEALTH_SLEEP
+  MODEL_NAME VLLM_EXTRA_ARGS
+)
+declare -A PRESERVED_ENV_OVERRIDES=()
+for name in "${ENV_OVERRIDE_NAMES[@]}"; do
+  if [[ -v $name ]]; then
+    PRESERVED_ENV_OVERRIDES[$name]="${!name}"
+  fi
+done
 if [[ -f "$ENV_FILE" ]]; then
   set -a
   # shellcheck disable=SC1090
   source "$ENV_FILE"
   set +a
 fi
+for name in "${!PRESERVED_ENV_OVERRIDES[@]}"; do
+  export "$name=${PRESERVED_ENV_OVERRIDES[$name]}"
+done
 
 : "${RUNPOD_HOST:?RUNPOD_HOST is required}"
 : "${RUNPOD_SSH_PORT:=22}"
@@ -89,8 +117,12 @@ EXCLUDES=(
   --exclude dist
   --exclude build
   --exclude .venv
+  --exclude .omx
   --exclude .gstack
   --exclude dogfood-output
+  --exclude .mypy_cache
+  --exclude .pytest_cache
+  --exclude .ruff_cache
   --exclude __pycache__
   --exclude .env
   --exclude .env.local
@@ -112,8 +144,12 @@ TAR_EXCLUDES=(
   --exclude=dist
   --exclude=build
   --exclude=.venv
+  --exclude=.omx
   --exclude=.gstack
   --exclude=dogfood-output
+  --exclude=.mypy_cache
+  --exclude=.pytest_cache
+  --exclude=.ruff_cache
   --exclude=__pycache__
   --exclude=.env
   --exclude=.env.local
@@ -155,10 +191,6 @@ echo "Target: $REDACTED_TARGET/<remote-dir>"
 
 if [[ "$DRY_RUN" == "1" ]]; then
   echo "Would create remote dir, rsync repository, then run mode '$DEPLOY_MODE'."
-  if ! command -v rsync >/dev/null 2>&1; then
-    echo "rsync not found locally; install rsync before deployment."
-    exit 3
-  fi
   set +e
   ssh_capture "test -d '$RUNPOD_REMOTE_DIR'"
   workspace_status=$?

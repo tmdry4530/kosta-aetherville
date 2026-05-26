@@ -969,3 +969,33 @@ infra/docker/docker-compose.cloud.yml
 Local agent/runbook folders `.codex/`, `.agents/`, `codex/`, and `docs/` remain ignored and local-only by design. Use `project/TASKS.json`, `project/PROGRESS.md`, and `project/SESSION_HANDOFF.md` for future tracked status updates.
 
 RunPod was not touched for this cleanup. Do not run Docker/Compose/DinD.
+
+## RTX 5090 migration readiness handoff — 2026-05-26T21:31:31+09:00
+
+Current branch: `feat/llm-driven-city-loop`.
+
+Use this order when credits are added and a 5090 pod is available:
+
+```bash
+# 1. Fill infra/runpod/.env.runpod with the NEW 5090 SSH values only.
+bash infra/runpod/verify_runpod.sh
+
+# 2. Fast no-download runtime proof.
+bash infra/runpod/deploy_5090_direct.sh --profile safe-smoke
+
+# 3. Real AI opt-in only after safe-smoke is green and GPU spend is approved.
+AETHERVILLE_APPROVE_REAL_AI=1 bash infra/runpod/deploy_5090_direct.sh --profile real-demo
+```
+
+Detailed runbook: `project/RTX5090_MIGRATION_RUNBOOK.md`.
+
+Latest current-pod handoff backup:
+
+```text
+.omx/backups/runpod-remote-handoff-20260526-213131
+archive sha256: 92af4c5911d9d6633c8e34b227917f2eb00a8837cc7c8c21b360be87a810835b
+```
+
+This backup is a remote workspace/runtime-state safety net, not a full RunPod disk/model-cache image. It intentionally excludes secrets, dependency/build caches, and model caches. Recreate `.env.runpod`, HF/model credentials, and vLLM/YOLO packages on the 5090 machine.
+
+Do not delete the 4090 pod until the 5090 tunnel health checks and scenario/browser smokes pass against `http://127.0.0.1:18080`.
